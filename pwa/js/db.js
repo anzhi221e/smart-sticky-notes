@@ -156,8 +156,10 @@ export async function readConfig() {
 
 export async function writeConfig(key, value) {
     const sb = getSupabase();
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
     const { error } = await sb
         .from('smartstickynotes_config')
-        .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' });
+        .upsert({ user_id: user.id, key, value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' });
     if (error) throw error;
 }
