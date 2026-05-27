@@ -505,13 +505,13 @@ async function showSettings() {
 
     document.getElementById('copy-token-btn').addEventListener('click', async () => {
         const sb = getSupabase();
-        const { data } = await sb.auth.getSession();
-        if (data.session && data.session.refresh_token) {
-            await navigator.clipboard.writeText(data.session.refresh_token);
-            showToast('令牌已复制到剪贴板');
-        } else {
-            showToast('无法获取令牌，请重新登录');
+        const { data, error } = await sb.auth.refreshSession();
+        if (error || !data.session) {
+            showToast('无法刷新令牌，请重新登录');
+            return;
         }
+        await navigator.clipboard.writeText(data.session.refresh_token);
+        showToast('新令牌已复制到剪贴板');
     });
 
     document.getElementById('logout-btn').addEventListener('click', async () => {
