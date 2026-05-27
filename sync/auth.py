@@ -1,11 +1,9 @@
 """Manage Supabase auth for headless PC sync script.
 
-On first run, opens browser for OAuth/magic link login.
-Stores refresh_token in Windows Credential Manager via keyring.
-Auto-refreshes session JWT before expiry.
+Reads refresh_token from SUPABASE_REFRESH_TOKEN env var.
+Stores in Windows Credential Manager after first refresh.
 """
 import os
-import webbrowser
 import time
 import keyring
 from supabase_client import get_client
@@ -13,44 +11,37 @@ from supabase_client import get_client
 SERVICE_NAME = "SmartStickyNotes"
 ACCOUNT_NAME = "supabase_refresh_token"
 
+
 def _store_token(token: str) -> None:
     keyring.set_password(SERVICE_NAME, ACCOUNT_NAME, token)
+
 
 def _get_stored_token() -> str | None:
     return keyring.get_password(SERVICE_NAME, ACCOUNT_NAME)
 
-def _delete_stored_token() -> None:
-    try:
-        keyring.delete_password(SERVICE_NAME, ACCOUNT_NAME)
-    except keyring.errors.PasswordDeleteError:
-        pass
 
-def login() -> bool:
-    """Open browser for OAuth login. Returns True if successful."""
-    client = get_client()
-    url = os.environ.get("SUPABASE_URL", "")
+def initial_auth() -> bool:
+    """Use refresh_token from env var to create session. Stores token for future use."""
+    token = os.environ.get("SUPABASE_REFRESH_TOKEN", "").strip()
+    if not token:
+        print("Set SUPABASE_REFRESH_TOKEN env var for first-time auth.")
+        print("To get it: open PWA in browser → F12 → Application → Local Storage")
+        print("→ find key 'supabase-auth-token' → copy the refresh_token value")
+        return False
 
-    print(f"Opening browser for login at: {url}")
-    webbrowser.open(f"{url}/auth/v1/authorize?provider=email&redirect_to=http://localhost:9999/callback")
-    print("After logging in, copy your refresh_token from the session.")
-
-    token = input("Paste your refresh_token: ").strip()
-    if token:
-        _store_token(token)
-        _set_session(token)
-        return True
-    return False
-
-def _set_session(refresh_token: str) -> None:
     client = get_client()
     try:
-        resp = client.auth.refresh_session(refresh_token)
+        resp = client.auth.refresh_session(token)
         _store_token(resp.session.refresh_token)
+        print("Authentication successful.")
+        return True
     except Exception as e:
-        raise RuntimeError(f"Failed to refresh session: {e}") from e
+        print(f"Auth failed: {e}")
+        return False
+
 
 def ensure_session() -> None:
-    """Ensure we have a valid session. Call on startup and before each poll cycle."""
+    """Ensure valid session. Tries stored token first, then env var."""
     client = get_client()
     try:
         session = client.auth.get_session()
@@ -62,17 +53,11 @@ def ensure_session() -> None:
     token = _get_stored_token()
     if token:
         try:
-            _set_session(token)
+            resp = client.auth.refresh_session(token)
+            _store_token(resp.session.refresh_token)
             return
         except Exception:
-            _delete_stored_token()
+            pass
 
-    raise RuntimeError("Not authenticated. Run login().")
-
-def logout() -> None:
-    _delete_stored_token()
-    client = get_client()
-    try:
-        client.auth.sign_out()
-    except Exception:
-        pass
+    if not initial_auth():
+        raise RuntimeError("Not authenticated. Set SUPABASE_REFRESH_TOKEN and try again.")

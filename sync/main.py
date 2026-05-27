@@ -5,7 +5,7 @@ import threading
 
 from sync_loop import SyncLoop, run_sync_loop
 from tray_app import TrayApp, HAS_TRAY
-from auth import ensure_session, login as do_login
+from auth import ensure_session
 from config import read_config
 
 
@@ -17,17 +17,15 @@ def on_alert(level: str, msg: str):
 def main():
     if not os.environ.get("SUPABASE_URL") or not os.environ.get("SUPABASE_ANON_KEY"):
         print("Set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.")
-        print("Usage: SUPABASE_URL=<url> SUPABASE_ANON_KEY=<key> python main.py")
+        print("Usage: SUPABASE_URL=<url> SUPABASE_ANON_KEY=<key> SUPABASE_REFRESH_TOKEN=<token> python main.py")
         sys.exit(1)
 
     # Authenticate
     try:
         ensure_session()
-    except RuntimeError:
-        print("Not authenticated. Starting login flow...")
-        if not do_login():
-            print("Login failed.")
-            sys.exit(1)
+    except RuntimeError as e:
+        print(f"Authentication failed: {e}")
+        sys.exit(1)
 
     # Read config
     config = read_config()

@@ -467,7 +467,9 @@ async function showSettings() {
         </div>
         <div class="setting-group">
             <h3>账户</h3>
-            <button id="logout-btn" style="padding:10px 20px;background:var(--danger);color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:14px;">退出登录</button>
+            <button id="copy-token-btn" style="padding:10px 20px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:20px;cursor:pointer;font-size:14px;margin-bottom:8px;display:block;">复制同步令牌</button>
+            <span class="setting-hint">用于 PC 同步脚本认证</span>
+            <button id="logout-btn" style="padding:10px 20px;background:var(--danger);color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:14px;margin-top:12px;">退出登录</button>
         </div>
     `;
 
@@ -499,6 +501,17 @@ async function showSettings() {
         await writeConfig('config_sync_requested_at', new Date().toISOString());
         const hint = document.getElementById('cfg-folder-hint');
         if (hint) hint.textContent = '已发送同步请求 · PC 将在 30 秒内响应';
+    });
+
+    document.getElementById('copy-token-btn').addEventListener('click', async () => {
+        const sb = getSupabase();
+        const { data } = await sb.auth.getSession();
+        if (data.session && data.session.refresh_token) {
+            await navigator.clipboard.writeText(data.session.refresh_token);
+            showToast('令牌已复制到剪贴板');
+        } else {
+            showToast('无法获取令牌，请重新登录');
+        }
     });
 
     document.getElementById('logout-btn').addEventListener('click', async () => {
