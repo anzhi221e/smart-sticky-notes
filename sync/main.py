@@ -1,4 +1,8 @@
-"""Main entry point for PC Sync Script."""
+"""Main entry point for PC Sync Script.
+
+Uses service_role key from sync/.env file for admin access.
+No user login required — service_role bypasses RLS.
+"""
 import sys
 import os
 import threading
@@ -7,6 +11,7 @@ from sync_loop import SyncLoop, run_sync_loop
 from tray_app import TrayApp, HAS_TRAY
 from auth import ensure_session
 from config import read_config
+from supabase_client import get_client
 
 
 def on_alert(level: str, msg: str):
@@ -15,23 +20,21 @@ def on_alert(level: str, msg: str):
 
 
 def main():
-    if not os.environ.get("SUPABASE_URL") or not os.environ.get("SUPABASE_ANON_KEY"):
-        print("Set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.")
-        print("Usage: SUPABASE_URL=<url> SUPABASE_ANON_KEY=<key> SUPABASE_REFRESH_TOKEN=<token> python main.py")
-        sys.exit(1)
-
-    # Authenticate
+    # Verify credentials
     try:
-        ensure_session()
+        client = get_client(use_service_role=True)
     except RuntimeError as e:
-        print(f"Authentication failed: {e}")
+        print(str(e))
         sys.exit(1)
 
-    # Read config
+    # service_role doesn't need session management
+    ensure_session()
+
     config = read_config()
     folder = config.get("local_folder_path", "")
     if not folder:
         print("No local folder configured. Set it in PWA settings first.")
+        print("Or run: python -c \"from supabase_client import get_client; ...\" to insert config.")
         sys.exit(1)
 
     loop = SyncLoop(on_alert=on_alert)
