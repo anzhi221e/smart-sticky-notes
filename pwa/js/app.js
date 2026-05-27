@@ -226,11 +226,21 @@ async function onMicPress(e) {
     document.addEventListener('pointerup', onUp);
 }
 
+let _isSending = false;
+
 async function sendTextNote() {
+    if (_isSending) return;
+    _isSending = true;
+
     const textInput = document.getElementById('text-input');
+    const sendBtn = document.getElementById('send-btn');
     const text = textInput.value.trim();
 
+    sendBtn.disabled = true;
+
     if (!text && !window._pendingVoiceBlob) {
+        _isSending = false;
+        sendBtn.disabled = false;
         return;
     }
 
@@ -276,7 +286,11 @@ async function sendTextNote() {
             created_at: new Date().toISOString(),
         }));
         await cacheNotes(noteData);
+        _isSending = false;
+        sendBtn.disabled = false;
     } catch (err) {
+        _isSending = false;
+        sendBtn.disabled = false;
         if (!isOnline()) {
             await addToQueue({ type, text: text || '', tags, audio_path: null, audio_duration: null });
             showToast('已保存到本地，联网后自动发送');
