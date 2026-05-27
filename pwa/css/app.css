@@ -210,7 +210,7 @@ html, body {
 #login-btn:active, .wizard-btn:active { opacity: 0.9; }
 .msg { font-size: 14px; color: var(--text-secondary); margin-top: 12px; }
 .msg.error { color: var(--danger); }
-.hidden { display: none !important; }
+.hidden { display: none; }
 
 /* Settings */
 .settings-content { flex: 1; overflow-y: auto; padding: 16px; }

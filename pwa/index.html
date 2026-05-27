@@ -18,7 +18,7 @@
 <body>
     <div id="app">
         <!-- Connection screen (shown when no Supabase connection configured) -->
-        <div id="screen-connect" class="screen hidden">
+        <div id="screen-connect" class="screen">
             <div class="auth-container">
                 <h1>Smart Sticky Notes</h1>
                 <p class="subtitle">连接到你的 Supabase 项目</p>
@@ -32,7 +32,7 @@
         </div>
 
         <!-- Auth screen -->
-        <div id="screen-auth" class="screen hidden">
+        <div id="screen-auth" class="screen">
             <div class="auth-container">
                 <h1>Smart Sticky Notes</h1>
                 <p class="subtitle">随时随地记录，自动汇总整理</p>
@@ -45,14 +45,14 @@
         </div>
 
         <!-- Setup wizard -->
-        <div id="screen-wizard" class="screen hidden">
+        <div id="screen-wizard" class="screen">
             <div class="wizard-container">
                 <div id="wizard-steps"></div>
             </div>
         </div>
 
         <!-- Main chat view -->
-        <div id="screen-main" class="screen hidden">
+        <div id="screen-main" class="screen">
             <header class="top-bar">
                 <button id="menu-toggle" class="icon-btn" aria-label="菜单">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -79,7 +79,7 @@
         </div>
 
         <!-- Calendar view -->
-        <div id="screen-calendar" class="screen hidden">
+        <div id="screen-calendar" class="screen">
             <header class="top-bar">
                 <button id="calendar-back" class="icon-btn" aria-label="返回">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -96,7 +96,7 @@
         </div>
 
         <!-- Sidebar -->
-        <div id="sidebar" class="sidebar hidden">
+        <div id="sidebar" class="sidebar">
             <div class="sidebar-header">
                 <h2>菜单</h2>
                 <button id="sidebar-close" class="icon-btn" aria-label="关闭">
@@ -112,7 +112,7 @@
         </div>
 
         <!-- Recycle bin view -->
-        <div id="screen-recycle-bin" class="screen hidden">
+        <div id="screen-recycle-bin" class="screen">
             <header class="top-bar">
                 <button id="trash-back" class="icon-btn" aria-label="返回">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -124,7 +124,7 @@
         </div>
 
         <!-- Tags view -->
-        <div id="screen-tags" class="screen hidden">
+        <div id="screen-tags" class="screen">
             <header class="top-bar">
                 <button id="tags-back" class="icon-btn" aria-label="返回">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -136,7 +136,7 @@
         </div>
 
         <!-- Settings view -->
-        <div id="screen-settings" class="screen hidden">
+        <div id="screen-settings" class="screen">
             <header class="top-bar">
                 <button id="settings-back" class="icon-btn" aria-label="返回">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>

@@ -26,15 +26,23 @@ export function showToast(message, { undoLabel, onUndo, duration = 3000 } = {}) 
 }
 
 export function navigateTo(screenId) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.classList.add('hidden');
+    });
     const screen = document.getElementById(`screen-${screenId}`);
-    if (screen) screen.classList.add('active');
+    if (screen) {
+        screen.classList.add('active');
+        screen.classList.remove('hidden');
+    }
     const sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.classList.remove('open');
+    if (sidebar) sidebar.classList.add('hidden');
 }
 
 export function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('open');
+    sidebar.classList.toggle('hidden');
 }
 
 export function setSyncStatus(text) {
