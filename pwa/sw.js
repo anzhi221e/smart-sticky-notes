@@ -34,8 +34,8 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // Skip Supabase API calls
-    if (event.request.url.includes('supabase.co') || event.request.url.includes('esm.sh')) {
+    // Skip Supabase API calls and CDN scripts
+    if (event.request.url.includes('supabase.co') || event.request.url.includes('jsdelivr.net')) {
         return;
     }
 
