@@ -62,10 +62,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 function setupConnectionForm() {
     document.getElementById('connect-form').addEventListener('submit', (e) => {
         e.preventDefault();
-        saveConnection(
-            document.getElementById('connect-url').value.trim(),
-            document.getElementById('connect-anon-key').value.trim()
-        );
+        const url = document.getElementById('connect-url').value.trim();
+        const key = document.getElementById('connect-anon-key').value.trim();
+        console.log('[SSN] Saving connection:', url.substring(0, 20) + '...');
+        saveConnection(url, key);
+        console.log('[SSN] Stored URL:', localStorage.getItem('ssn_supabase_url')?.substring(0, 20));
         window.location.reload();
     });
 }
