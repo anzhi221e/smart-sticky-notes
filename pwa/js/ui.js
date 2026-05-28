@@ -127,16 +127,19 @@ const DEFAULT_THEME = 'blue-light';
 
 // 24-color bubble palette for multi-color mode
 const BUBBLE_PALETTE = [
+    // Dark gradients — high contrast with white text
     'linear-gradient(135deg,#667eea,#764ba2)', 'linear-gradient(135deg,#f093fb,#f5576c)',
     'linear-gradient(135deg,#4facfe,#00f2fe)', 'linear-gradient(135deg,#43e97b,#38f9d7)',
-    'linear-gradient(135deg,#fa709a,#fee140)', 'linear-gradient(135deg,#a18cd1,#fbc2eb)',
-    'linear-gradient(135deg,#fad0c4,#ffd1ff)', 'linear-gradient(135deg,#ffecd2,#fcb69f)',
-    'linear-gradient(135deg,#ff9a9e,#fecfef)', 'linear-gradient(135deg,#a1c4fd,#c2e9fb)',
-    'linear-gradient(135deg,#d4fc79,#96e6a1)', 'linear-gradient(135deg,#84fab0,#8fd3f4)',
-    'linear-gradient(135deg,#cfd9df,#e2ebf0)', 'linear-gradient(135deg,#f5f7fa,#c3cfe2)',
-    '#007aff', '#34c759', '#ff9500', '#ff3b30',
-    '#af52de', '#ff6b6b', '#48dbfb', '#ffd93d',
-    '#6c5ce7', '#00b894', '#e17055', '#0984e3',
+    'linear-gradient(135deg,#fa709a,#ee5a24)', 'linear-gradient(135deg,#a18cd1,#6c5ce7)',
+    'linear-gradient(135deg,#f5576c,#e91e63)', 'linear-gradient(135deg,#4facfe,#3b82f6)',
+    'linear-gradient(135deg,#11998e,#38ef7d)', 'linear-gradient(135deg,#fc4a1a,#f7b733)',
+    'linear-gradient(135deg,#834d9b,#d04ed6)', 'linear-gradient(135deg,#0f2027,#2c5364)',
+    // Solid dark colors — clean and high contrast
+    '#2563eb', '#7c3aed', '#db2777', '#dc2626',
+    '#ea580c', '#ca8a04', '#16a34a', '#0891b2',
+    '#4f46e5', '#9333ea', '#e11d48', '#b91c1c',
+    '#c2410c', '#15803d', '#0f766e', '#1d4ed8',
+    '#9d174d', '#6d28d9', '#7c2d12', '#166534',
 ];
 
 export function getTagColor(tag, userOverrides = {}) {
