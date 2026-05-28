@@ -289,17 +289,20 @@ async function sendTextNote() {
     const tags = parseTags(text || '');
     const type = window._pendingVoiceBlob ? 'voice' : 'text';
 
+    const voiceBlob = window._pendingVoiceBlob;
+    const voiceDur = window._pendingVoiceDuration;
+    window._pendingVoiceBlob = null;
+    window._pendingVoiceDuration = null;
+
     try {
         let note;
-        if (window._pendingVoiceBlob) {
-            note = await insertNote({ type: 'voice', text: text || '', tags, audio_path: '', audio_duration: window._pendingVoiceDuration || 0 });
+        if (voiceBlob) {
+            note = await insertNote({ type: 'voice', text: text || '', tags, audio_path: '', audio_duration: voiceDur || 0 });
             try {
-                const audioPath = await uploadAudio(note.id, window._pendingVoiceBlob);
+                const audioPath = await uploadAudio(note.id, voiceBlob);
                 await getSupabase().from('smartstickynotes_items').update({ audio_path: audioPath }).eq('id', note.id);
                 note.audio_path = audioPath;
-            } catch (e) { /* audio upload failed, note still saved */ }
-            window._pendingVoiceBlob = null;
-            window._pendingVoiceDuration = null;
+            } catch (e) { /* audio upload failed */ }
         } else {
             note = await insertNote({ type: 'text', text, tags, audio_path: null, audio_duration: null });
         }
