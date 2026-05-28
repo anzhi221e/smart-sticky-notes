@@ -27,6 +27,7 @@ export function createAudioPlayer(audioPath, duration) {
     const timeDisplay = document.createElement('span');
     timeDisplay.className = 'time-display';
     const formatTime = (s) => {
+        if (!isFinite(s) || s < 0) return '0:00';
         const m = Math.floor(s / 60);
         const sec = Math.floor(s % 60);
         return `${m}:${sec.toString().padStart(2, '0')}`;
@@ -59,8 +60,9 @@ export function createAudioPlayer(audioPath, duration) {
             audio = new Audio(url);
             audio.addEventListener('timeupdate', () => {
                 timeDisplay.textContent = formatTime(audio.currentTime);
-                if (audio.duration) {
-                    progressFill.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+                const dur = audio.duration || duration || 1;
+                if (isFinite(dur) && dur > 0) {
+                    progressFill.style.width = `${Math.min(100, (audio.currentTime / dur) * 100)}%`;
                 }
             });
             audio.addEventListener('ended', () => {

@@ -36,13 +36,20 @@ export function navigateTo(screenId) {
         screen.classList.remove('hidden');
     }
     const sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.classList.add('hidden');
+    if (sidebar) { sidebar.classList.remove('open'); sidebar.classList.add('hidden'); }
 }
 
 export function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('open');
-    sidebar.classList.toggle('hidden');
+    if (!sidebar) return;
+    const isOpen = sidebar.classList.contains('open');
+    if (isOpen) {
+        sidebar.classList.remove('open');
+        sidebar.classList.add('hidden');
+    } else {
+        sidebar.classList.remove('hidden');
+        sidebar.classList.add('open');
+    }
 }
 
 export function setSyncStatus(text) {

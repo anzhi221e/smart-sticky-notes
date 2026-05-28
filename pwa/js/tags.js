@@ -54,6 +54,7 @@ async function renderTagItems(container, sorted, pinned, mode) {
                 <span class="tag-name">${isPinned ? '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;display:inline-block;"><path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z"/></svg> ' : ''}#${tag}</span>
                 <span class="tag-count">${count} 条</span>
             </div>
+            <div class="tag-card-preview" id="preview-${tag}">...</div>
         `;
         card.addEventListener('click', () => showTagNotes(tag));
         card.addEventListener('contextmenu', (e) => {
@@ -61,6 +62,16 @@ async function renderTagItems(container, sorted, pinned, mode) {
             showTagContextMenu(e, tag, count, isPinned);
         });
         container.appendChild(card);
+    }
+
+    // Load previews lazily
+    for (const [tag] of ordered) {
+        const preview = container.querySelector(`#preview-${tag}`);
+        if (!preview) continue;
+        try {
+            const notes = await fetchNotesByTag(tag);
+            preview.textContent = notes.length > 0 ? (notes[0].text || '').substring(0, 80) : '暂无内容';
+        } catch { preview.textContent = ''; }
     }
 }
 

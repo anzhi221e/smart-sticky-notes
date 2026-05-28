@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const session = await getSession();
     if (session) {
-        applyTheme(localStorage.getItem('ssn-theme') || 'dark-blue');
+        applyTheme(localStorage.getItem('ssn-theme') || 'blue-light');
         navigateTo('main');
         await loadNotes();
         setupMainUI();
@@ -157,8 +157,38 @@ function setupMainUI() {
         searchTimeout = setTimeout(() => filterNotes(e.target.value), 300);
     });
 
+    // Infinite scroll: load older notes when scrolling down
+    let _loadingMore = false;
+    let _oldestCursor = null;
+    document.getElementById('notes-list')?.addEventListener('scroll', () => {
+        const list = document.getElementById('notes-list');
+        if (!list || _loadingMore) return;
+        // Near bottom → load older
+        if (list.scrollHeight - list.scrollTop - list.clientHeight < 200) {
+            _loadingMore = true;
+            loadOlderNotes();
+        }
+    });
+
     setSyncStatus('已同步');
 }
+
+async function loadOlderNotes() {
+    const sb = getSupabase();
+    let query = sb.from('smartstickynotes_items').select('*').eq('status', 'active').order('created_at', { ascending: true }).limit(50);
+    if (_oldestCursor) query = query.gt('created_at', _oldestCursor.created_at);
+    try {
+        const { data } = await query;
+        if (data && data.length > 0) {
+            const list = document.getElementById('notes-list');
+            data.forEach(n => {
+                const bubble = renderNoteBubble(n, null, (b, id, text, tags) => startEditing(b, id, text, () => loadNotes()));
+                list.appendChild(bubble);
+            });
+            _oldestCursor = data[data.length - 1];
+        }
+    } catch (e) { /* ignore */ }
+    _loadingMore = false;
 
 async function loadTagBar() {
     try {
@@ -260,7 +290,8 @@ async function sendTextNote() {
         const bubble = renderNoteBubble(note, null, (bubble, noteId, noteText, noteTags) => {
             startEditing(bubble, noteId, noteText, () => loadNotes());
         });
-        list.insertBefore(bubble, list.firstChild);
+        list.appendChild(bubble);  // append at bottom (oldest first)
+        list.scrollTop = list.scrollHeight;
 
         const noteData = Array.from(list.querySelectorAll('.note-bubble')).map(b => ({
             id: b.dataset.noteId, type, text, tags, created_at: new Date().toISOString(),
@@ -288,11 +319,17 @@ export async function loadNotes() {
     try {
         let notes;
         if (!isOnline()) notes = await getCachedNotes();
-        else { notes = await fetchNotes(100); await cacheNotes(notes); }
+        else {
+            const sb = getSupabase();
+            const { data } = await sb.from('smartstickynotes_items').select('*').eq('status', 'active').order('created_at', { ascending: true }).limit(50);
+            notes = data || [];
+            await cacheNotes(notes);
+        }
         notes.forEach(note => {
             const bubble = renderNoteBubble(note, null, (b, id, text, tags) => startEditing(b, id, text, () => loadNotes()));
             list.appendChild(bubble);
         });
+        if (notes.length > 0) _oldestCursor = notes[notes.length - 1];
     } catch (err) {
         const cached = await getCachedNotes();
         cached.forEach(note => list.appendChild(renderNoteBubble(note)));
@@ -324,7 +361,11 @@ function setupPullToRefresh() {
     list.addEventListener('touchstart', (e) => { if (list.scrollTop === 0) startY = e.touches[0].clientY; }, { passive: true });
     list.addEventListener('touchend', async (e) => {
         if (list.scrollTop <= 0 && e.changedTouches[0].clientY - startY > 60) {
-            setSyncStatus('同步中...'); await loadNotes(); setSyncStatus('已同步');
+            setSyncStatus('同步中...');
+            // Reload from newest
+            _oldestCursor = null;
+            await loadNotes();
+            setSyncStatus('已同步');
         }
     });
 }

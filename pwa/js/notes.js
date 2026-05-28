@@ -114,8 +114,8 @@ export function renderNoteBubble(note, onDelete, onEdit) {
 }
 
 function showBubbleMenu(bubble, note, onDelete, onEdit) {
-    const existing = document.querySelector('.bubble-menu');
-    if (existing) existing.remove();
+    // Clean up all existing menus and context menus
+    document.querySelectorAll('.bubble-menu, .context-menu').forEach(m => m.remove());
 
     const menu = document.createElement('div');
     menu.className = 'bubble-menu';
@@ -158,5 +158,7 @@ function showBubbleMenu(bubble, note, onDelete, onEdit) {
     });
 
     document.body.appendChild(menu);
-    setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 10);
+    // Close menu on next click anywhere
+    const closeHandler = () => { menu.remove(); document.removeEventListener('click', closeHandler); };
+    setTimeout(() => document.addEventListener('click', closeHandler), 0);
 }
