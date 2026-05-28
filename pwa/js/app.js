@@ -191,6 +191,7 @@ async function loadOlderNotes() {
         }
     } catch (e) { /* ignore */ }
     _loadingMore = false;
+}
 
 async function loadTagBar() {
     try {
