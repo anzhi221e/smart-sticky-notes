@@ -28,9 +28,9 @@ export async function showSettings() {
                 ${dayThemes.map(name => {
                     const meta = getThemeMeta(name);
                     const sel = (currentTheme === name) ? 'selected' : '';
-                    const label = name === 'day-multi' ? '日间多彩 🎨' : name;
-                    return `<div class="theme-swatch ${sel}" data-theme="${name}" style="background:${meta.bg};border:4px solid ${meta.accent};">
-                        <div style="background:${meta.surface};padding:4px 8px;border-radius:4px;font-size:10px;color:${meta.text};text-align:center;">${label}</div>
+                    const label = name === 'pink-light' ? '粉白' : name === 'green-light' ? '绿白' : name === 'blue-light' ? '蓝白' : '多彩';
+                    return `<div class="theme-swatch ${sel}" data-theme="${name}" style="background:${meta.bg};border:2px solid ${meta.accent};">
+                        <span class="theme-label" style="font-size:11px;font-weight:500;color:${meta.text};">${label}</span>
                     </div>`;
                 }).join('')}
             </div>
@@ -39,9 +39,9 @@ export async function showSettings() {
                 ${nightThemes.map(name => {
                     const meta = getThemeMeta(name);
                     const sel = (currentTheme === name) ? 'selected' : '';
-                    const label = name === 'night-multi' ? '夜间多彩 🎨' : name;
-                    return `<div class="theme-swatch ${sel}" data-theme="${name}" style="background:${meta.bg};border:4px solid ${meta.accent};">
-                        <div style="background:${meta.surface};padding:4px 8px;border-radius:4px;font-size:10px;color:${meta.text};text-align:center;">${label}</div>
+                    const label = name === 'dark-blue' ? '暗蓝' : name === 'pure-black' ? '纯黑' : name === 'pink-dark' ? '灰粉' : '多彩';
+                    return `<div class="theme-swatch ${sel}" data-theme="${name}" style="background:${meta.bg};border:2px solid ${meta.accent};">
+                        <span class="theme-label" style="font-size:11px;font-weight:500;color:${meta.text};">${label}</span>
                     </div>`;
                 }).join('')}
             </div>
