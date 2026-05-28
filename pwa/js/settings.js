@@ -1,5 +1,6 @@
 import { readConfig, writeConfig } from './db.js';
 import { showToast, navigateTo, applyTheme, getThemeNames, getThemeMeta } from './ui.js';
+import { signOut } from './auth.js';
 
 export async function showSettings() {
     navigateTo('settings');
