@@ -189,6 +189,9 @@ async function showTagNotes(tag) {
             <h2>#${tag}</h2>
         </div>
     `;
+    // Inside a single tag, use theme accent color, not multi-color
+    const savedMulti = document.documentElement.dataset.multi;
+    document.documentElement.dataset.multi = '0';
     if (notes.length === 0) {
         const empty = document.createElement('p');
         empty.style.cssText = 'padding:24px;color:var(--text-secondary);text-align:center;';
@@ -197,5 +200,6 @@ async function showTagNotes(tag) {
     } else {
         notes.forEach(n => content.appendChild(renderNoteBubble(n)));
     }
+    document.documentElement.dataset.multi = savedMulti;
     document.getElementById('tag-notes-back').addEventListener('click', showTagsView);
 }

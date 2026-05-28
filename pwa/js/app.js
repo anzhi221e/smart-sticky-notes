@@ -391,6 +391,9 @@ export async function navigateToTags(tag) {
             <h2>#${tag}</h2>
         </div>
     `;
+    const savedMulti = document.documentElement.dataset.multi;
+    document.documentElement.dataset.multi = '0';
     notes.forEach(n => content.appendChild(renderNoteBubble(n)));
+    document.documentElement.dataset.multi = savedMulti;
     document.getElementById('tag-filter-back').addEventListener('click', showTagsView);
 }
