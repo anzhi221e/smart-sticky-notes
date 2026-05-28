@@ -1,6 +1,6 @@
 import { fetchTags, fetchNotesByTag, softDeleteNote, readConfig, writeConfig } from './db.js';
 import { renderNoteBubble } from './notes.js';
-import { showToast, navigateTo } from './ui.js';
+import { showToast, navigateTo, getTagColor, getPalette } from './ui.js';
 
 export async function showTagsView() {
     navigateTo('tags');
@@ -45,10 +45,28 @@ async function renderTagItems(container, sorted, pinned, mode) {
         return aPin - bPin || b[1] - a[1];
     });
 
+    const isMulti = document.documentElement.dataset.multi === '1';
+    const tagColors = JSON.parse((await readConfig().catch(() => ({}))).tag_colors || '{}');
+
     for (const [tag, count] of ordered) {
         const card = document.createElement('div');
         card.className = mode === 'card' ? 'tag-card' : 'tag-list-item';
         const isPinned = pinned.includes(tag);
+
+        // Apply tag color in multi-color mode
+        if (isMulti) {
+            const color = getTagColor(tag, tagColors);
+            if (mode === 'card') {
+                card.style.borderLeft = `3px solid`;
+                card.style.borderImage = color.startsWith('linear-gradient') ? color : 'none';
+                if (!color.startsWith('linear-gradient')) card.style.borderLeftColor = color;
+            } else {
+                card.style.background = color.startsWith('linear-gradient')
+                    ? color.replace('135deg', '90deg') : color;
+                card.style.color = '#fff';
+            }
+        }
+
         card.innerHTML = `
             <div class="tag-card-header">
                 <span class="tag-name">${isPinned ? '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;display:inline-block;"><path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z"/></svg> ' : ''}#${tag}</span>
@@ -83,6 +101,7 @@ function showTagContextMenu(e, tag, count, isPinned) {
     menu.style.top = e.clientY + 'px';
     menu.innerHTML = `
         <button class="context-item" data-action="pin">${isPinned ? '取消置顶' : '📌 置顶'}</button>
+        <button class="context-item" data-action="color">🎨 更改颜色</button>
         <button class="context-item context-item--danger" data-action="delete">删除标签笔记 (${count})</button>
     `;
     menu.querySelector('[data-action="pin"]').addEventListener('click', async () => {
@@ -94,6 +113,10 @@ function showTagContextMenu(e, tag, count, isPinned) {
         menu.remove();
         showTagsView();
     });
+    menu.querySelector('[data-action="color"]').addEventListener('click', async () => {
+        menu.remove();
+        showColorPicker(tag);
+    });
     menu.querySelector('[data-action="delete"]').addEventListener('click', () => {
         if (confirm(`确定删除 #${tag} 下的 ${count} 条笔记？\n它们将移至回收站，30 天后自动清除。`)) {
             batchDeleteTag(tag);
@@ -102,6 +125,40 @@ function showTagContextMenu(e, tag, count, isPinned) {
     });
     document.body.appendChild(menu);
     setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 10);
+}
+
+async function showColorPicker(tag) {
+    const palette = getPalette();
+    const cfg = await readConfig().catch(() => ({}));
+    const tagColors = JSON.parse(cfg.tag_colors || '{}');
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+        <div style="background:var(--surface);border-radius:16px;padding:20px;max-width:360px;width:90%;">
+            <h3 style="margin-bottom:12px;">为 #${tag} 选择颜色</h3>
+            <div id="palette-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:12px;"></div>
+            <button id="palette-cancel" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;font-size:14px;">关闭</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const grid = overlay.querySelector('#palette-grid');
+    palette.forEach((color, idx) => {
+        const swatch = document.createElement('div');
+        swatch.style.cssText = `width:100%;aspect-ratio:1;border-radius:8px;cursor:pointer;background:${color};border:2px solid transparent;`;
+        if (tagColors[tag] === idx) swatch.style.borderColor = 'var(--accent)';
+        swatch.addEventListener('click', async () => {
+            tagColors[tag] = idx;
+            await writeConfig('tag_colors', JSON.stringify(tagColors));
+            overlay.remove();
+            showTagsView();
+        });
+        grid.appendChild(swatch);
+    });
+
+    overlay.querySelector('#palette-cancel').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
 
 async function batchDeleteTag(tag) {

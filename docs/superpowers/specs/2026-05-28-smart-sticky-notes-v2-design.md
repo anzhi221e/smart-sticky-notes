@@ -376,7 +376,9 @@ Two display modes, toggled via top-right button.
 
 **Tag card gestures**:
 - Tap → enter that tag's note list
-- Long press → menu: Pin toggle / Delete tag's notes
+- Long press → menu: Pin toggle / Change color / Delete tag's notes
+
+**Tag color in multi-color mode**: Cards (both modes) display the tag's assigned palette color as left border (card mode) or background tint (list mode). Long press → "更改颜色" → opens palette picker. Selected color stored in `tag_colors` config.
 
 **Batch delete confirmation**: "Delete tag's notes" triggers a dialog: "确定删除 #产品 下的 12 条笔记？它们将移至回收站，30 天后自动清除。" → [取消] [确定删除]
 

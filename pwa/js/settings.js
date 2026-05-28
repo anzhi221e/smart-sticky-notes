@@ -19,12 +19,25 @@ export async function showSettings() {
             <span class="setting-hint" id="sync-status-hint">上次同步: ${cfg.last_sync_at ? new Date(cfg.last_sync_at).toLocaleString('zh-CN') : '从未'}</span>
         </div>
         <div class="setting-group"><h3>主题</h3>
-            <div class="theme-grid" id="theme-grid">
-                ${themeNames.map(name => {
+            <div style="font-size:11px;color:var(--text-secondary);margin:8px 0 4px;">日间</div>
+            <div class="theme-grid" id="theme-grid-day">
+                ${dayThemes.map(name => {
                     const meta = getThemeMeta(name);
-                    const sel = (cfg.theme || 'dark-blue') === name ? 'selected' : '';
+                    const sel = (currentTheme === name) ? 'selected' : '';
+                    const label = name === 'day-multi' ? '日间多彩 🎨' : name;
                     return `<div class="theme-swatch ${sel}" data-theme="${name}" style="background:${meta.bg};border:4px solid ${meta.accent};">
-                        <div style="background:${meta.surface};padding:4px 8px;border-radius:4px;font-size:11px;color:${meta.text};">${name}</div>
+                        <div style="background:${meta.surface};padding:4px 8px;border-radius:4px;font-size:10px;color:${meta.text};text-align:center;">${label}</div>
+                    </div>`;
+                }).join('')}
+            </div>
+            <div style="font-size:11px;color:var(--text-secondary);margin:12px 0 4px;">夜间</div>
+            <div class="theme-grid" id="theme-grid-night">
+                ${nightThemes.map(name => {
+                    const meta = getThemeMeta(name);
+                    const sel = (currentTheme === name) ? 'selected' : '';
+                    const label = name === 'night-multi' ? '夜间多彩 🎨' : name;
+                    return `<div class="theme-swatch ${sel}" data-theme="${name}" style="background:${meta.bg};border:4px solid ${meta.accent};">
+                        <div style="background:${meta.surface};padding:4px 8px;border-radius:4px;font-size:10px;color:${meta.text};text-align:center;">${label}</div>
                     </div>`;
                 }).join('')}
             </div>

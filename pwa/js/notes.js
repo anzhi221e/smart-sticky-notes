@@ -1,5 +1,5 @@
 import { createAudioPlayer } from './audio-player.js';
-import { showToast } from './ui.js';
+import { showToast, getTagColor } from './ui.js';
 import { softDeleteNote } from './db.js';
 
 const TAG_REGEX = /#([一-鿿\w]+)/g;
@@ -38,6 +38,20 @@ export function renderNoteBubble(note, onDelete, onEdit) {
     const bubble = document.createElement('div');
     bubble.className = 'note-bubble';
     bubble.dataset.noteId = note.id;
+
+    // Multi-color: apply tag's palette color
+    const isMulti = document.documentElement.dataset.multi === '1';
+    if (isMulti && note.tags && note.tags.length > 0) {
+        import('./db.js').then(m => m.readConfig().catch(() => ({}))).then(cfg => {
+            const overrides = JSON.parse(cfg.tag_colors || '{}');
+            const color = getTagColor(note.tags[0], overrides);
+            bubble.style.background = color;
+            if (color.startsWith('linear-gradient')) {
+                bubble.style.color = '#fff';
+                bubble.querySelectorAll('.note-meta').forEach(m => m.style.color = 'rgba(255,255,255,0.7)');
+            }
+        });
+    }
 
     const textEl = document.createElement('div');
     textEl.className = 'note-text';
