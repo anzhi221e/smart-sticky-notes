@@ -231,16 +231,15 @@ function setupMainUI() {
                     cb = document.createElement('input');
                     cb.type = 'checkbox';
                     cb.className = 'select-checkbox';
-                    cb.style.cssText = 'position:absolute;left:-28px;top:50%;transform:translateY(-50%);width:20px;height:20px;accent-color:var(--accent);cursor:pointer;';
+                    cb.style.cssText = 'position:absolute;left:8px;top:14px;width:20px;height:20px;accent-color:var(--accent);cursor:pointer;z-index:5;';
                     cb.addEventListener('change', () => {
                         if (cb.checked) _selectedIds.add(b.dataset.noteId);
                         else _selectedIds.delete(b.dataset.noteId);
                         const count = document.getElementById('select-count');
                         if (count) count.textContent = `已选 ${_selectedIds.size} 项`;
                     });
-                    b.style.marginLeft = '36px';
-                    b.style.position = 'relative';
-                    b.insertBefore(cb, b.firstChild);
+                    // Insert checkbox BEFORE bubble (as sibling), not inside it
+                    b.parentNode.insertBefore(cb, b);
                 }
                 cb.style.display = '';
             } else {

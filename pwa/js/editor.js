@@ -52,8 +52,11 @@ async function saveEditing(onSaved) {
 
     try {
         const { getSupabase } = await import('./supabase.js');
+        const { parseTags } = await import('./notes.js');
+        const newTags = parseTags(newText);
         await getSupabase().from('smartstickynotes_items').update({
             text: newText,
+            tags: newTags,
             updated_at: new Date().toISOString(),
         }).eq('id', _editingNoteId);
 
