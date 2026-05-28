@@ -134,12 +134,14 @@ const BUBBLE_PALETTE = [
     'linear-gradient(135deg,#f5576c,#e91e63)', 'linear-gradient(135deg,#4facfe,#3b82f6)',
     'linear-gradient(135deg,#11998e,#38ef7d)', 'linear-gradient(135deg,#fc4a1a,#f7b733)',
     'linear-gradient(135deg,#834d9b,#d04ed6)', 'linear-gradient(135deg,#0f2027,#2c5364)',
-    // Solid dark colors — clean and high contrast
-    '#2563eb', '#7c3aed', '#db2777', '#dc2626',
-    '#ea580c', '#ca8a04', '#16a34a', '#0891b2',
-    '#4f46e5', '#9333ea', '#e11d48', '#b91c1c',
-    '#c2410c', '#15803d', '#0f766e', '#1d4ed8',
-    '#9d174d', '#6d28d9', '#7c2d12', '#166534',
+    // Solid colors — youthful + modern + mature mix
+    '#6366f1', '#ec4899', '#f59e0b', '#ef4444',  // vibrant indigo/pink/amber/red
+    '#8b5cf6', '#06b6d4', '#84cc16', '#f97316',  // purple/cyan/lime/orange
+    '#3b82f6', '#14b8a6', '#e11d48', '#a855f7',  // blue/teal/rose/violet
+    '#22c55e', '#d946ef', '#0ea5e9', '#f43f5e',  // green/fuchsia/sky/rose
+    '#64748b', '#78716c', '#475569', '#334155',  // mature slate/stone/grey
+    '#f472b6', '#38bdf8', '#a3e635', '#fb923c',  // extra light: pink/sky/lime/orange
+];
 ];
 
 export function getTagColor(tag, userOverrides = {}) {
