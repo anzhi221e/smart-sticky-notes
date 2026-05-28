@@ -231,21 +231,22 @@ function setupMainUI() {
                     cb = document.createElement('input');
                     cb.type = 'checkbox';
                     cb.className = 'select-checkbox';
-                    cb.style.cssText = 'position:absolute;left:-30px;top:14px;width:20px;height:20px;accent-color:var(--accent);cursor:pointer;z-index:5;';
-                    b.style.position = 'relative';
-                    b.style.overflow = 'visible';
                     cb.addEventListener('change', () => {
                         if (cb.checked) _selectedIds.add(b.dataset.noteId);
                         else _selectedIds.delete(b.dataset.noteId);
                         const count = document.getElementById('select-count');
                         if (count) count.textContent = `已选 ${_selectedIds.size} 项`;
                     });
-                    cb.style.cssText = 'position:absolute;left:-30px;top:14px;width:20px;height:20px;accent-color:var(--accent);cursor:pointer;z-index:5;';
-                    b.insertBefore(cb, b.firstChild);
                 }
                 cb.style.display = '';
+                // Position at left edge of notes-list, aligned with bubble top
+                const list = document.getElementById('notes-list');
+                list.style.position = 'relative';
+                list.appendChild(cb);
+                cb.style.cssText = 'position:absolute;left:4px;width:20px;height:20px;accent-color:var(--accent);cursor:pointer;z-index:5;';
+                cb.style.top = (b.offsetTop + 14) + 'px';
             } else {
-                if (cb) { cb.style.display = 'none'; b.style.position = ''; b.style.overflow = ''; }
+                if (cb) cb.remove();
             }
         });
         updateSelectCount();
