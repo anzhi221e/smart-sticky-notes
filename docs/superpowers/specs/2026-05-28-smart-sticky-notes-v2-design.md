@@ -462,23 +462,19 @@ Light themes have: white bubbles, subtle colored borders, dark text.
 | 4 | 暗夜蓝 | `#0f1119` | `#1a1d2e` / `#252840` | `#6c8cff` | `#e8e8e8` / `#888` |
 | 5 | 纯黑 | `#000` | `#111` / `#1a1a1a` | `#4ade80` | `#e8e8e8` / `#888` |
 | 6 | 灰粉暮色 | `#1a1518` | `#261f23` / `#32282d` | `#e05588` | `#e8d8dc` / `#988` |
-| 7 | 晴空粉彩 🎨 | `#f5f8ff` | `#fff` / `#e0e8ff` | multi | `#333` / `#888` |
-| 8 | 粉彩晨曦 🎨 | `#fff5f7` | `#fff` / `#ffe0e5` | multi | `#333` / `#888` |
-| 9 | 薄荷粉彩 🎨 | `#f5fff8` | `#fff` / `#e0ffe8` | multi | `#333` / `#888` |
-| 10 | 暗夜粉彩 🎨 | `#0f1119` | `#1a1d2e` / `#252840` | multi | `#e8e8e8` / `#888` |
-| 11 | 纯黑粉彩 🎨 | `#000` | `#111` / `#1a1a1a` | multi | `#e8e8e8` / `#888` |
-| 12 | 暮色粉彩 🎨 | `#1a1518` | `#261f23` / `#32282d` | multi | `#e8d8dc` / `#988` |
+| 7 | 日间多彩 🎨 | `#f5f8ff` | `#fff` / `#e0e8ff` | multi | `#333` / `#888` |
+| 8 | 夜间多彩 🎨 | `#0f1119` | `#1a1d2e` / `#252840` | multi | `#e8e8e8` / `#888` |
 
-Themes 1-6: uniform bubble color (= accent). Themes 7-12: tag-based multi-color bubbles. `multi` accent = per-tag palette selection.
+Themes 1-6: uniform bubble color (= accent). Themes 7-8: tag-based multi-color bubbles. Both multi-color themes share the same bubble palette; only background/UI chrome differ. `multi` accent = per-tag palette selection.
 
 ### Multi-Color Bubble Mode (粉彩多色)
 
-Independent theme variants — **6 extra themes with 🎨 marker** (3 day + 3 night), total 12 themes.
+Two extra themes — **1 day + 1 night multi-color**, total 8 themes.
 
 | # | Name | Type | Bubble behavior |
 |---|------|------|-----------------|
 | 1-6 | Original 6 | Default | All bubbles same color (theme accent) |
-| 7-12 | 粉彩变体 🎨 | Multi-color | Each tag auto-assigned a color from palette |
+| 7-8 | 多彩 🎨 | Multi-color | Each tag auto-assigned a color from shared palette |
 
 **Color assignment algorithm**:
 ```
