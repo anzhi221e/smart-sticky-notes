@@ -57,13 +57,35 @@
                 <button id="menu-toggle" class="icon-btn" aria-label="菜单">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
-                <span class="sync-status" id="sync-status">已同步</span>
+                <input type="search" id="search-input" placeholder="搜索笔记..." style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:8px 16px;color:var(--text);font-size:14px;outline:none;margin:0 8px;">
                 <button id="calendar-toggle" class="icon-btn" aria-label="日历">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </button>
             </header>
 
             <div id="notes-list" class="notes-list"></div>
+
+            <!-- Toolbar -->
+            <div id="toolbar" class="toolbar hidden">
+                <div class="toolbar-row toolbar-row--format">
+                    <div class="toolbar-group">
+                        <button class="tb-btn" data-action="bold" title="加粗">B</button>
+                        <button class="tb-btn tb-btn--italic" data-action="italic" title="斜体">I</button>
+                        <button class="tb-btn tb-btn--underline" data-action="underline" title="下划线">U</button>
+                        <button class="tb-btn tb-btn--strike" data-action="strikethrough" title="删除线">S&#773;</button>
+                        <button class="tb-btn" data-action="bullet" title="无序列表">&#x2022;&#x2022;</button>
+                        <button class="tb-btn" data-action="numbered" title="有序列表">1.</button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="tb-btn" data-action="h1" title="一级标题">#</button>
+                        <button class="tb-btn" data-action="h2" title="二级标题">##</button>
+                        <button class="tb-btn" data-action="h3" title="三级标题">###</button>
+                        <button class="tb-btn" data-action="smartconn" title="Smart Connections">::</button>
+                        <button class="tb-btn" data-action="quote" title="引用">&gt;</button>
+                    </div>
+                </div>
+                <div class="toolbar-row toolbar-row--tags" id="tag-quick-bar"></div>
+            </div>
 
             <footer class="bottom-bar">
                 <div class="input-row">

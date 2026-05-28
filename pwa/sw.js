@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ssn-v1';
+const CACHE_NAME = 'ssn-v2';
 const ASSETS = [
     '/',
     '/index.html',
@@ -15,6 +15,11 @@ const ASSETS = [
     '/js/offline.js',
     '/js/audio-player.js',
     '/js/wizard.js',
+    '/js/toolbar.js',
+    '/js/editor.js',
+    '/js/tags.js',
+    '/js/recycle-bin.js',
+    '/js/settings.js',
 ];
 
 self.addEventListener('install', (event) => {

@@ -15,14 +15,33 @@ export function parseTags(text) {
     return tags;
 }
 
-export function renderNoteBubble(note, onDelete) {
+export function renderMarkdown(text) {
+    if (!text) return '';
+    let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Order matters: headers before bold, etc.
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
+    html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+    html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>');
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Line breaks
+    html = html.replace(/\n\n/g, '<br><br>');
+    return html;
+}
+
+export function renderNoteBubble(note, onDelete, onEdit) {
     const bubble = document.createElement('div');
     bubble.className = 'note-bubble';
     bubble.dataset.noteId = note.id;
 
     const textEl = document.createElement('div');
     textEl.className = 'note-text';
-    textEl.textContent = note.text || '';
+    textEl.innerHTML = renderMarkdown(note.text);
     bubble.appendChild(textEl);
 
     if (note.type === 'voice' && note.audio_path) {
@@ -77,9 +96,47 @@ export function renderNoteBubble(note, onDelete) {
         }
     });
 
-    // Long press context menu
+    // Long press → edit menu
+    let longPressTimer;
+    bubble.addEventListener('touchstart', () => {
+        longPressTimer = setTimeout(() => {
+            showBubbleMenu(bubble, note, onDelete, onEdit);
+        }, 500);
+    }, { passive: true });
+    bubble.addEventListener('touchend', () => clearTimeout(longPressTimer));
+    bubble.addEventListener('touchmove', () => clearTimeout(longPressTimer));
     bubble.addEventListener('contextmenu', (e) => {
         e.preventDefault();
+        showBubbleMenu(bubble, note, onDelete, onEdit);
+    });
+
+    return bubble;
+}
+
+function showBubbleMenu(bubble, note, onDelete, onEdit) {
+    const existing = document.querySelector('.bubble-menu');
+    if (existing) existing.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'bubble-menu';
+    menu.innerHTML = `
+        <button class="bubble-menu-item" data-action="edit">编辑</button>
+        <button class="bubble-menu-item" data-action="delete">删除</button>
+        <button class="bubble-menu-item" data-action="copy">复制</button>
+    `;
+    const rect = bubble.getBoundingClientRect();
+    menu.style.cssText = `
+        position:fixed;top:${rect.bottom + 4}px;right:${window.innerWidth - rect.right}px;
+        background:var(--surface);border:1px solid var(--border);border-radius:12px;
+        padding:4px;z-index:200;min-width:120px;
+    `;
+
+    menu.querySelector('[data-action="edit"]').addEventListener('click', () => {
+        menu.remove();
+        if (onEdit) onEdit(bubble, note.id, note.text, note.tags);
+    });
+    menu.querySelector('[data-action="delete"]').addEventListener('click', () => {
+        menu.remove();
         softDeleteNote(note.id).then(() => {
             showToast('已移至回收站', {
                 undoLabel: '撤销',
@@ -91,8 +148,15 @@ export function renderNoteBubble(note, onDelete) {
                 },
             });
             bubble.remove();
+            if (onDelete) onDelete(note.id);
         });
     });
+    menu.querySelector('[data-action="copy"]').addEventListener('click', () => {
+        navigator.clipboard.writeText(note.text);
+        showToast('已复制');
+        menu.remove();
+    });
 
-    return bubble;
+    document.body.appendChild(menu);
+    setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 10);
 }

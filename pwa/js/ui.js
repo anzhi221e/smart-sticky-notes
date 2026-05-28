@@ -103,3 +103,32 @@ export function updateRecordingText(text) {
     const el = document.getElementById('recording-text');
     if (el) el.textContent = text || '说话中...';
 }
+
+// --- Theme System ---
+const THEMES = {
+    'pink-light':   { bg:'#fff5f7', surface:'#fff', surfaceAlt:'#ffe0e5', border:'#f0d0d8', text:'#333', textSec:'#888', accent:'#e91e63', accentDim:'rgba(233,30,99,0.12)' },
+    'green-light':  { bg:'#f5fff8', surface:'#fff', surfaceAlt:'#e0ffe8', border:'#d0e8d8', text:'#333', textSec:'#888', accent:'#10b981', accentDim:'rgba(16,185,129,0.12)' },
+    'blue-light':   { bg:'#f5f8ff', surface:'#fff', surfaceAlt:'#e0e8ff', border:'#d0d8f0', text:'#333', textSec:'#888', accent:'#3b82f6', accentDim:'rgba(59,130,246,0.12)' },
+    'dark-blue':    { bg:'#0f1119', surface:'#1a1d2e', surfaceAlt:'#252840', border:'#2a2d40', text:'#e8e8e8', textSec:'#888', accent:'#6c8cff', accentDim:'rgba(108,140,255,0.15)' },
+    'pure-black':   { bg:'#000', surface:'#111', surfaceAlt:'#1a1a1a', border:'#222', text:'#e8e8e8', textSec:'#888', accent:'#4ade80', accentDim:'rgba(74,222,128,0.15)' },
+    'pink-dark':    { bg:'#1a1518', surface:'#261f23', surfaceAlt:'#32282d', border:'#3a2d33', text:'#e8d8dc', textSec:'#988', accent:'#e05588', accentDim:'rgba(224,85,136,0.15)' },
+};
+
+const DEFAULT_THEME = 'dark-blue';
+
+export function applyTheme(name) {
+    const t = THEMES[name] || THEMES[DEFAULT_THEME];
+    const root = document.documentElement;
+    root.style.setProperty('--bg', t.bg);
+    root.style.setProperty('--surface', t.surface);
+    root.style.setProperty('--surface-hover', t.surfaceAlt);
+    root.style.setProperty('--border', t.border);
+    root.style.setProperty('--text', t.text);
+    root.style.setProperty('--text-secondary', t.textSec);
+    root.style.setProperty('--accent', t.accent);
+    root.style.setProperty('--accent-dim', t.accentDim);
+    localStorage.setItem('ssn-theme', name);
+}
+
+export function getThemeNames() { return Object.keys(THEMES); }
+export function getThemeMeta(name) { return THEMES[name] || THEMES[DEFAULT_THEME]; }
