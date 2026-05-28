@@ -75,7 +75,8 @@ html, body {
     border: 1px solid var(--border);
     color: var(--bubble-text, var(--text));
 }
-.note-bubble .note-meta { color: inherit; opacity: 0.7; }
+.note-bubble .note-meta { opacity: 0.8; }
+.note-bubble .note-tag { background: rgba(255,255,255,0.2); color: inherit; }
 .note-bubble .note-text { font-size: 15px; white-space: pre-wrap; word-break: break-word; }
 .note-bubble .note-meta {
     font-size: 11px; color: var(--text-secondary);

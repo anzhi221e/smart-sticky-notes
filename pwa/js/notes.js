@@ -39,17 +39,15 @@ export function renderNoteBubble(note, onDelete, onEdit) {
     bubble.className = 'note-bubble';
     bubble.dataset.noteId = note.id;
 
-    // Multi-color: apply tag's palette color
+    // Multi-color: apply tag's palette color, always white text for readability
     const isMulti = document.documentElement.dataset.multi === '1';
     if (isMulti && note.tags && note.tags.length > 0) {
         const tagColors = window._tagColorCache || {};
         const color = getTagColor(note.tags[0], tagColors);
         bubble.style.background = color;
         bubble.style.border = 'none';
-        if (color.startsWith('linear-gradient') || !color.startsWith('#')) {
-            bubble.style.color = '#fff';
-            bubble.querySelectorAll('.note-meta').forEach(m => m.style.color = 'rgba(255,255,255,0.7)');
-        }
+        bubble.style.color = '#fff';
+        bubble.classList.add('multi-color-bubble');
     }
 
     const textEl = document.createElement('div');
