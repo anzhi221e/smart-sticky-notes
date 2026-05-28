@@ -127,9 +127,10 @@ function setupMainUI() {
     textInput.addEventListener('input', () => {
         toggleSendButton(textInput.value.trim().length > 0);
     });
-    textInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); sendTextNote(); }
-    }, { once: false });
+    // Enter key handler disabled for debug — use send button only
+    // textInput.addEventListener('keydown', (e) => {
+    //     if (e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); sendTextNote(); }
+    // });
 
     document.getElementById('send-btn').addEventListener('click', sendTextNote);
 
