@@ -12,6 +12,10 @@ import { showTagsView } from './tags.js';
 import { showRecycleBin } from './recycle-bin.js';
 import { showSettings } from './settings.js';
 
+// --- Module-level state ---
+let _loadingMore = false;
+let _oldestCursor = null;
+
 // --- Init ---
 document.addEventListener('DOMContentLoaded', async () => {
     const conn = getConnection();
@@ -158,8 +162,6 @@ function setupMainUI() {
     });
 
     // Infinite scroll: load older notes when scrolling down
-    let _loadingMore = false;
-    let _oldestCursor = null;
     document.getElementById('notes-list')?.addEventListener('scroll', () => {
         const list = document.getElementById('notes-list');
         if (!list || _loadingMore) return;
