@@ -47,6 +47,13 @@ async function doInit() {
         await loadNotes();
         setupMainUI();
         const cfg = await readConfig().catch(() => ({}));
+        // Auto-hide mic if speech recognition not supported
+        if (cfg.show_mic_button === undefined) {
+            const speechOk = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+            if (!speechOk) {
+                document.getElementById('mic-btn') && (document.getElementById('mic-btn').style.display = 'none');
+            }
+        }
         if (!cfg.local_folder_path) {
             navigateTo('wizard');
             import('./wizard.js').then(m => m.renderWizard(1));
@@ -149,6 +156,10 @@ function setupMainUI() {
 
     initToolbar();
 
+    // Apply mic visibility setting
+    readConfig().then(cfg => {
+        if (cfg.show_mic_button === 'false') document.getElementById('mic-btn').style.display = 'none';
+    });
     updateMicState();
     onNetworkChange((online) => {
         updateMicState();

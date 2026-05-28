@@ -67,6 +67,10 @@ export async function showSettings() {
                 <span class="setting-hint">JSON 数组，如 ["产品", "设计"]</span></div>
         </div>
         <div class="setting-group"><h3>偏好</h3>
+            <div class="setting-row" style="flex-direction:row;align-items:center;justify-content:space-between;">
+                <label>显示录音按钮</label>
+                <input type="checkbox" id="cfg-show-mic" ${cfg.show_mic_button !== 'false' ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--accent);">
+            </div>
             <div class="setting-row"><label>默认日历视图</label>
                 <select id="cfg-calendar-view">
                     <option value="day" ${cfg.default_calendar_view === 'day' ? 'selected' : ''}>日</option>
@@ -98,6 +102,10 @@ export async function showSettings() {
     document.getElementById('cfg-sync-interval').addEventListener('change', e => writeConfig('sync_interval', e.target.value));
     document.getElementById('cfg-pinned-tags').addEventListener('change', e => writeConfig('pinned_tags', e.target.value));
     document.getElementById('cfg-calendar-view').addEventListener('change', e => writeConfig('default_calendar_view', e.target.value));
+    document.getElementById('cfg-show-mic').addEventListener('change', e => {
+        writeConfig('show_mic_button', e.target.checked ? 'true' : 'false');
+        document.getElementById('mic-btn').style.display = e.target.checked ? '' : 'none';
+    });
 
     // Manual sync
     document.getElementById('cfg-sync-now').addEventListener('click', async () => {
