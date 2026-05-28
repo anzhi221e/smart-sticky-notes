@@ -175,12 +175,12 @@ function setupMainUI() {
         searchTimeout = setTimeout(() => filterNotes(e.target.value), 300);
     });
 
-    // Infinite scroll: load older notes when scrolling down
+    // Infinite scroll: load older notes when scrolling to the top.
     document.getElementById('notes-list')?.addEventListener('scroll', () => {
         const list = document.getElementById('notes-list');
         if (!list || _loadingMore) return;
         // Near bottom → load older
-        if (list.scrollHeight - list.scrollTop - list.clientHeight < 200) {
+        if (list.scrollTop < 200) {
             _loadingMore = true;
             loadOlderNotes();
         }
@@ -191,17 +191,26 @@ function setupMainUI() {
 
 async function loadOlderNotes() {
     const sb = getSupabase();
-    let query = sb.from('smartstickynotes_items').select('*').eq('status', 'active').order('created_at', { ascending: true }).limit(50);
-    if (_oldestCursor) query = query.gt('created_at', _oldestCursor.created_at);
+    if (!_oldestCursor) { _loadingMore = false; return; }
+    const query = sb
+        .from('smartstickynotes_items')
+        .select('*')
+        .eq('status', 'active')
+        .lt('created_at', _oldestCursor.created_at)
+        .order('created_at', { ascending: false })
+        .limit(50);
     try {
         const { data } = await query;
         if (data && data.length > 0) {
             const list = document.getElementById('notes-list');
-            data.forEach(n => {
+            const previousScrollHeight = list.scrollHeight;
+            data.reverse().forEach(n => {
+                if (list.querySelector(`[data-note-id="${CSS.escape(n.id)}"]`)) return;
                 const bubble = renderNoteBubble(n, null, (b, id, text, tags) => startEditing(b, id, text, () => loadNotes()));
-                list.appendChild(bubble);
+                list.insertBefore(bubble, list.firstChild);
             });
-            _oldestCursor = data[data.length - 1];
+            _oldestCursor = data[0];
+            list.scrollTop += list.scrollHeight - previousScrollHeight;
         }
     } catch (e) { /* ignore */ }
     _loadingMore = false;
@@ -322,10 +331,12 @@ async function sendTextNote(caller = 'unknown') {
         toggleSendButton(false);
 
         const list = document.getElementById('notes-list');
-        const bubble = renderNoteBubble(note, null, (bubble, noteId, noteText, noteTags) => {
-            startEditing(bubble, noteId, noteText, () => loadNotes());
-        });
-        list.appendChild(bubble);
+        if (!list.querySelector(`[data-note-id="${CSS.escape(note.id)}"]`)) {
+            const bubble = renderNoteBubble(note, null, (bubble, noteId, noteText, noteTags) => {
+                startEditing(bubble, noteId, noteText, () => loadNotes());
+            });
+            list.appendChild(bubble);
+        }
         list.scrollTop = list.scrollHeight;
 
         const noteData = Array.from(list.querySelectorAll('.note-bubble')).map(b => ({
@@ -352,15 +363,17 @@ export async function loadNotes() {
         if (!isOnline()) notes = await getCachedNotes();
         else {
             const sb = getSupabase();
-            const { data } = await sb.from('smartstickynotes_items').select('*').eq('status', 'active').order('created_at', { ascending: true }).limit(50);
-            notes = data || [];
+            const { data } = await sb.from('smartstickynotes_items').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(50);
+            notes = (data || []).reverse();
             await cacheNotes(notes);
         }
         notes.forEach(note => {
+            if (list.querySelector(`[data-note-id="${CSS.escape(note.id)}"]`)) return;
             const bubble = renderNoteBubble(note, null, (b, id, text, tags) => startEditing(b, id, text, () => loadNotes()));
             list.appendChild(bubble);
         });
-        if (notes.length > 0) _oldestCursor = notes[notes.length - 1];
+        _oldestCursor = notes.length > 0 ? notes[0] : null;
+        list.scrollTop = list.scrollHeight;
     } catch (err) {
         const cached = await getCachedNotes();
         cached.forEach(note => list.appendChild(renderNoteBubble(note)));
