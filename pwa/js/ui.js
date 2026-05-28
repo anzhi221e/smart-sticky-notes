@@ -142,7 +142,6 @@ const BUBBLE_PALETTE = [
     '#64748b', '#78716c', '#475569', '#334155',  // mature slate/stone/grey
     '#f472b6', '#38bdf8', '#a3e635', '#fb923c',  // extra light: pink/sky/lime/orange
 ];
-];
 
 export function getTagColor(tag, userOverrides = {}) {
     if (userOverrides[tag] !== undefined) {

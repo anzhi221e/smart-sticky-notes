@@ -289,12 +289,12 @@ async function loadOlderNotes() {
         if (data && data.length > 0) {
             const list = document.getElementById('notes-list');
             const previousScrollHeight = list.scrollHeight;
-            data.reverse().forEach(n => {
+            data.forEach(n => {
                 if (list.querySelector(`[data-note-id="${CSS.escape(n.id)}"]`)) return;
                 const bubble = renderNoteBubble(n, null, (b, id, text, tags) => startEditing(b, id, text, () => loadNotes()));
                 list.insertBefore(bubble, list.firstChild);
             });
-            _oldestCursor = data[0];
+            _oldestCursor = data[data.length - 1];
             list.scrollTop += list.scrollHeight - previousScrollHeight;
         }
     } catch (e) { /* ignore */ }
@@ -352,9 +352,9 @@ async function onMicPress(e) {
                 toggleSendButton(text.trim().length > 0);
                 window._pendingVoiceBlob = result.blob;
                 window._pendingVoiceDuration = result.duration;
-                textInput.focus();
+                textInputEl.focus();
             }
-        } catch (err) { showToast('录音保存失败'); }
+        } catch (err) { showToast('录音失败: ' + err.message); }
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
