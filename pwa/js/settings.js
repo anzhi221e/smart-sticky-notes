@@ -66,11 +66,14 @@ export async function showSettings() {
 
     // Theme swatches
     document.querySelectorAll('.theme-swatch').forEach(el => {
-        el.addEventListener('click', () => {
+        el.addEventListener('click', async () => {
             const name = el.dataset.theme;
-            applyTheme(name); writeConfig('theme', name);
+            applyTheme(name); await writeConfig('theme', name);
             document.querySelectorAll('.theme-swatch').forEach(e => e.classList.remove('selected'));
             el.classList.add('selected');
+            // Reload notes to apply new theme colors
+            const app = await import('./app.js');
+            if (app.loadNotes) app.loadNotes();
         });
     });
 

@@ -17,8 +17,17 @@ console.log('[SSN] v2.3 loaded — ' + new Date().toISOString());
 let _loadingMore = false;
 let _oldestCursor = null;
 
+async function refreshTagColorCache() {
+    try {
+        const { readConfig } = await import('./db.js');
+        const cfg = await readConfig().catch(() => ({}));
+        window._tagColorCache = JSON.parse(cfg.tag_colors || '{}');
+    } catch { window._tagColorCache = {}; }
+}
+
 // --- Init ---
 document.addEventListener('DOMContentLoaded', async () => {
+    refreshTagColorCache();
     const conn = getConnection();
     if (!conn.url || !conn.anonKey) {
         document.getElementById('screen-connect').classList.add('active');
@@ -115,8 +124,8 @@ function setupMainUI() {
     textInput.addEventListener('input', () => {
         toggleSendButton(textInput.value.trim().length > 0);
     });
-    textInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); sendTextNote(); }
+    textInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); sendTextNote(); }
     });
 
     document.getElementById('send-btn').addEventListener('click', sendTextNote);
