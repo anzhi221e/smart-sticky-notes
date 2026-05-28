@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Debug</title></head>
+<body style="font-family:sans-serif;padding:20px;background:#fff;color:#333;">
+<h2>Debug Console</h2>
+<div id="log" style="font-family:monospace;font-size:12px;line-height:1.6;"></div>
+<script type="module">
+const log = (msg, err) => {
+    const el = document.createElement('div');
+    el.textContent = msg;
+    el.style.color = err ? 'red' : 'green';
+    document.getElementById('log').appendChild(el);
+};
+try {
+    log('Module loaded OK');
+    const m = await import('./js/supabase.js');
+    log('supabase.js OK');
+    const m2 = await import('./js/ui.js');
+    log('ui.js OK');
+    const m3 = await import('./js/db.js');
+    log('db.js OK');
+    const m4 = await import('./js/notes.js');
+    log('notes.js OK');
+    const m5 = await import('./js/toolbar.js');
+    log('toolbar.js OK');
+    const m6 = await import('./js/app.js');
+    log('app.js OK — all modules loaded!');
+} catch(e) {
+    log('FAILED: ' + e.message, true);
+    log(e.stack, true);
+}
+</script>
+</body></html>
