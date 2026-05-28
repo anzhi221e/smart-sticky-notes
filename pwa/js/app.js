@@ -167,6 +167,87 @@ function setupMainUI() {
 
     // Search
     let searchTimeout;
+    // Select mode
+    let _selectMode = false;
+    const _selectedIds = new Set();
+    const selectToggle = document.getElementById('select-mode-toggle');
+    selectToggle.style.display = '';
+
+    selectToggle.addEventListener('click', () => {
+        _selectMode = !_selectMode;
+        _selectedIds.clear();
+        document.querySelectorAll('.note-bubble').forEach(b => {
+            const cb = b.querySelector('.select-checkbox');
+            if (cb) cb.checked = false;
+        });
+        updateSelectModeUI();
+    });
+
+    function updateSelectModeUI() {
+        const selectBar = document.getElementById('select-action-bar');
+        if (_selectMode) {
+            if (!selectBar) {
+                const bar = document.createElement('div');
+                bar.id = 'select-action-bar';
+                bar.style.cssText = 'display:flex;gap:8px;padding:10px 16px;background:var(--surface);border-top:1px solid var(--border);align-items:center;';
+                bar.innerHTML = `
+                    <span id="select-count" style="font-size:13px;color:var(--text-secondary);flex:1;">已选 0 项</span>
+                    <button id="select-delete-btn" style="padding:8px 16px;background:var(--danger);color:#fff;border:none;border-radius:16px;cursor:pointer;font-size:13px;">删除所选</button>
+                    <button id="select-cancel-btn" style="padding:8px 16px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:16px;cursor:pointer;font-size:13px;">取消</button>
+                `;
+                document.getElementById('screen-main').appendChild(bar);
+                bar.querySelector('#select-delete-btn').addEventListener('click', async () => {
+                    if (_selectedIds.size === 0) return;
+                    if (!confirm(`确定删除 ${_selectedIds.size} 条笔记？`)) return;
+                    const { softDeleteNote } = await import('./db.js');
+                    for (const id of _selectedIds) await softDeleteNote(id);
+                    showToast(`已删除 ${_selectedIds.size} 条`);
+                    _selectMode = false; _selectedIds.clear();
+                    document.getElementById('select-action-bar')?.remove();
+                    updateSelectModeUI();
+                    loadNotes();
+                });
+                bar.querySelector('#select-cancel-btn').addEventListener('click', () => {
+                    _selectMode = false; _selectedIds.clear();
+                    document.getElementById('select-action-bar')?.remove();
+                    updateSelectModeUI();
+                });
+            }
+        } else {
+            if (selectBar) selectBar.remove();
+        }
+        // Show/hide checkboxes
+        document.querySelectorAll('.note-bubble').forEach(b => {
+            let cb = b.querySelector('.select-checkbox');
+            if (_selectMode) {
+                if (!cb) {
+                    cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.className = 'select-checkbox';
+                    cb.style.cssText = 'position:absolute;left:-28px;top:50%;transform:translateY(-50%);width:20px;height:20px;accent-color:var(--accent);cursor:pointer;';
+                    cb.addEventListener('change', () => {
+                        if (cb.checked) _selectedIds.add(b.dataset.noteId);
+                        else _selectedIds.delete(b.dataset.noteId);
+                        const count = document.getElementById('select-count');
+                        if (count) count.textContent = `已选 ${_selectedIds.size} 项`;
+                    });
+                    b.style.marginLeft = '36px';
+                    b.style.position = 'relative';
+                    b.insertBefore(cb, b.firstChild);
+                }
+                cb.style.display = '';
+            } else {
+                if (cb) cb.style.display = 'none';
+            }
+        });
+        updateSelectCount();
+    }
+
+    function updateSelectCount() {
+        const count = document.getElementById('select-count');
+        if (count) count.textContent = `已选 ${_selectedIds.size} 项`;
+    }
+
     document.getElementById('search-input')?.addEventListener('input', (e) => {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => filterNotes(e.target.value), 300);
