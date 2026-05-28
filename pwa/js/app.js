@@ -87,7 +87,10 @@ function setupAuthUI() {
 }
 
 // --- Main UI ---
+let _mainUISetup = false;
 function setupMainUI() {
+    if (_mainUISetup) return;
+    _mainUISetup = true;
     document.getElementById('menu-toggle').addEventListener('click', toggleSidebar);
     document.getElementById('sidebar-close').addEventListener('click', toggleSidebar);
 
@@ -124,9 +127,9 @@ function setupMainUI() {
     textInput.addEventListener('input', () => {
         toggleSendButton(textInput.value.trim().length > 0);
     });
-    textInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); sendTextNote(); }
-    });
+    textInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); sendTextNote(); }
+    }, { once: false });
 
     document.getElementById('send-btn').addEventListener('click', sendTextNote);
 

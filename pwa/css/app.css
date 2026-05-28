@@ -79,10 +79,9 @@ html, body {
     font-size: 11px; margin-top: 6px; display: flex; gap: 8px;
     align-items: center; flex-wrap: wrap; opacity: 0.8;
 }
-.note-bubble .note-tag { background: rgba(0,0,0,0.15); color: inherit; }
 .note-bubble .note-text { font-size: 15px; white-space: pre-wrap; word-break: break-word; }
 .note-bubble .note-tag {
-    background: var(--accent-dim); color: var(--accent);
+    background: rgba(0,0,0,0.18); color: inherit;
     padding: 1px 8px; border-radius: 10px; font-size: 12px;
     text-decoration: none; cursor: pointer;
 }
