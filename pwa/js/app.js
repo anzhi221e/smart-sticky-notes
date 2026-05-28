@@ -30,8 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshTagColorCache();
     const conn = getConnection();
     if (!conn.url || !conn.anonKey) {
-        document.getElementById('screen-connect').classList.add('active');
-        document.getElementById('screen-connect').classList.remove('hidden');
+        navigateTo('connect');
         setupConnectionForm();
         return;
     }
@@ -50,8 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             import('./wizard.js').then(m => m.renderWizard(1));
         }
     } else {
-        document.getElementById('screen-auth').classList.add('active');
-        document.getElementById('screen-auth').classList.remove('hidden');
+        navigateTo('auth');
         setupAuthUI();
     }
 });
@@ -80,7 +78,6 @@ function setupAuthUI() {
     });
     onAuthStateChange((event, session) => {
         if (session) {
-            document.getElementById('screen-auth').classList.remove('active');
             navigateTo('main'); loadNotes(); setupMainUI();
         }
     });

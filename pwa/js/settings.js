@@ -188,7 +188,7 @@ export async function showSettings() {
     // Logout
     document.getElementById('logout-btn').addEventListener('click', async () => {
         await signOut();
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById('screen-auth').classList.add('active');
+        const { navigateTo } = await import('./ui.js');
+        navigateTo('auth');
     });
 }
