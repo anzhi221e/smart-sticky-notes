@@ -39,6 +39,12 @@ def main():
 
     loop = SyncLoopV2(on_alert=on_alert)
 
+    # --once flag: run one cycle and exit (for Task Scheduler)
+    if "--once" in sys.argv:
+        stats = loop.run_once()
+        print(f"Sync done: {stats}")
+        sys.exit(0)
+
     if HAS_TRAY:
         sync_thread = threading.Thread(
             target=run_sync_loop,
