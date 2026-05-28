@@ -1,4 +1,4 @@
-"""Generate tag-aggregated Markdown files with note boundaries for snapshot export."""
+"""Generate compact tag-aggregated Markdown snapshot exports."""
 import hashlib
 import json
 from pathlib import Path
@@ -9,9 +9,9 @@ from tag_slug import build_tag_map
 def _format_time(iso_str: str) -> str:
     try:
         dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
-        return dt.strftime("%Y-%m-%d %H:%M")
+        return dt.strftime("%m-%d %H:%M")
     except (ValueError, AttributeError):
-        return iso_str
+        return iso_str or ""
 
 
 def _note_boundary(note: dict) -> str:
@@ -25,25 +25,23 @@ def _note_boundary(note: dict) -> str:
 
 
 def _render_note(note: dict) -> str:
+    note_id_short = note["id"][:8]
+    text = (note.get("text") or "").strip()
     lines = [
-        _note_boundary(note),
+        f"### {_format_time(note.get('created_at'))} · `{note_id_short}` {_note_boundary(note)}",
         "",
-        note.get("text", ""),
-        "",
+        text,
     ]
-    if note.get("tags"):
-        tags_str = " ".join(f"#{t}" for t in note["tags"])
-        lines.append(f"tags: {tags_str}")
+
     if note.get("audio_path"):
-        note_id_short = note["id"][:8]
         dur = note.get("audio_duration", 0) or 0
         mins, secs = divmod(int(dur), 60) if dur else (0, 0)
-        lines.append(
-            f"> [收听录音](../../audio/{note_id_short}.opus) ({mins}:{secs:02d})"
-        )
-    lines.append("")
-    lines.append("---")
-    lines.append("")
+        lines.extend([
+            "",
+            f"> [收听录音](../../audio/{note_id_short}.opus) ({mins}:{secs:02d})",
+        ])
+
+    lines.extend(["", "---", ""])
     return "\n".join(lines)
 
 
@@ -75,8 +73,7 @@ def build_tag_files(notes: list[dict]) -> tuple[dict[str, str], dict[str, str]]:
     for filename, note_texts in tag_notes.items():
         if note_texts:
             tag_display = filename.replace(".md", "")
-            content = f"# {tag_display}\n\n" + "\n".join(note_texts)
-            result[filename] = content
+            result[filename] = f"# {tag_display}\n\n" + "\n".join(note_texts)
 
     if untagged_notes:
         result["未分类.md"] = "# 未分类\n\n" + "\n".join(untagged_notes)
@@ -110,7 +107,6 @@ def write_snapshot(active_notes: list[dict], deleted_notes: list[dict], folder: 
             "sha256": sha,
         })
 
-    # Deleted notes export
     trash_dir = Path(folder) / "trash"
     trash_dir.mkdir(parents=True, exist_ok=True)
     if deleted_notes:
@@ -121,7 +117,6 @@ def write_snapshot(active_notes: list[dict], deleted_notes: list[dict], folder: 
     else:
         (trash_dir / "deleted.md").write_text("# 已删除的笔记\n\n回收站为空\n", encoding="utf-8")
 
-    # Manifest LAST
     manifest = {
         "schema_version": 1,
         "generated_at": datetime.now().isoformat(),
@@ -136,7 +131,6 @@ def write_snapshot(active_notes: list[dict], deleted_notes: list[dict], folder: 
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
-    # Copy to current/
     current_dir = Path(folder) / "current"
     current_dir.mkdir(parents=True, exist_ok=True)
     for f in snap_dir.iterdir():

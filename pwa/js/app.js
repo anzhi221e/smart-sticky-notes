@@ -26,8 +26,12 @@ async function refreshTagColorCache() {
 }
 
 // --- Init ---
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
+document.addEventListener('DOMContentLoaded', () => doInit().catch(e => {
+    document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:12px;font-family:sans-serif;"><p style="font-size:16px;color:#e05555;">加载失败</p><pre style="font-size:12px;color:#888;max-width:90%;overflow:auto;">${e.message}\n\n${e.stack}</pre></div>`;
+    console.error(e);
+}));
+
+async function doInit() {
     refreshTagColorCache();
     const conn = getConnection();
     if (!conn.url || !conn.anonKey) {
@@ -35,9 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupConnectionForm();
         return;
     }
-
     initSupabase(conn.url, conn.anonKey);
-
     const session = await getSession();
     if (session) {
         applyTheme(localStorage.getItem('ssn-theme') || 'blue-light');
@@ -53,21 +55,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         navigateTo('auth');
         setupAuthUI();
     }
-    } catch (e) {
-        document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:12px;font-family:sans-serif;"><p style="font-size:16px;color:#e05555;">加载失败</p><pre style="font-size:12px;color:#888;max-width:90%;overflow:auto;">${e.message}\n\n${e.stack}</pre></div>`;
-        console.error(e);
-    }
-});
+}
 
 function setupConnectionForm() {
-    document.getElementById('connect-form').addEventListener('submit', (e) => {
+    document.getElementById('connect-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const url = document.getElementById('connect-url').value.trim();
         const key = document.getElementById('connect-anon-key').value.trim();
-        console.log('[SSN] Saving connection:', url.substring(0, 20) + '...');
+        if (!url || !key) return;
         saveConnection(url, key);
-        console.log('[SSN] Stored URL:', localStorage.getItem('ssn_supabase_url')?.substring(0, 20));
-        window.location.reload();
+        try {
+            await doInit();
+        } catch (err) {
+            document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:12px;font-family:sans-serif;"><p style="font-size:16px;color:#e05555;">加载失败</p><pre style="font-size:12px;color:#888;max-width:90%;overflow:auto;">${err.message}\n\n${err.stack}</pre></div>`;
+        }
     });
 }
 
