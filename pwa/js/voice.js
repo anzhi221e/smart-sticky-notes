@@ -62,7 +62,12 @@ export async function startRecording({ onText, onState }) {
 
     mediaRecorder.start(100);
     isRecording = true;
-    if (onRecordingState) onRecordingState('recording');
+    // Return whether speech recognition is actually available
+    if (onRecordingState) onRecordingState('recording', !!recognition);
+}
+
+export function isSpeechSupported() {
+    return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 }
 
 export function stopRecording() {

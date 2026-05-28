@@ -326,7 +326,12 @@ async function onMicPress(e) {
     try {
         await startRecording({
             onText: (text, isFinal) => updateRecordingText(text),
-            onState: (state) => { if (state === 'recording') updateRecordingText('说话中...'); },
+            onState: (state, speechOk) => {
+                if (state === 'recording') {
+                    updateRecordingText(speechOk ? '说话中...' : '录音中（不支持实时转写）');
+                    window._speechSupported = speechOk;
+                }
+            },
         });
     } catch (err) {
         hideRecordingOverlay();
@@ -355,6 +360,7 @@ async function onMicPress(e) {
                 window._pendingVoiceBlob = result.blob;
                 window._pendingVoiceDuration = result.duration;
                 textInputEl.focus();
+                if (!window._speechSupported) showToast('语音已保存。手动输入文字后发送');
             }
         } catch (err) { showToast('录音失败: ' + err.message); }
     };

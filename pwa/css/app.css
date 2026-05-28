@@ -249,7 +249,7 @@ html, body {
 .recording-cancel { font-size: 13px; color: var(--danger); margin-top: 8px; }
 
 /* Tags */
-.tags-content { flex: 1; overflow-y: auto; }
+.tags-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding: 0 16px 16px; }
 
 /* Toolbar */
 .toolbar { border-top: 1px solid var(--border); background: var(--bg); padding: 8px 12px 4px; }
