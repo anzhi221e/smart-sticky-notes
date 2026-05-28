@@ -126,7 +126,8 @@ footer {
 <div class="timeline-item"><div class="time">v2 实现</div><div class="text">16 任务分 4 阶段实施：数据库迁移、PC 同步脚本重写（快照导出+标签聚合）、PWA 8 大新模块、集成组装。</div></div>
 <div class="timeline-item"><div class="time">双发送 Bug 攻坚战</div><div class="text">持续 14 次提交的顽固 Bug：Enter/点击出现两条笔记。经历 8 次失败尝试（preventDefault、stopPropagation、keypress、时间戳防抖、_isSending 锁），最终根因是滚动监听触发 loadOlderNotes 重复渲染。</div></div>
 <div class="timeline-item"><div class="time">主题系统重构</div><div class="text">从 6 套升级到 8 套（+2 多彩），引入 24 色调色盘、hash 分配算法、标签颜色自定义。经历气泡色反转、标签不可见等多轮 CSS 调试。</div></div>
-<div class="timeline-item"><div class="time">总结与记忆</div><div class="text">生成项目 reflection，将用户偏好、架构决策、技术教训写入 Claude 持久记忆系统，供未来项目复用。</div></div>
+<div class="timeline-item"><div class="time">UI 现代化 + 移动端适配</div><div class="text">登录界面重新设计为卡片式蓝白风格，复选框多选删除、iOS 开关按钮、语音不支持时的降级提示。</div></div>
+<div class="timeline-item"><div class="time">部署 + 记忆固化</div><div class="text">GitHub push + Vercel 部署，更新 reflection，将 checkboxes/scroll/sw/cache 经验写入持久记忆。</div></div>
 
 <!-- 1. 问题定义 -->
 <h2>1. 问题定义</h2>
