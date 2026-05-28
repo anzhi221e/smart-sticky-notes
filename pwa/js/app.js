@@ -127,10 +127,9 @@ function setupMainUI() {
     textInput.addEventListener('input', () => {
         toggleSendButton(textInput.value.trim().length > 0);
     });
-    // Enter key handler disabled for debug — use send button only
-    // textInput.addEventListener('keydown', (e) => {
-    //     if (e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); sendTextNote(); }
-    // });
+    textInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); sendTextNote(); }
+    });
 
     document.getElementById('send-btn').addEventListener('click', sendTextNote);
 
@@ -268,15 +267,11 @@ async function onMicPress(e) {
 }
 
 // --- Send ---
-let _lastSend = 0;
-let _sendCount = 0;
+let _isSending = false;
 
 async function sendTextNote() {
-    const now = Date.now();
-    _sendCount++;
-    console.log(`[SSN] sendTextNote called #${_sendCount} at +${now - _lastSend}ms since last`);
-    if (now - _lastSend < 1000) { console.log('[SSN] BLOCKED — too soon'); return; }
-    _lastSend = now;
+    if (_isSending) return;
+    _isSending = true;
 
     const textInput = document.getElementById('text-input');
     const sendBtn = document.getElementById('send-btn');
@@ -322,9 +317,9 @@ async function sendTextNote() {
             id: b.dataset.noteId, type, text, tags, created_at: new Date().toISOString(),
         }));
         await cacheNotes(noteData);
-        sendBtn.disabled = false;
+        _isSending = false; sendBtn.disabled = false;
     } catch (err) {
-        sendBtn.disabled = false;
+        _isSending = false; sendBtn.disabled = false;
         if (!isOnline()) {
             await addToQueue({ type, text: text || '', tags, audio_path: null, audio_duration: null });
             showToast('已保存到本地，联网后自动发送');
