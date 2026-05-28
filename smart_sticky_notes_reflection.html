@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Sticky Notes — 项目 Reflection</title>
+<style>
+:root {
+  --bg: #0f0f1a;
+  --card: #181830;
+  --accent: #e94560;
+  --text: #d0d0dc;
+  --text-secondary: #9090a8;
+  --border: #282848;
+  --code-bg: #09091a;
+  --green: #4ade80;
+  --yellow: #fbbf24;
+  --red: #f87171;
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.7; padding: 40px 20px;
+}
+.container { max-width: 960px; margin: 0 auto; }
+h1 { font-size: 2rem; color: #fff; margin-bottom: 4px; }
+h2 { font-size: 1.4rem; color: #fff; margin: 48px 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; color: var(--text); margin: 24px 0 10px 0; }
+p, li { color: var(--text-secondary); font-size: 0.95rem; }
+a { color: var(--blue); }
+.subtitle { font-size: 1rem; color: var(--text-secondary); margin-bottom: 32px; }
+
+.highlight-box {
+  background: var(--card); border-left: 4px solid var(--accent);
+  padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 16px 0;
+}
+.highlight-box.green { border-color: var(--green); }
+.highlight-box.yellow { border-color: var(--yellow); }
+.highlight-box.blue { border-color: var(--blue); }
+.highlight-box.purple { border-color: var(--purple); }
+.highlight-box p { margin: 0; }
+
+.tag {
+  display: inline-block; padding: 2px 10px; border-radius: 10px;
+  font-size: 0.8rem; font-weight: 600; margin-right: 6px;
+}
+.tag.green { background: rgba(74,222,128,0.15); color: var(--green); }
+.tag.red { background: rgba(248,113,113,0.15); color: var(--red); }
+.tag.blue { background: rgba(96,165,250,0.15); color: var(--blue); }
+.tag.yellow { background: rgba(251,191,36,0.15); color: var(--yellow); }
+.tag.purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+
+.two-col {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+}
+@media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+.code-block {
+  background: var(--code-bg); border-radius: 8px; padding: 16px 20px;
+  overflow-x: auto; margin: 12px 0; border: 1px solid var(--border);
+  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
+  font-size: 0.85rem; line-height: 1.6; color: var(--text);
+}
+.code-block .kw { color: var(--purple); }
+.code-block .str { color: var(--green); }
+.code-block .fn { color: var(--blue); }
+.code-block .cm { color: var(--text-secondary); font-style: italic; }
+
+.file-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px 18px; margin: 8px 0;
+}
+.file-card .name { font-weight: 600; color: #fff; font-family: monospace; }
+.file-card .desc { color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px; }
+
+.timeline-item {
+  padding: 12px 0 12px 24px; border-left: 2px solid var(--border);
+  position: relative; margin-left: 8px;
+}
+.timeline-item::before {
+  content: ''; position: absolute; left: -5px; top: 18px;
+  width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+}
+.timeline-item .time { font-size: 0.8rem; color: var(--text-secondary); }
+.timeline-item .text { margin-top: 2px; }
+
+table {
+  width: 100%; border-collapse: collapse; margin: 12px 0;
+}
+th, td {
+  padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+th { color: #fff; font-weight: 600; font-size: 0.85rem; }
+td { color: var(--text-secondary); }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+footer {
+  margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border);
+  color: var(--text-secondary); font-size: 0.85rem;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Smart Sticky Notes</h1>
+<p class="subtitle">完整开发过程 Reflection — 从需求到交付</p>
+
+<!-- 时间线 -->
+<h2>会话时间线</h2>
+
+<div class="timeline-item"><div class="time">需求提出</div><div class="text">用户需要一个跨端（手机+电脑）的笔记工具，支持语音转文字、文本输入，所有内容最终汇入本地 Markdown 文件夹供 AI 读取。</div></div>
+<div class="timeline-item"><div class="time">方案探索</div><div class="text">评估了 3 种架构方案：PWA+本地同步服务、Telegram Bot、微信企业号。最终选择 PWA + Supabase 云中转 + PC 同步脚本。</div></div>
+<div class="timeline-item"><div class="time">设计评审</div><div class="text">设计文档经历 4 轮 review（v1→v4），外部反馈发现 20+ 问题，全部在设计阶段修复。</div></div>
+<div class="timeline-item"><div class="time">实现</div><div class="text">11 次 git 提交，32 个文件，约 6500 行代码。Supabase 配置 + PC 同步脚本（Python）+ PWA（vanilla JS）。</div></div>
+<div class="timeline-item"><div class="time">调试</div><div class="text">解决 esm.sh CDN 被墙、CSS !important 黑屏、Supabase auth token 旋转、配置 RLS 写入失败等问题。</div></div>
+<div class="timeline-item"><div class="time">部署</div><div class="text">Vercel 部署成功但手机端慢（海外节点）。Cloudflare 登录被墙后终于成功，建立 GitHub 私有仓库 + Cloudflare Pages 自动部署流水线。但 Workers Dev 域名在手机端仍被屏蔽。最终建议 Tailscale 私有网络方案。</div></div>
+<div class="timeline-item"><div class="time">CI/CD 建立</div><div class="text">创建 GitHub 私有仓库 <code>ychen02/smart-sticky-notes</code>，连接 Cloudflare Pages，每次 git push 自动部署到 <code>smart-sticky-notes.chen-cy-ying.workers.dev</code>。</div></div>
+<div class="timeline-item"><div class="time">总结与记忆</div><div class="text">生成项目 reflection，将用户偏好、架构决策、技术教训写入 Claude 持久记忆系统，供未来项目复用。</div></div>
+
+<!-- 1. 问题定义 -->
+<h2>1. 问题定义</h2>
+
+<div class="highlight-box purple">
+<p><strong>用户原话：</strong>"我平时经常会需要在各个端进行笔记记录。但是这些笔记往往是散落在各处的。我想要把它们汇总成为一份文件，并让AI读取或者是整理的话会非常困难。"</p>
+</div>
+
+<h3>核心约束</h3>
+<ul>
+<li><strong>跨端</strong>：手机和电脑都能用</li>
+<li><strong>语音输入</strong>：录音后自动转文字，同时保留原音频</li>
+<li><strong>低成本</strong>：尽量免费（最终实现为 $0）</li>
+<li><strong>本地落盘</strong>：最终内容化为 Markdown 文件存到 OneDrive 文件夹</li>
+<li><strong>国内可用</strong>：用户在中国大陆，访问海外服务有障碍</li>
+<li><strong>不关注前端形态</strong>：只要能随时随地记录，最终汇总到 Markdown 文件夹</li>
+</ul>
+
+<!-- 2. 技术调研 -->
+<h2>2. 技术调研过程</h2>
+
+<h3>探索的方案</h3>
+
+<table>
+<tr><th>方案</th><th>评估</th><th>结论</th></tr>
+<tr><td>微信企业号/测试号 + 后端</td><td>体验最贴近习惯，但需要服务器、注册审核、消息接口限制</td><td><span class="tag red">放弃</span></td></tr>
+<tr><td>Telegram Bot + 本地拉取</td><td>技术简单，但国内需代理，违背"随时随地"</td><td><span class="tag red">放弃</span></td></tr>
+<tr><td>PWA + 本地同步服务</td><td>零成本、国内无障碍，但 PC 需要开机</td><td><span class="tag yellow">改进</span></td></tr>
+<tr><td>PWA + Supabase + PC 同步脚本</td><td>加入云中转层，解决 PC 离线问题。免费额度够用</td><td><span class="tag green">采纳</span></td></tr>
+</table>
+
+<h3>关键技术验证</h3>
+
+<div class="highlight-box yellow">
+<p><strong>Web Speech API 限制：</strong>设计初稿假设离线录音后可以自动转写，但验证发现 SpeechRecognition 只能处理实时麦克风输入，不能对音频文件做转写。修正：语音功能仅在线可用，离线时禁用并提示使用文字输入。</p>
+</div>
+
+<div class="highlight-box yellow">
+<p><strong>Supabase refresh_token 一次性使用：</strong>尝试让 PWA 和 PC 脚本共享 refresh_token 时发现，每次 refresh 后旧 token 立即失效。结论：PC 脚本使用 service_role key 独立认证，不与 PWA 共享用户态 token。</p>
+</div>
+
+<div class="highlight-box blue">
+<p><strong>esm.sh CDN 国内被墙：</strong>PWA 使用 <code>esm.sh/@supabase/supabase-js@2</code> 加载 SDK，导致国内用户打开即黑屏。切换到 <code>jsdelivr.net</code> + import map 方案解决。</p>
+</div>
+
+<!-- 3. 方案设计 -->
+<h2>3. 方案设计</h2>
+
+<h3>最终架构</h3>
+
+<div class="code-block">
+<span class="cm"># 数据流</span>
+手机 PWA ──HTTP──→ Supabase (cloud relay) ←── PC Sync Script ──→ OneDrive/Markdown ──→ AI 读取
+
+<span class="cm"># 认证分离</span>
+PWA:      anon key + magic link (RLS 隔离)
+PC 脚本:  service_role key (本地受信)
+</div>
+
+<h3>技术栈</h3>
+
+<table>
+<tr><th>层面</th><th>选择</th><th>理由</th></tr>
+<tr><td>前端</td><td>Vanilla HTML/CSS/JS (PWA)</td><td>零构建工具，手机浏览器原生支持，体量极小</td></tr>
+<tr><td>云后端</td><td>Supabase (免费版)</td><td>PostgreSQL + Auth + Storage，自带 REST API，无需写后端代码</td></tr>
+<tr><td>语音识别</td><td>Web Speech API</td><td>浏览器内置，免费，中文识别良好（仅实时）</td></tr>
+<tr><td>音频编码</td><td>Opus 16kbps mono</td><td>~120KB/min，免费额度可存 4+ 年</td></tr>
+<tr><td>PC 同步</td><td>Python + pystray</td><td>跨平台，Windows 系统托盘，后台静默运行</td></tr>
+<tr><td>部署</td><td>Vercel (静态)</td><td>免费，一键部署，全球 CDN</td></tr>
+</table>
+
+<h3>数据模型</h3>
+
+<div class="code-block">
+<span class="kw">smartstickynotes_items</span>
+├── id (uuid), user_id (FK auth.users)
+├── type: <span class="str">"voice"</span> | <span class="str">"text"</span>
+├── text, tags, audio_path, audio_duration
+├── status: <span class="str">"active"</span> | <span class="str">"deleted"</span>
+├── created_at, updated_at, deleted_at, synced_at
+
+<span class="kw">deletion_events</span>     <span class="cm">// 轻量墓碑，PC 可见</span>
+├── note_id, audio_path
+
+<span class="kw">smartstickynotes_config</span>
+├── key, value (PWA + PC 共享配置)</div>
+
+<!-- 4. 安全分析 -->
+<h2>4. 安全分析</h2>
+
+<h3>认证架构</h3>
+<table>
+<tr><th>场景</th><th>密钥类型</th><th>安全边界</th></tr>
+<tr><td>PWA 前端</td><td>anon key (公开)</td><td>RLS 策略限制到 auth.uid()，所有表+Storage 均有行级安全</td></tr>
+<tr><td>PC 同步脚本</td><td>service_role key (仅本地 .env)</td><td>.env 被 gitignore，不提交到任何仓库</td></tr>
+<tr><td>用户登录</td><td>Magic Link (无密码)</td><td>邮箱验证，JWT 有过期时间</td></tr>
+</table>
+
+<h3>数据安全边界</h3>
+<ul>
+<li>anon key 暴露在前端是正常且预期的 — 安全来自 RLS 而非密钥隐藏</li>
+<li>所有 RLS 策略包含 <code>USING</code> + <code>WITH CHECK</code>，覆盖 SELECT/INSERT/UPDATE/DELETE</li>
+<li>Storage bucket 为 private，访问通过临时签名 URL</li>
+</ul>
+
+<h3>关键风险评估</h3>
+<table>
+<tr><th>风险</th><th>级别</th><th>缓解措施</th></tr>
+<tr><td>PC 脚本文件覆盖本地修改</td><td><span class="tag red">高</span></td><td>Hash 对比冲突检测，本地修改不被覆盖</td></tr>
+<tr><td>文件名碰撞</td><td><span class="tag red">高</span></td><td>模板强制包含 {id} 变量保证唯一性</td></tr>
+<tr><td>本地文件误删导致云端被删</td><td><span class="tag yellow">中</span></td><td>三级预警机制，不自动标记删除</td></tr>
+<tr><td>Supabase 免费额度超限</td><td><span class="tag green">低</span></td><td>Opus 低码率编码，预估 4 年容量</td></tr>
+</table>
+
+<!-- 5. 实现产出 -->
+<h2>5. 实现产出</h2>
+
+<div class="two-col">
+<div>
+<h3>PC 同步脚本 (sync/)</h3>
+<div class="file-card"><div class="name">main.py</div><div class="desc">入口：验证凭证 → 读取配置 → 启动同步循环 + 系统托盘</div></div>
+<div class="file-card"><div class="name">sync_loop.py</div><div class="desc">核心轮询：拉取变更 → 冲突检测 → 生成 Markdown → 处理删除事件</div></div>
+<div class="file-card"><div class="name">auth.py</div><div class="desc">使用 service_role key，无需 OAuth 交互</div></div>
+<div class="file-card"><div class="name">markdown_writer.py</div><div class="desc">YAML frontmatter + 音频链接生成</div></div>
+<div class="file-card"><div class="name">conflict.py</div><div class="desc">Hash 对比：区分覆盖/跳过/碰撞</div></div>
+<div class="file-card"><div class="name">sync_state.py</div><div class="desc">.sync_state.json 管理：游标、哈希、缺失追踪</div></div>
+<div class="file-card"><div class="name">tray_app.py</div><div class="desc">Windows 系统托盘：绿/橙/红状态 + 菜单</div></div>
+</div>
+<div>
+<h3>PWA 前端 (pwa/)</h3>
+<div class="file-card"><div class="name">index.html + app.css</div><div class="desc">多屏 SPA：连接→登录→向导→聊天→日历→标签→回收站→设置</div></div>
+<div class="file-card"><div class="name">js/app.js</div><div class="desc">主控制器：路由、事件绑定、笔记发送、设置管理</div></div>
+<div class="file-card"><div class="name">js/db.js</div><div class="desc">Supabase 查询：CRUD、标签、配置、音频签名 URL</div></div>
+<div class="file-card"><div class="name">js/voice.js</div><div class="desc">MediaRecorder + SpeechRecognition 实时转写</div></div>
+<div class="file-card"><div class="name">js/audio-player.js</div><div class="desc">内联播放器：进度拖拽、倍速、签名 URL 缓存</div></div>
+<div class="file-card"><div class="name">js/calendar.js</div><div class="desc">日/周/月/年 四视图日历</div></div>
+<div class="file-card"><div class="name">js/offline.js</div><div class="desc">IndexedDB 离线队列 + 笔记缓存</div></div>
+<div class="file-card"><div class="name">js/wizard.js</div><div class="desc">三步初始化向导：路径→SQL→脚本</div></div>
+</div>
+</div>
+
+<!-- 6. 部署 -->
+<h2>6. 部署方式</h2>
+
+<h3>当前部署</h3>
+<table>
+<tr><th>组件</th><th>位置</th></tr>
+<tr><td>PWA (Vercel)</td><td><code>smartstickynotes.vercel.app</code></td></tr>
+<tr><td>PWA (Cloudflare)</td><td><code>smart-sticky-notes.chen-cy-ying.workers.dev</code></td></tr>
+<tr><td>源代码</td><td>GitHub: <code>ychen02/smart-sticky-notes</code> (私有)</td></tr>
+<tr><td>数据库</td><td>Supabase: <code>hbqccdhnzrkhgyaasfts.supabase.co</code></td></tr>
+<tr><td>PC 同步</td><td>本地: <code>python sync/main.py</code></td></tr>
+<tr><td>笔记落盘</td><td><code>E:\OneDrive\Smart Sticky Notes\</code></td></tr>
+</table>
+
+<h3>CI/CD 流水线</h3>
+<div class="code-block">
+<span class="cm"># 开发→部署 流程</span>
+git push → GitHub (私有) → Cloudflare Pages (自动) → 域名更新
+
+<span class="cm"># 修改代码后</span>
+git add -A && git commit -m <span class="str">"fix: xxx"</span> && git push
+<span class="cm"># Cloudflare 自动构建部署，无需手动操作</span>
+</div>
+
+<h3>国内访问问题</h3>
+<div class="highlight-box yellow">
+<p>经实测：Vercel（vercel.app）手机端慢，Cloudflare Workers Dev（workers.dev）手机端完全被屏蔽。所有海外托管免费域名在中国大陆手机网络下均不可靠。建议方案：Tailscale 私有网络（免费 100 设备），手机通过 WireGuard 直连电脑 PWA。</p>
+</div>
+
+<!-- 7. 问题与洞察 -->
+<h2>7. 问题与洞察</h2>
+
+<h3>CSS !important 的隐秘陷阱</h3>
+<p>黑屏 Bug 持续了约 30 分钟才定位到。根因：HTML 元素同时有 <code>.screen</code>（display:none）和 <code>.hidden</code>（display:none!important）。JS 切换 <code>.active</code> 时 <code>!important</code> 优先级高于 class 切换，导致所有页面永远不可见。教训：避免在 CSS 中使用 <code>!important</code>，尤其是会被 JS 动态切换的元素。</p>
+
+<h3>Supabase Refresh Token 旋转机制</h3>
+<p>尝试让 PWA 和 PC 脚本共享 refresh_token 时反复遇到 "Already Used" 错误。Supabase 的 refresh_token 是一次性使用：每次 refresh 返回新 token，旧 token 立即失效。这意味着不能把同一个 token 同时给两个客户端用。最终用 service_role 绕过了这个限制，代价是 PC 脚本获得了更高权限。</p>
+
+<h3>国内网络环境的现实约束</h3>
+<p>esm.sh CDN 被墙、Vercel 手机访问慢、Cloudflare 登录被墙——这些都不是代码问题，但决定了用户体验。一个"能用"的系统，在中国大陆需要：可访问的 CDN（jsdelivr）、可访问的云服务（Supabase 恰好可用）、以及 VPN/代理作为兜底。</p>
+
+<div class="highlight-box purple">
+<p><strong>用户反复确认的关注点：</strong>低成本和简洁是最高优先级。用户多次拒绝引入付费服务（Whisper API）、拒绝复杂的初始化流程、选择浏览器内置的免费方案。这不是技术妥协，而是正确的产品决策——MVP 不需要完美，需要能用。</p>
+</div>
+
+<!-- 8. 交付清单 -->
+<h2>8. 最终交付清单</h2>
+
+<table>
+<tr><th>文件</th><th>状态</th><th>说明</th></tr>
+<tr><td>supabase/migrations/001_initial.sql</td><td><span class="tag green">完成</span></td><td>3 表 + RLS + 索引</td></tr>
+<tr><td>sync/ (10 文件)</td><td><span class="tag green">完成</span></td><td>PC 同步脚本，已测试同步成功</td></tr>
+<tr><td>pwa/ (16 文件)</td><td><span class="tag green">完成</span></td><td>PWA，已部署到 Vercel</td></tr>
+<tr><td>docs/.../design.md</td><td><span class="tag green">完成</span></td><td>设计文档 v4</td></tr>
+<tr><td>docs/.../plan.md</td><td><span class="tag green">完成</span></td><td>实现计划 19 任务</td></tr>
+<tr><td>.gitignore</td><td><span class="tag green">完成</span></td><td>.env + __pycache__ 排除</td></tr>
+<tr><td>sync/.env.example</td><td><span class="tag green">完成</span></td><td>密钥模板</td></tr>
+<tr><td>手机端访问</td><td><span class="tag yellow">需 VPN</span></td><td>Vercel 海外节点</td></tr>
+<tr><td>Cloudflare 部署</td><td><span class="tag red">受阻</span></td><td>登录被墙</td></tr>
+</table>
+
+<hr class="divider">
+
+<footer>
+<p>项目路径: D:\My Documents\Claude Code\projects\smart_sticky_notes</p>
+<p>技术栈: Vanilla JS PWA + Supabase + Python + Vercel</p>
+<p>生成日期: 2026-05-27</p>
+<p>Git 提交: 11 次 | 总文件: 32 个 | 约 6500 行代码</p>
+</footer>
+
+</div>
+</body>
+</html>
