@@ -128,10 +128,10 @@ function setupMainUI() {
         toggleSendButton(textInput.value.trim().length > 0);
     });
     textInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); sendTextNote(); }
+        if (e.key === 'Enter') { e.preventDefault(); sendTextNote('keydown-Enter'); }
     });
 
-    document.getElementById('send-btn').addEventListener('click', sendTextNote);
+    document.getElementById('send-btn').addEventListener('click', () => sendTextNote('send-btn-click'));
 
     // Mic
     const micBtn = document.getElementById('mic-btn');
@@ -269,8 +269,9 @@ async function onMicPress(e) {
 // --- Send ---
 let _isSending = false;
 
-async function sendTextNote() {
-    if (_isSending) return;
+async function sendTextNote(caller = 'unknown') {
+    console.trace(`[SSN] sendTextNote called by: ${caller}`);
+    if (_isSending) { console.log('[SSN] BLOCKED by _isSending'); return; }
     _isSending = true;
 
     const textInput = document.getElementById('text-input');
