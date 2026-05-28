@@ -121,6 +121,11 @@ footer {
 <div class="timeline-item"><div class="time">调试</div><div class="text">解决 esm.sh CDN 被墙、CSS !important 黑屏、Supabase auth token 旋转、配置 RLS 写入失败等问题。</div></div>
 <div class="timeline-item"><div class="time">部署</div><div class="text">Vercel 部署成功但手机端慢（海外节点）。Cloudflare 登录被墙后终于成功，建立 GitHub 私有仓库 + Cloudflare Pages 自动部署流水线。但 Workers Dev 域名在手机端仍被屏蔽。最终建议 Tailscale 私有网络方案。</div></div>
 <div class="timeline-item"><div class="time">CI/CD 建立</div><div class="text">创建 GitHub 私有仓库 <code>ychen02/smart-sticky-notes</code>，连接 Cloudflare Pages，每次 git push 自动部署到 <code>smart-sticky-notes.chen-cy-ying.workers.dev</code>。</div></div>
+<div class="timeline-item"><div class="time">v2 需求提出</div><div class="text">用户在实际使用中发现真实需求：标签工具栏、富文本编辑、多彩主题、标签聚合 Markdown 导出等 20+ 项功能需求。</div></div>
+<div class="timeline-item"><div class="time">v2 设计评审</div><div class="text">经历 3 轮外部评审，解决快照导出原子性、多标签文件一致性、删除-恢复流程、标签文件名冲突等核心架构问题。</div></div>
+<div class="timeline-item"><div class="time">v2 实现</div><div class="text">16 任务分 4 阶段实施：数据库迁移、PC 同步脚本重写（快照导出+标签聚合）、PWA 8 大新模块、集成组装。</div></div>
+<div class="timeline-item"><div class="time">双发送 Bug 攻坚战</div><div class="text">持续 14 次提交的顽固 Bug：Enter/点击出现两条笔记。经历 8 次失败尝试（preventDefault、stopPropagation、keypress、时间戳防抖、_isSending 锁），最终根因是滚动监听触发 loadOlderNotes 重复渲染。</div></div>
+<div class="timeline-item"><div class="time">主题系统重构</div><div class="text">从 6 套升级到 8 套（+2 多彩），引入 24 色调色盘、hash 分配算法、标签颜色自定义。经历气泡色反转、标签不可见等多轮 CSS 调试。</div></div>
 <div class="timeline-item"><div class="time">总结与记忆</div><div class="text">生成项目 reflection，将用户偏好、架构决策、技术教训写入 Claude 持久记忆系统，供未来项目复用。</div></div>
 
 <!-- 1. 问题定义 -->
@@ -323,6 +328,46 @@ git add -A && git commit -m <span class="str">"fix: xxx"</span> && git push
 <tr><td>手机端访问</td><td><span class="tag yellow">需 VPN</span></td><td>Vercel 海外节点</td></tr>
 <tr><td>Cloudflare 部署</td><td><span class="tag red">受阻</span></td><td>登录被墙</td></tr>
 </table>
+
+<h2>v2 关键洞察</h2>
+
+<h3>双发送 Bug —— 最顽固的 UI 联动 Bug</h3>
+
+<div class="highlight-box red">
+<p><strong>根因</strong>：发送 → <code>appendChild</code> → <code>scrollTop = scrollHeight</code> → 触发滚动监听 → "接近底部" → <code>loadOlderNotes()</code> → 把刚发的同一条从数据库查回来再次 append → DOM 里两条。</p>
+</div>
+
+<p>数据库只有一条，UI 渲染了两条。刷新后重新加载只有一条——这就是"清缓存后两条变一条"的原因。</p>
+
+<p><strong>8 次失败尝试</strong>：</p>
+<ul>
+<li><code>e.preventDefault()</code> + <code>stopPropagation()</code> — 无效，问题不在事件层</li>
+<li><code>stopImmediatePropagation()</code> — 无效</li>
+<li>切换 keydown → keypress — 无效</li>
+<li>时间戳防抖（800ms → 1000ms） — 无效，第二次调用在 12 秒后</li>
+<li>重新引入 <code>_isSending</code> 锁 — 无效，锁在第一次完成后已释放</li>
+<li><code>setupMainUI</code> 防重复注册 — 无效</li>
+<li>禁用 Enter、仅用发送按钮 — 仍然两条</li>
+<li>拆分 try/catch + 客户端 UUID 幂等 — 无效，问题在 DOM 层</li>
+</ul>
+
+<p><strong>教训</strong>：<code>scrollTop = scrollHeight</code> 是副作用炸弹。任何"滚到底"操作都可能触发已有的滚动监听逻辑。解决方案：去重检查（发送新笔记后跳过一轮滚动加载）、或者滚动监听加 <code>data-note-id</code> 已存在判断。</p>
+
+<h3>CSS 优先级——标签不可见之谜</h3>
+
+<div class="highlight-box yellow">
+<p>标签 pill 在彩色气泡上不可见，因为 CSS 有两个 <code>.note-bubble .note-tag</code> 规则互相覆盖——后者用 <code>var(--accent-dim)</code> 做背景，在粉色气泡上等于"粉色字放在粉色背景上"。</p>
+</div>
+
+<p><strong>教训</strong>：永远检查合并后的 CSS 规则。两个同选择器规则，后者覆盖前者，不管看起来是否"应该合并"。</p>
+
+<h3>Service Worker 缓存——网络优先 vs 缓存优先</h3>
+
+<p>开发阶段缓存优先策略导致每次代码更新都需要手动 Unregister SW。改为网络优先（Network First）后，在线时永远拿最新代码。</p>
+
+<h3>主题系统复杂度</h3>
+
+<p>8 套主题 × 2 种渲染模式（统一色 / 多色）= 16 种视觉效果。CSS 变量 + JS inline style 混用导致切换主题时气泡颜色不一致。最终方案：统一通过 <code>--bubble-bg</code> + <code>--bubble-text</code> CSS 变量控制，多色模式通过 <code>dataset.multi</code> 标记 + inline style 覆盖。</p>
 
 <hr class="divider">
 
