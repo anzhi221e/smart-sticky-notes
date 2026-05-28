@@ -94,6 +94,8 @@ export function renderNoteBubble(note, onDelete, onEdit) {
     bubble.addEventListener('touchend', (e) => {
         const diff = startX - e.changedTouches[0].clientX;
         if (diff > 80) {
+            if (_deletingBubble) return;
+            _deletingBubble = true;
             softDeleteNote(note.id).then(() => {
                 showToast('已移至回收站', {
                     undoLabel: '撤销',
@@ -101,11 +103,13 @@ export function renderNoteBubble(note, onDelete, onEdit) {
                         import('./db.js').then(m => m.restoreNote(note.id)).then(() => {
                             bubble.remove();
                             import('./app.js').then(m => m.loadNotes());
+                            _deletingBubble = false;
                         });
                     },
                 });
                 bubble.remove();
                 if (onDelete) onDelete(note.id);
+                _deletingBubble = false;
             });
         }
     });
@@ -127,52 +131,52 @@ export function renderNoteBubble(note, onDelete, onEdit) {
     return bubble;
 }
 
+let _bubbleMenuOpen = false;
+
 function showBubbleMenu(bubble, note, onDelete, onEdit) {
-    // Clean up all existing menus and context menus
-    document.querySelectorAll('.bubble-menu, .context-menu').forEach(m => m.remove());
+    if (_bubbleMenuOpen) return;
+    _bubbleMenuOpen = true;
+    document.querySelectorAll('.bubble-menu').forEach(m => m.remove());
 
     const menu = document.createElement('div');
-    menu.className = 'bubble-menu';
+    menu.className = 'bubble-menu bubble-menu-sheet';
     menu.innerHTML = `
-        <button class="bubble-menu-item" data-action="edit">编辑</button>
-        <button class="bubble-menu-item" data-action="delete">删除</button>
-        <button class="bubble-menu-item" data-action="copy">复制</button>
-    `;
-    const rect = bubble.getBoundingClientRect();
-    menu.style.cssText = `
-        position:fixed;top:${rect.bottom + 4}px;right:${window.innerWidth - rect.right}px;
-        background:var(--surface);border:1px solid var(--border);border-radius:12px;
-        padding:4px;z-index:200;min-width:120px;
+        <div class="bubble-menu-sheet-inner">
+            <button class="bubble-menu-item" data-action="edit">编辑</button>
+            <button class="bubble-menu-item" data-action="copy">复制</button>
+            <button class="bubble-menu-item bubble-menu-item--danger" data-action="delete">删除</button>
+            <button class="bubble-menu-item" data-action="cancel">取消</button>
+        </div>
     `;
 
-    menu.querySelector('[data-action="edit"]').addEventListener('click', () => {
-        menu.remove();
-        if (onEdit) onEdit(bubble, note.id, note.text, note.tags);
-    });
-    menu.querySelector('[data-action="delete"]').addEventListener('click', () => {
-        menu.remove();
-        softDeleteNote(note.id).then(() => {
-            showToast('已移至回收站', {
-                undoLabel: '撤销',
-                onUndo: () => {
-                    import('./db.js').then(m => m.restoreNote(note.id)).then(() => {
-                        bubble.remove();
-                        import('./app.js').then(m => m.loadNotes());
-                    });
-                },
-            });
-            bubble.remove();
-            if (onDelete) onDelete(note.id);
-        });
-    });
-    menu.querySelector('[data-action="copy"]').addEventListener('click', () => {
-        navigator.clipboard.writeText(note.text);
-        showToast('已复制');
-        menu.remove();
-    });
+    menu.querySelector('[data-action="edit"]').addEventListener('click', () => { cleanup(); if (onEdit) onEdit(bubble, note.id, note.text, note.tags); });
+    menu.querySelector('[data-action="delete"]').addEventListener('click', () => { cleanup(); deleteBubble(bubble, note, onDelete); });
+    menu.querySelector('[data-action="copy"]').addEventListener('click', () => { cleanup(); navigator.clipboard.writeText(note.text); showToast('已复制'); });
+    menu.querySelector('[data-action="cancel"]').addEventListener('click', cleanup);
+
+    function cleanup() { menu.remove(); _bubbleMenuOpen = false; }
+    menu.addEventListener('click', (e) => { if (e.target === menu) cleanup(); });
 
     document.body.appendChild(menu);
-    // Close menu on next click anywhere
-    const closeHandler = () => { menu.remove(); document.removeEventListener('click', closeHandler); };
-    setTimeout(() => document.addEventListener('click', closeHandler), 0);
+}
+
+let _deletingBubble = false;
+function deleteBubble(bubble, note, onDelete) {
+    if (_deletingBubble) return;
+    _deletingBubble = true;
+    softDeleteNote(note.id).then(() => {
+        showToast('已移至回收站', {
+            undoLabel: '撤销',
+            onUndo: () => {
+                import('./db.js').then(m => m.restoreNote(note.id)).then(() => {
+                    bubble.remove();
+                    import('./app.js').then(m => m.loadNotes());
+                    _deletingBubble = false;
+                });
+            },
+        });
+        bubble.remove();
+        if (onDelete) onDelete(note.id);
+        _deletingBubble = false;
+    });
 }

@@ -57,12 +57,18 @@ async function renderTagItems(container, sorted, pinned, mode) {
         if (isMulti) {
             const color = getTagColor(tag, tagColors);
             if (mode === 'card') {
-                card.style.borderLeft = `3px solid`;
-                card.style.borderImage = color.startsWith('linear-gradient') ? color : 'none';
-                if (!color.startsWith('linear-gradient')) card.style.borderLeftColor = color;
+                if (color.startsWith('linear-gradient')) {
+                    card.style.borderLeft = '3px solid transparent';
+                    card.style.borderImage = color + ' 1';
+                } else {
+                    card.style.borderLeft = '3px solid ' + color;
+                }
             } else {
-                card.style.background = color.startsWith('linear-gradient')
-                    ? color.replace('135deg', '90deg') : color;
+                if (color.startsWith('linear-gradient')) {
+                    card.style.background = color.replace('135deg', '90deg');
+                } else {
+                    card.style.background = color;
+                }
                 card.style.color = '#fff';
             }
         }

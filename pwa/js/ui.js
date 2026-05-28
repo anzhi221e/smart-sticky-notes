@@ -166,6 +166,9 @@ export function applyTheme(name) {
     root.style.setProperty('--text-secondary', t.textSec);
     root.style.setProperty('--accent', t.accent);
     root.style.setProperty('--accent-dim', t.accentDim);
+    // Bubble background: accent color for uniform themes, transparent for multi
+    root.style.setProperty('--bubble-bg', t.multi ? t.surface : t.accent);
+    root.style.setProperty('--bubble-text', t.multi ? t.text : '#fff');
     root.dataset.theme = name;
     root.dataset.multi = t.multi ? '1' : '0';
     localStorage.setItem('ssn-theme', name);

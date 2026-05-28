@@ -116,7 +116,7 @@ function setupMainUI() {
         toggleSendButton(textInput.value.trim().length > 0);
     });
     textInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') sendTextNote();
+        if (e.key === 'Enter') { e.preventDefault(); sendTextNote(); }
     });
 
     document.getElementById('send-btn').addEventListener('click', sendTextNote);
