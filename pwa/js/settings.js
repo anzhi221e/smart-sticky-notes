@@ -9,6 +9,9 @@ export async function showSettings() {
 
     let cfg; try { cfg = await readConfig(); } catch { cfg = {}; }
     const themeNames = getThemeNames();
+    const currentTheme = cfg.theme || 'blue-light';
+    const dayThemes = ['pink-light','green-light','blue-light','day-multi'];
+    const nightThemes = ['dark-blue','pure-black','pink-dark','night-multi'];
 
     content.innerHTML = `
         <div class="setting-group"><h3>同步</h3>

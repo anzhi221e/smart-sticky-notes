@@ -13,6 +13,7 @@ import { showRecycleBin } from './recycle-bin.js';
 import { showSettings } from './settings.js';
 
 // --- Module-level state ---
+console.log('[SSN] v2.3 loaded — ' + new Date().toISOString());
 let _loadingMore = false;
 let _oldestCursor = null;
 
