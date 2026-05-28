@@ -231,19 +231,33 @@ function setupMainUI() {
                     cb = document.createElement('input');
                     cb.type = 'checkbox';
                     cb.className = 'select-checkbox';
-                    cb.style.cssText = 'position:absolute;left:8px;top:14px;width:20px;height:20px;accent-color:var(--accent);cursor:pointer;z-index:5;';
+                    cb.style.cssText = 'flex-shrink:0;margin-top:12px;width:20px;height:20px;accent-color:var(--accent);cursor:pointer;';
                     cb.addEventListener('change', () => {
                         if (cb.checked) _selectedIds.add(b.dataset.noteId);
                         else _selectedIds.delete(b.dataset.noteId);
                         const count = document.getElementById('select-count');
                         if (count) count.textContent = `已选 ${_selectedIds.size} 项`;
                     });
-                    // Insert checkbox BEFORE bubble (as sibling), not inside it
-                    b.parentNode.insertBefore(cb, b);
+                    // Wrap bubble in a flex row with checkbox at left edge
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display:flex;align-items:flex-start;gap:6px;width:100%;';
+                    row.className = 'select-row';
+                    b.parentNode.insertBefore(row, b);
+                    row.appendChild(cb);
+                    row.appendChild(b);
+                    b.style.flex = '1';
                 }
                 cb.style.display = '';
             } else {
-                if (cb) cb.style.display = 'none';
+                if (cb) {
+                    // Unwrap: move bubble back to list if it was wrapped in a select-row
+                    const row = cb.parentNode;
+                    if (row && row.classList.contains('select-row')) {
+                        const bubble = row.querySelector('.note-bubble');
+                        if (bubble) { row.parentNode.insertBefore(bubble, row); bubble.style.flex = ''; }
+                        row.remove();
+                    }
+                }
             }
         });
         updateSelectCount();
