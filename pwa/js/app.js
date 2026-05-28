@@ -268,10 +268,13 @@ async function onMicPress(e) {
 
 // --- Send ---
 let _lastSend = 0;
+let _sendCount = 0;
 
 async function sendTextNote() {
     const now = Date.now();
-    if (now - _lastSend < 800) return;
+    _sendCount++;
+    console.log(`[SSN] sendTextNote called #${_sendCount} at +${now - _lastSend}ms since last`);
+    if (now - _lastSend < 1000) { console.log('[SSN] BLOCKED — too soon'); return; }
     _lastSend = now;
 
     const textInput = document.getElementById('text-input');
