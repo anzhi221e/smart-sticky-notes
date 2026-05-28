@@ -331,14 +331,16 @@ html, body {
 .context-item--danger { color: var(--danger); }
 
 /* Theme grid */
-.theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.theme-grid--day, .theme-grid--night {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
 .theme-swatch {
-    aspect-ratio: 1; border-radius: 14px; cursor: pointer;
+    border-radius: 12px; cursor: pointer; padding: 14px 12px;
     display: flex; align-items: center; justify-content: center;
     transition: transform 0.15s, box-shadow 0.15s;
 }
-.theme-swatch:active { transform: scale(0.95); }
-.theme-swatch.selected { box-shadow: 0 0 0 3px var(--accent), 0 0 0 5px var(--bg); }
+.theme-swatch:active { transform: scale(0.97); }
+.theme-swatch.selected { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent); }
 .theme-label { pointer-events: none; }
 
 /* Markdown rendered in bubbles */

@@ -1,17 +1,17 @@
-const MARKDOWN_ACTIONS = {
+const RICH_ACTIONS = {
     bold:          { before: '**', after: '**', placeholder: '粗体文字' },
     italic:        { before: '*', after: '*', placeholder: '斜体文字' },
     underline:     { before: '<u>', after: '</u>', placeholder: '下划线文字' },
     strikethrough: { before: '~~', after: '~~', placeholder: '删除线文字' },
     bullet:        { before: '\n- ', after: '', placeholder: '列表项' },
     numbered:      { before: '\n1. ', after: '', placeholder: '列表项' },
-    h1:            { before: '# ', after: '', placeholder: '' },
-    h2:            { before: '## ', after: '', placeholder: '' },
-    h3:            { before: '### ', after: '', placeholder: '' },
-    smartconn:     { before: '::', after: '', placeholder: '' },
-    quote:         { before: '> ', after: '', placeholder: '' },
-    callout:       { before: '> [!note]\n> ', after: '', placeholder: '' },
 };
+
+const DEFAULT_SYNTAX = [
+    {label:'#',before:'# ',after:''}, {label:'##',before:'## ',after:''},
+    {label:'###',before:'### ',after:''}, {label:'::',before:'::',after:''},
+    {label:'>',before:'> ',after:''}, {label:'!',before:'> [!note]\n> ',after:''},
+];
 
 let _targetInput = null;
 
@@ -20,13 +20,40 @@ export function setToolbarTarget(inputEl) {
 }
 
 export function initToolbar() {
+    // Rich text buttons (fixed)
     document.querySelectorAll('.tb-btn[data-action]').forEach(btn => {
         btn.addEventListener('click', () => {
             const action = btn.dataset.action;
-            const def = MARKDOWN_ACTIONS[action];
+            const def = RICH_ACTIONS[action];
             if (!def || !_targetInput) return;
             insertMarkdown(def);
         });
+    });
+    // Syntax buttons are rendered dynamically
+    renderSyntaxButtons();
+}
+
+export async function renderSyntaxButtons() {
+    const container = document.getElementById('syntax-buttons');
+    if (!container) return;
+    let buttons = DEFAULT_SYNTAX;
+    try {
+        const { readConfig } = await import('./db.js');
+        const cfg = await readConfig().catch(() => ({}));
+        if (cfg.toolbar_buttons) buttons = JSON.parse(cfg.toolbar_buttons);
+    } catch (e) { /* use defaults */ }
+
+    container.innerHTML = '';
+    buttons.forEach(btn => {
+        const el = document.createElement('button');
+        el.className = 'tb-btn';
+        el.textContent = btn.label;
+        el.title = btn.before + '…' + btn.after;
+        el.addEventListener('click', () => {
+            if (!_targetInput) return;
+            insertMarkdown({ before: btn.before, after: btn.after, placeholder: '' });
+        });
+        container.appendChild(el);
     });
 }
 

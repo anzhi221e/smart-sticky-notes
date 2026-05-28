@@ -24,27 +24,42 @@ export async function showSettings() {
         </div>
         <div class="setting-group"><h3>主题</h3>
             <div style="font-size:11px;color:var(--text-secondary);margin:8px 0 4px;">日间</div>
-            <div class="theme-grid" id="theme-grid-day">
+            <div class="theme-grid--day">
                 ${dayThemes.map(name => {
                     const meta = getThemeMeta(name);
                     const sel = (currentTheme === name) ? 'selected' : '';
                     const label = name === 'pink-light' ? '粉白' : name === 'green-light' ? '绿白' : name === 'blue-light' ? '蓝白' : '多彩';
-                    return `<div class="theme-swatch ${sel}" data-theme="${name}" style="background:${meta.bg};border:2px solid ${meta.accent};">
-                        <span class="theme-label" style="font-size:11px;font-weight:500;color:${meta.text};">${label}</span>
+                    const isMulti = name === 'day-multi';
+                    const bg = isMulti ? 'linear-gradient(135deg,#667eea,#f093fb,#f5576c,#4facfe,#43e97b)' : meta.accent;
+                    const border = name.includes('light') || isMulti ? '#ddd' : '#444';
+                    return `<div class="theme-swatch ${sel}" data-theme="${name}" style="background:${bg};border:2px solid ${border};">
+                        <span class="theme-label" style="font-size:11px;font-weight:500;color:#fff;">${label}</span>
                     </div>`;
                 }).join('')}
             </div>
             <div style="font-size:11px;color:var(--text-secondary);margin:12px 0 4px;">夜间</div>
-            <div class="theme-grid" id="theme-grid-night">
+            <div class="theme-grid--night">
                 ${nightThemes.map(name => {
                     const meta = getThemeMeta(name);
                     const sel = (currentTheme === name) ? 'selected' : '';
                     const label = name === 'dark-blue' ? '暗蓝' : name === 'pure-black' ? '纯黑' : name === 'pink-dark' ? '灰粉' : '多彩';
-                    return `<div class="theme-swatch ${sel}" data-theme="${name}" style="background:${meta.bg};border:2px solid ${meta.accent};">
-                        <span class="theme-label" style="font-size:11px;font-weight:500;color:${meta.text};">${label}</span>
+                    const isMulti = name === 'night-multi';
+                    const bg = isMulti ? 'linear-gradient(135deg,#667eea,#f093fb,#f5576c,#4facfe,#43e97b)' : meta.accent;
+                    return `<div class="theme-swatch ${sel}" data-theme="${name}" style="background:${bg};border:2px solid #444;">
+                        <span class="theme-label" style="font-size:11px;font-weight:500;color:#fff;">${label}</span>
                     </div>`;
                 }).join('')}
             </div>
+        </div>
+        <div class="setting-group"><h3>快捷语法按钮</h3>
+            <div id="toolbar-editor" style="display:flex;flex-direction:column;gap:6px;"></div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+                <input type="text" id="new-btn-label" placeholder="标签" style="flex:1;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;max-width:60px;">
+                <input type="text" id="new-btn-before" placeholder="前" style="flex:1;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+                <input type="text" id="new-btn-after" placeholder="后" style="flex:1;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+                <button id="add-toolbar-btn" style="padding:8px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;white-space:nowrap;">添加</button>
+            </div>
+            <button id="reset-toolbar-btn" style="margin-top:8px;padding:8px 16px;background:var(--surface);color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px;">恢复默认</button>
         </div>
         <div class="setting-group"><h3>置顶标签</h3>
             <div class="setting-row"><input type="text" id="cfg-pinned-tags" value="${cfg.pinned_tags || '[]'}">
@@ -99,6 +114,74 @@ export async function showSettings() {
             await navigator.clipboard.writeText(data.session.refresh_token);
             showToast('新令牌已复制');
         } else showToast('请重新登录');
+    });
+
+    // --- Toolbar editor ---
+    const DEFAULT_BUTTONS = [
+        {label:'#',before:'# ',after:''}, {label:'##',before:'## ',after:''},
+        {label:'###',before:'### ',after:''}, {label:'::',before:'::',after:''},
+        {label:'>',before:'> ',after:''}, {label:'!',before:'> [!note]\n> ',after:''},
+    ];
+    let toolbarButtons = JSON.parse(cfg.toolbar_buttons || 'null') || [...DEFAULT_BUTTONS];
+
+    function renderToolbarEditor() {
+        const editor = document.getElementById('toolbar-editor');
+        if (!editor) return;
+        editor.innerHTML = '';
+        toolbarButtons.forEach((btn, i) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+            row.innerHTML = `
+                <button class="tb-move-btn" data-dir="up" data-idx="${i}" ${i===0?'disabled':''} style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:14px;padding:4px;">▲</button>
+                <button class="tb-move-btn" data-dir="down" data-idx="${i}" ${i===toolbarButtons.length-1?'disabled':''} style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:14px;padding:4px;">▼</button>
+                <span style="background:var(--surface);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:13px;min-width:32px;text-align:center;">${btn.label}</span>
+                <code style="font-size:11px;color:var(--text-secondary);flex:1;">${btn.before}<i>text</i>${btn.after}</code>
+                <button class="tb-del-btn" data-idx="${i}" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:4px;">✕</button>
+            `;
+            editor.appendChild(row);
+        });
+
+        editor.querySelectorAll('.tb-move-btn').forEach(b => {
+            b.addEventListener('click', () => {
+                const idx = parseInt(b.dataset.idx);
+                const dir = b.dataset.dir;
+                if (dir === 'up' && idx > 0) {
+                    [toolbarButtons[idx-1], toolbarButtons[idx]] = [toolbarButtons[idx], toolbarButtons[idx-1]];
+                } else if (dir === 'down' && idx < toolbarButtons.length - 1) {
+                    [toolbarButtons[idx], toolbarButtons[idx+1]] = [toolbarButtons[idx+1], toolbarButtons[idx]];
+                }
+                writeConfig('toolbar_buttons', JSON.stringify(toolbarButtons));
+                renderToolbarEditor();
+            });
+        });
+        editor.querySelectorAll('.tb-del-btn').forEach(b => {
+            b.addEventListener('click', () => {
+                toolbarButtons.splice(parseInt(b.dataset.idx), 1);
+                writeConfig('toolbar_buttons', JSON.stringify(toolbarButtons));
+                renderToolbarEditor();
+            });
+        });
+    }
+
+    renderToolbarEditor();
+
+    document.getElementById('add-toolbar-btn').addEventListener('click', () => {
+        const label = document.getElementById('new-btn-label').value.trim();
+        const before = document.getElementById('new-btn-before').value;
+        const after = document.getElementById('new-btn-after').value;
+        if (!label) return;
+        toolbarButtons.push({label, before, after});
+        writeConfig('toolbar_buttons', JSON.stringify(toolbarButtons));
+        renderToolbarEditor();
+        document.getElementById('new-btn-label').value = '';
+        document.getElementById('new-btn-before').value = '';
+        document.getElementById('new-btn-after').value = '';
+    });
+
+    document.getElementById('reset-toolbar-btn').addEventListener('click', () => {
+        toolbarButtons = [...DEFAULT_BUTTONS];
+        writeConfig('toolbar_buttons', JSON.stringify(toolbarButtons));
+        renderToolbarEditor();
     });
 
     // Logout
