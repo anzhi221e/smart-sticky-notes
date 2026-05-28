@@ -259,8 +259,8 @@ async function onMicPress(e) {
             if (result && result.blob) {
                 const recognitionText = document.getElementById('recording-text')?.textContent;
                 const text = (recognitionText && recognitionText !== '说话中...' && recognitionText !== '松开取消') ? recognitionText : '';
-                textInput = document.getElementById('text-input');
-                textInput.value = text;
+                const textInputEl = document.getElementById('text-input');
+                textInputEl.value = text;
                 toggleSendButton(text.trim().length > 0);
                 window._pendingVoiceBlob = result.blob;
                 window._pendingVoiceDuration = result.duration;
