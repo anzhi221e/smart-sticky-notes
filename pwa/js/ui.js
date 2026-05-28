@@ -113,8 +113,8 @@ export function updateRecordingText(text) {
 
 // --- Theme System (8 themes) ---
 const THEMES = {
-    'pink-light':   { bg:'#fff5f7', surface:'#fff', surfaceAlt:'#ffe0e5', border:'#f0d0d8', text:'#333', textSec:'#888', accent:'#e91e63', accentDim:'rgba(233,30,99,0.12)', multi:false },
-    'green-light':  { bg:'#f5fff8', surface:'#fff', surfaceAlt:'#e0ffe8', border:'#d0e8d8', text:'#333', textSec:'#888', accent:'#10b981', accentDim:'rgba(16,185,129,0.12)', multi:false },
+    'pink-light':   { bg:'#fdf2f8', surface:'#fff', surfaceAlt:'#fce7f3', border:'#f0d0e0', text:'#333', textSec:'#777', accent:'#ec4899', accentDim:'rgba(236,72,153,0.15)', multi:false },
+    'green-light':  { bg:'#f0fdf4', surface:'#fff', surfaceAlt:'#dcfce7', border:'#d0e8d8', text:'#333', textSec:'#777', accent:'#22c55e', accentDim:'rgba(34,197,94,0.15)', multi:false },
     'blue-light':   { bg:'#f5f8ff', surface:'#fff', surfaceAlt:'#e0e8ff', border:'#d0d8f0', text:'#333', textSec:'#888', accent:'#3b82f6', accentDim:'rgba(59,130,246,0.12)', multi:false },
     'dark-blue':    { bg:'#0f1119', surface:'#1a1d2e', surfaceAlt:'#252840', border:'#2a2d40', text:'#e8e8e8', textSec:'#888', accent:'#6c8cff', accentDim:'rgba(108,140,255,0.15)', multi:false },
     'pure-black':   { bg:'#000', surface:'#111', surfaceAlt:'#1a1a1a', border:'#222', text:'#e8e8e8', textSec:'#888', accent:'#4ade80', accentDim:'rgba(74,222,128,0.15)', multi:false },
