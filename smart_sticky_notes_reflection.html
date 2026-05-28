@@ -127,7 +127,8 @@ footer {
 <div class="timeline-item"><div class="time">双发送 Bug 攻坚战</div><div class="text">持续 14 次提交的顽固 Bug：Enter/点击出现两条笔记。经历 8 次失败尝试（preventDefault、stopPropagation、keypress、时间戳防抖、_isSending 锁），最终根因是滚动监听触发 loadOlderNotes 重复渲染。</div></div>
 <div class="timeline-item"><div class="time">主题系统重构</div><div class="text">从 6 套升级到 8 套（+2 多彩），引入 24 色调色盘、hash 分配算法、标签颜色自定义。经历气泡色反转、标签不可见等多轮 CSS 调试。</div></div>
 <div class="timeline-item"><div class="time">UI 现代化 + 移动端适配</div><div class="text">登录界面重新设计为卡片式蓝白风格，复选框多选删除、iOS 开关按钮、语音不支持时的降级提示。</div></div>
-<div class="timeline-item"><div class="time">部署 + 记忆固化</div><div class="text">GitHub push + Vercel 部署，更新 reflection，将 checkboxes/scroll/sw/cache 经验写入持久记忆。</div></div>
+<div class="timeline-item"><div class="time">同步自动化</div><div class="text">Windows Task Scheduler 注册每 30 分钟自动同步任务，`--once` 模式跑完即退出不占内存，PWA 手动同步按钮接入 sync_requests 表。</div></div>
+<div class="timeline-item"><div class="time">移动端适配 + 收尾</div><div class="text">登录页蓝白卡片式重设计，iOS 开关按钮，语音不支持降级提示，复选框屏幕边缘对齐，标签视图气泡截断修复。"Designed by Anzhi" 全局品牌化。8 条持久记忆固化全部关键教训。</div></div>
 
 <!-- 1. 问题定义 -->
 <h2>1. 问题定义</h2>
@@ -370,13 +371,33 @@ git add -A && git commit -m <span class="str">"fix: xxx"</span> && git push
 
 <p>8 套主题 × 2 种渲染模式（统一色 / 多色）= 16 种视觉效果。CSS 变量 + JS inline style 混用导致切换主题时气泡颜色不一致。最终方案：统一通过 <code>--bubble-bg</code> + <code>--bubble-text</code> CSS 变量控制，多色模式通过 <code>dataset.multi</code> 标记 + inline style 覆盖。</p>
 
+<h2>v2 最终交付清单</h2>
+
+<table>
+<tr><th>功能</th><th>状态</th><th>说明</th></tr>
+<tr><td>标签聚合 Markdown 导出</td><td><span class="tag green">完成</span></td><td>快照式，manifest.json 原子标记</td></tr>
+<tr><td>8 套主题（6 统一 + 2 多彩）</td><td><span class="tag green">完成</span></td><td>36 色调色盘，hash 分色</td></tr>
+<tr><td>富文本编辑 + Markdown 存储</td><td><span class="tag green">完成</span></td><td>工具栏双行：格式 + Obsidian 语法</td></tr>
+<tr><td>自定义语法按钮</td><td><span class="tag green">完成</span></td><td>排序/添加/删除/恢复默认</td></tr>
+<tr><td>标签视图（卡片/列表）</td><td><span class="tag green">完成</span></td><td>置顶、颜色自定义、预览</td></tr>
+<tr><td>回收站 30 天自动清理</td><td><span class="tag green">完成</span></td><td>批量选择、恢复、撤销</td></tr>
+<tr><td>多选删除</td><td><span class="tag green">完成</span></td><td>复选框屏幕边缘对齐</td></tr>
+<tr><td>搜索 + 无限滚动</td><td><span class="tag green">完成</span></td><td>复合游标去重</td></tr>
+<tr><td>PC 同步自动化</td><td><span class="tag green">完成</span></td><td>Task Scheduler 30min，--once 模式</td></tr>
+<tr><td>移动端语音降级</td><td><span class="tag green">完成</span></td><td>iOS 自动隐藏麦克风</td></tr>
+<tr><td>登录页重设计</td><td><span class="tag green">完成</span></td><td>蓝白卡片式</td></tr>
+<tr><td>"Designed by Anzhi"</td><td><span class="tag green">完成</span></td><td>侧边栏 + 设置页</td></tr>
+<tr><td>手机端国内直连</td><td><span class="tag yellow">需 VPN</span></td><td>Vercel 海外节点</td></tr>
+</table>
+
 <hr class="divider">
 
 <footer>
 <p>项目路径: D:\My Documents\Claude Code\projects\smart_sticky_notes</p>
 <p>技术栈: Vanilla JS PWA + Supabase + Python + Vercel</p>
-<p>生成日期: 2026-05-27</p>
-<p>Git 提交: 11 次 | 总文件: 32 个 | 约 6500 行代码</p>
+<p>日期: 2026-05-27 ~ 2026-05-28</p>
+<p>Git 提交: 40+ 次 | 总文件: 38 个 | ~8000 行代码</p>
+<p>持久记忆: 8 条 | 设计文档: v1 + v2 | Bug 报告: 2 份</p>
 </footer>
 
 </div>
