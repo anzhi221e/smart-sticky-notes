@@ -243,7 +243,7 @@ function setupMainUI() {
                 const list = document.getElementById('notes-list');
                 list.style.position = 'relative';
                 list.appendChild(cb);
-                cb.style.cssText = 'position:absolute;left:4px;width:20px;height:20px;accent-color:var(--accent);cursor:pointer;z-index:5;';
+                cb.style.cssText = 'position:absolute;left:16px;width:20px;height:20px;accent-color:var(--accent);cursor:pointer;z-index:5;';
                 cb.style.top = (b.offsetTop + 14) + 'px';
             } else {
                 if (cb) cb.remove();
