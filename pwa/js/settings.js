@@ -52,11 +52,12 @@ export async function showSettings() {
             </div>
         </div>
         <div class="setting-group"><h3>快捷语法按钮</h3>
+            <p style="font-size:11px;color:var(--text-secondary);margin-bottom:8px;">选中文字后点击按钮，会在文字前后插入标记。如 [[ + 文字 + ]] = [[文字]]</p>
             <div id="toolbar-editor" style="display:flex;flex-direction:column;gap:6px;"></div>
             <div style="display:flex;gap:8px;margin-top:8px;">
-                <input type="text" id="new-btn-label" placeholder="标签" style="flex:1;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;max-width:60px;">
-                <input type="text" id="new-btn-before" placeholder="前" style="flex:1;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
-                <input type="text" id="new-btn-after" placeholder="后" style="flex:1;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+                <input type="text" id="new-btn-label" placeholder="按钮名" style="flex:1;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;max-width:60px;">
+                <input type="text" id="new-btn-before" placeholder="插入在前" style="flex:1;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+                <input type="text" id="new-btn-after" placeholder="插入在后" style="flex:1;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
                 <button id="add-toolbar-btn" style="padding:8px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;white-space:nowrap;">添加</button>
             </div>
             <button id="reset-toolbar-btn" style="margin-top:8px;padding:8px 16px;background:var(--surface);color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px;">恢复默认</button>
@@ -136,7 +137,7 @@ export async function showSettings() {
                 <button class="tb-move-btn" data-dir="down" data-idx="${i}" ${i===toolbarButtons.length-1?'disabled':''} style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:14px;padding:4px;">▼</button>
                 <span style="background:var(--surface);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:13px;min-width:32px;text-align:center;">${btn.label}</span>
                 <code style="font-size:11px;color:var(--text-secondary);flex:1;">${btn.before}<i>text</i>${btn.after}</code>
-                <button class="tb-del-btn" data-idx="${i}" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:4px;">✕</button>
+                <button class="tb-del-btn" data-idx="${i}" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:14px;padding:4px;">✕</button>
             `;
             editor.appendChild(row);
         });
