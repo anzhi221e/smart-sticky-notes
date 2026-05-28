@@ -27,6 +27,7 @@ async function refreshTagColorCache() {
 
 // --- Init ---
 document.addEventListener('DOMContentLoaded', async () => {
+    try {
     refreshTagColorCache();
     const conn = getConnection();
     if (!conn.url || !conn.anonKey) {
@@ -51,6 +52,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         navigateTo('auth');
         setupAuthUI();
+    }
+    } catch (e) {
+        document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:12px;font-family:sans-serif;"><p style="font-size:16px;color:#e05555;">加载失败</p><pre style="font-size:12px;color:#888;max-width:90%;overflow:auto;">${e.message}\n\n${e.stack}</pre></div>`;
+        console.error(e);
     }
 });
 
