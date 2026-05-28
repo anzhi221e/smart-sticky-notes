@@ -255,11 +255,12 @@ async function onMicPress(e) {
 }
 
 // --- Send ---
-let _isSending = false;
+let _lastSend = 0;
 
 async function sendTextNote() {
-    if (_isSending) return;
-    _isSending = true;
+    const now = Date.now();
+    if (now - _lastSend < 800) return;
+    _lastSend = now;
 
     const textInput = document.getElementById('text-input');
     const sendBtn = document.getElementById('send-btn');
@@ -302,9 +303,9 @@ async function sendTextNote() {
             id: b.dataset.noteId, type, text, tags, created_at: new Date().toISOString(),
         }));
         await cacheNotes(noteData);
-        _isSending = false; sendBtn.disabled = false;
+        sendBtn.disabled = false;
     } catch (err) {
-        _isSending = false; sendBtn.disabled = false;
+        sendBtn.disabled = false;
         if (!isOnline()) {
             await addToQueue({ type, text: text || '', tags, audio_path: null, audio_duration: null });
             showToast('已保存到本地，联网后自动发送');

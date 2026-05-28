@@ -58,10 +58,13 @@ async function renderTagItems(container, sorted, pinned, mode) {
             const color = getTagColor(tag, tagColors);
             if (mode === 'card') {
                 if (color.startsWith('linear-gradient')) {
-                    card.style.borderLeft = '3px solid transparent';
-                    card.style.borderImage = color + ' 1';
+                    card.style.background = color.replace('135deg', '100deg');
+                    card.style.color = '#fff';
+                    card.style.border = 'none';
                 } else {
-                    card.style.borderLeft = '3px solid ' + color;
+                    card.style.background = color;
+                    card.style.color = '#fff';
+                    card.style.border = 'none';
                 }
             } else {
                 if (color.startsWith('linear-gradient')) {
