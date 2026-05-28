@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>主题对比</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;}
+h2{font-size:14px;letter-spacing:1px;text-transform:uppercase;padding:16px;}
+
+/* === A: 纯白底 + 彩色气泡（类似 iMessage） === */
+.a{background:#f0f0f0;padding-bottom:20px;}
+.a .bar{background:#fafafa;padding:12px 16px;border-bottom:1px solid #e0e0e0;font-weight:600;font-size:16px;display:flex;align-items:center;gap:8px;}
+.a .list{display:flex;flex-direction:column;gap:6px;padding:12px 16px;}
+.a .bubble{padding:12px 16px;border-radius:18px;max-width:80%;font-size:14px;line-height:1.5;}
+.a .bubble.self{align-self:flex-end;background:#007aff;color:#fff;border-bottom-right-radius:4px;}
+.a .bubble.self .meta{color:rgba(255,255,255,0.7);}
+.a .bubble .meta{font-size:11px;margin-top:4px;}
+.a .input{display:flex;gap:8px;padding:10px 16px 16px;background:#fafafa;border-top:1px solid #e0e0e0;}
+.a .input input{flex:1;padding:10px 16px;border:1px solid #e0e0e0;border-radius:20px;outline:none;font-size:14px;}
+.a .input button{width:40px;height:40px;border-radius:50%;border:none;background:#007aff;color:#fff;font-size:20px;cursor:pointer;}
+
+/* === B: 米白底 + 薄荷绿气泡 === */
+.b{background:#f5f7f0;padding-bottom:20px;}
+.b .bar{background:#fff;padding:12px 16px;border-bottom:1px solid #e8ecd8;font-weight:600;font-size:16px;display:flex;align-items:center;gap:8px;}
+.b .list{display:flex;flex-direction:column;gap:8px;padding:12px 16px;}
+.b .bubble{padding:12px 16px;border-radius:14px;max-width:80%;font-size:14px;line-height:1.5;}
+.b .bubble.self{align-self:flex-end;background:#d4edc9;color:#1a3a10;border:1px solid #b8d8a0;}
+.b .bubble .meta{font-size:11px;color:#8a9a7a;margin-top:4px;}
+.b .input{display:flex;gap:8px;padding:10px 16px 16px;background:#fff;border-top:1px solid #e8ecd8;}
+.b .input input{flex:1;padding:10px 16px;border:1px solid #d8dcd0;border-radius:20px;outline:none;font-size:14px;background:#f5f7f0;}
+.b .input button{width:40px;height:40px;border-radius:50%;border:none;background:#7ab85e;color:#fff;font-size:20px;cursor:pointer;}
+
+/* === C: 纯白底 + 渐变粉彩气泡 === */
+.c{background:#fff;padding-bottom:20px;}
+.c .bar{background:#fff;padding:12px 16px;border-bottom:1px solid #f0f0f0;font-weight:600;font-size:16px;display:flex;align-items:center;gap:8px;}
+.c .list{display:flex;flex-direction:column;gap:8px;padding:12px 16px;}
+.c .bubble{padding:12px 16px;border-radius:14px;max-width:80%;font-size:14px;line-height:1.5;}
+.c .bubble.type-a{align-self:flex-end;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;}
+.c .bubble.type-b{align-self:flex-end;background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;}
+.c .bubble.type-c{align-self:flex-end;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;}
+.c .bubble.type-d{align-self:flex-end;background:linear-gradient(135deg,#43e97b,#38f9d7);color:#1a3a10;}
+.c .bubble .meta{font-size:11px;color:rgba(255,255,255,0.8);margin-top:4px;}
+.c .input{display:flex;gap:8px;padding:10px 16px 16px;background:#fff;border-top:1px solid #f0f0f0;}
+.c .input input{flex:1;padding:10px 16px;border:1px solid #e8e8e8;border-radius:20px;outline:none;font-size:14px;background:#f8f8f8;}
+.c .input button{width:40px;height:40px;border-radius:50%;border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:20px;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<h2>A — 纯白底 + 蓝色气泡（iMessage 风格）</h2>
+<div class="a">
+  <div class="bar">≡ 我的笔记 📅</div>
+  <div class="list">
+    <div class="bubble self">今天想了一个产品设计的灵感 <span class="meta">#产品 14:25</span></div>
+    <div class="bubble self">明天要记得和团队讨论这个方案 <span class="meta">#待办 10:08</span></div>
+    <div class="bubble self">🎙 收听录音 (0:32) <span class="meta">#产品 08:15</span></div>
+  </div>
+  <div class="input"><input placeholder="输入文字..."><button>🎤</button></div>
+</div>
+
+<h2>B — 米白底 + 薄荷绿气泡</h2>
+<div class="b">
+  <div class="bar">≡ 我的笔记 📅</div>
+  <div class="list">
+    <div class="bubble self">今天想了一个产品设计的灵感 <span class="meta">#产品 14:25</span></div>
+    <div class="bubble self">明天要记得和团队讨论这个方案 <span class="meta">#待办 10:08</span></div>
+    <div class="bubble self">🎙 收听录音 (0:32) <span class="meta">#产品 08:15</span></div>
+  </div>
+  <div class="input"><input placeholder="输入文字..."><button>🎤</button></div>
+</div>
+
+<h2>C — 纯白底 + 渐变粉彩气泡（多色系）</h2>
+<div class="c">
+  <div class="bar">≡ 我的笔记 📅</div>
+  <div class="list">
+    <div class="bubble type-a">今天想了一个产品设计的灵感 <span class="meta">#产品 14:25</span></div>
+    <div class="bubble type-b">明天要记得和团队讨论这个方案 <span class="meta">#待办 10:08</span></div>
+    <div class="bubble type-d">🎙 收听录音 (0:32) <span class="meta">#产品 08:15</span></div>
+  </div>
+  <div class="input"><input placeholder="输入文字..."><button>🎤</button></div>
+</div>
+
+</body>
+</html>

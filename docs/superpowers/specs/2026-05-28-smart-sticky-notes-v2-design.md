@@ -451,8 +451,42 @@ Light themes have: white bubbles, subtle colored borders, dark text.
 | 4 | 暗夜蓝 | `#0f1119` | `#1a1d2e` / `#252840` | `#6c8cff` | `#e8e8e8` / `#888` |
 | 5 | 纯黑 | `#000` | `#111` / `#1a1a1a` | `#4ade80` | `#e8e8e8` / `#888` |
 | 6 | 灰粉暮色 | `#1a1518` | `#261f23` / `#32282d` | `#e05588` | `#e8d8dc` / `#988` |
+| 7 | 晴空粉彩 🎨 | `#f5f8ff` | `#fff` / `#e0e8ff` | multi | `#333` / `#888` |
+| 8 | 粉彩晨曦 🎨 | `#fff5f7` | `#fff` / `#ffe0e5` | multi | `#333` / `#888` |
+| 9 | 薄荷粉彩 🎨 | `#f5fff8` | `#fff` / `#e0ffe8` | multi | `#333` / `#888` |
+| 10 | 暗夜粉彩 🎨 | `#0f1119` | `#1a1d2e` / `#252840` | multi | `#e8e8e8` / `#888` |
+| 11 | 纯黑粉彩 🎨 | `#000` | `#111` / `#1a1a1a` | multi | `#e8e8e8` / `#888` |
+| 12 | 暮色粉彩 🎨 | `#1a1518` | `#261f23` / `#32282d` | multi | `#e8d8dc` / `#988` |
 
-Dark themes use the existing v1 dark style as base.
+Themes 1-6: uniform bubble color (= accent). Themes 7-12: tag-based multi-color bubbles. `multi` accent = per-tag palette selection.
+
+### Multi-Color Bubble Mode (粉彩多色)
+
+Independent theme variants — **6 extra themes with 🎨 marker** (3 day + 3 night), total 12 themes.
+
+| # | Name | Type | Bubble behavior |
+|---|------|------|-----------------|
+| 1-6 | Original 6 | Default | All bubbles same color (theme accent) |
+| 7-12 | 粉彩变体 🎨 | Multi-color | Each tag auto-assigned a color from palette |
+
+**Color assignment algorithm**:
+```
+renderBubble(note):
+  for each tag in note.tags:
+    if tag_colors[tag] exists → use user-defined color
+    else → palette[hash(tag) % palette.length]
+```
+
+- **Palette**: 24-30 gradient presets (purple, pink, blue, teal, mint, orange, rose, indigo, etc.)
+- **Stability**: Same tag always maps to same color (deterministic hash)
+- **Collisions allowed**: Multiple tags CAN share the same color — differentiation comes from tag name text
+- **User override**: Tag settings let user pick any palette color for any tag, stored in `tag_colors` config
+
+**Tag color customizer**: In tag context menu → "更改颜色" → opens modern color picker panel with 24-30 preset swatches in a grid. Selected color stored in config key `tag_colors` as `{"产品": 3, "设计": 7, ...}` (palette index).
+
+**Base themes**: In multi-color mode, the "base" theme controls background, input area, and UI chrome. Bubbles ignore the base theme accent and use per-tag colors instead.
+
+**Tag cards in multi-color mode**: Tag cards (both card and list views) display with the tag's assigned palette color — colored left border in card mode, colored background tint in list mode. The hash-to-color logic applies identically to both bubble rendering and tag card rendering.
 
 ## 6. PC Sync Script Changes
 

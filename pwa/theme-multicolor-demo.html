@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>多色模式 — 两种方案对比</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f0f0f0;display:flex;gap:20px;padding:20px;}
+.col{flex:1;max-width:420px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);}
+.col h2{font-size:15px;padding:16px;border-bottom:1px solid #eee;text-align:center;background:#fafafa;}
+.content{padding:16px;}
+
+/* Shared setting styles */
+.setting-group{margin-bottom:20px;}
+.setting-group h3{font-size:11px;text-transform:uppercase;color:#999;margin-bottom:10px;letter-spacing:0.5px;}
+.setting-row{margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.setting-row label{font-size:14px;color:#333;}
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;}
+.theme-swatch{padding:14px 10px;border-radius:10px;text-align:center;font-size:11px;cursor:pointer;min-height:55px;display:flex;align-items:flex-end;justify-content:center;position:relative;}
+.theme-swatch.selected{box-shadow:0 0 0 2px #3b82f6,0 0 0 4px #fff;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f8f8f8;border-radius:10px;margin-top:10px;}
+.toggle-row label{font-size:13px;color:#555;}
+.toggle{width:44px;height:26px;background:#ddd;border-radius:13px;position:relative;cursor:pointer;transition:background 0.2s;}
+.toggle.on{background:#3b82f6;}
+.toggle::after{content:'';position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left 0.2s;}
+.toggle.on::after{left:20px;}
+
+/* Preview bubbles */
+.preview-section{margin-top:16px;padding:12px;border-radius:10px;background:#f8f8f8;}
+.preview-label{font-size:11px;color:#999;margin-bottom:8px;}
+.bubbles{display:flex;flex-direction:column;gap:6px;}
+.bubble{padding:10px 14px;border-radius:14px;font-size:13px;max-width:85%;align-self:flex-end;line-height:1.4;}
+.bubble .tag{font-size:10px;opacity:0.8;}
+.bubble.blue{background:#007aff;color:#fff;}
+.bubble.green{background:#34c759;color:#fff;}
+.bubble.purple{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;}
+.bubble.pink{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;}
+.bubble.teal{background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;}
+.bubble.mint{background:linear-gradient(135deg,#43e97b,#38f9d7);color:#1a3a10;}
+</style>
+</head>
+<body>
+
+<!-- ============ A: Toggle per theme ============ -->
+<div class="col">
+  <h2>方案 A：每个主题内嵌开关</h2>
+  <div class="content">
+
+    <div class="setting-group">
+      <h3>主题</h3>
+      <div class="theme-grid">
+        <div class="theme-swatch" style="background:#f8fafc;border:2px solid #e2e8f0;color:#1e293b;">晴空蓝</div>
+        <div class="theme-swatch selected" style="background:#fff5f7;border:2px solid #fce7f3;color:#831843;">粉色晨曦</div>
+        <div class="theme-swatch" style="background:#111827;border:2px solid #1f2937;color:#f3f4f6;">暗夜蓝</div>
+        <div class="theme-swatch" style="background:#f0fdf4;border:2px solid #dcfce7;color:#14532d;">青绿薄荷</div>
+        <div class="theme-swatch" style="background:#000;border:2px solid #27272a;color:#e5e5e5;">纯黑</div>
+        <div class="theme-swatch" style="background:#1c1417;border:2px solid #2d1f24;color:#e8d8dc;">灰粉暮色</div>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#333;">粉彩多色气泡</div>
+          <div style="font-size:11px;color:#999;">不同标签自动分配不同颜色</div>
+        </div>
+        <div class="toggle on" id="toggle-a"></div>
+      </div>
+
+      <div class="preview-section">
+        <div class="preview-label">预览 — 粉色晨曦 + 多色开启</div>
+        <div class="bubbles">
+          <div class="bubble purple">今天想了一个产品灵感 <span class="tag">#产品</span></div>
+          <div class="bubble pink">设计方案确认了 <span class="tag">#设计</span></div>
+          <div class="bubble teal">明天记得开会 <span class="tag">#待办</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ B: Separate themes ============ -->
+<div class="col">
+  <h2>方案 B：独立的粉彩主题</h2>
+  <div class="content">
+
+    <div class="setting-group">
+      <h3>日间主题</h3>
+      <div class="theme-grid">
+        <div class="theme-swatch" style="background:#f8fafc;border:2px solid #e2e8f0;color:#1e293b;">晴空蓝</div>
+        <div class="theme-swatch selected" style="background:#fff5f7;border:2px solid #fce7f3;color:#831843;">粉色晨曦</div>
+        <div class="theme-swatch" style="background:#f0fdf4;border:2px solid #dcfce7;color:#14532d;">青绿薄荷</div>
+      </div>
+      <div style="margin:12px 0;font-size:11px;color:#999;text-align:center;">—— 粉彩变体 ——</div>
+      <div class="theme-grid">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#f8fafc,#e8edf5);border:2px solid #c8d8f0;color:#1e293b;">晴空粉彩 🎨</div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#fff5f7,#fce7f3);border:2px solid #f0c8d8;color:#831843;">粉彩晨曦 🎨</div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #c0e8c8;color:#14532d;">薄荷粉彩 🎨</div>
+      </div>
+
+      <h3 style="margin-top:16px;">夜间主题</h3>
+      <div class="theme-grid">
+        <div class="theme-swatch" style="background:#111827;border:2px solid #1f2937;color:#f3f4f6;">暗夜蓝</div>
+        <div class="theme-swatch" style="background:#000;border:2px solid #27272a;color:#e5e5e5;">纯黑</div>
+        <div class="theme-swatch" style="background:#1c1417;border:2px solid #2d1f24;color:#e8d8dc;">灰粉暮色</div>
+      </div>
+      <div style="margin:12px 0;font-size:11px;color:#999;text-align:center;">—— 粉彩变体 ——</div>
+      <div class="theme-grid">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#111827,#1a1f36);border:2px solid #2a3050;color:#f3f4f6;">暗夜粉彩 🎨</div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#000,#0a0a14);border:2px solid #1a1a2a;color:#e5e5e5;">纯黑粉彩 🎨</div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#1c1417,#2a1d24);border:2px solid #3a2833;color:#e8d8dc;">暮色粉彩 🎨</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
