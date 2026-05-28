@@ -48,15 +48,17 @@ export async function fetchNoteDates() {
 
 export async function insertNote(note) {
     const sb = getSupabase();
+    const row = {
+        type: note.type,
+        text: note.text,
+        tags: note.tags || [],
+        audio_path: note.audio_path || null,
+        audio_duration: note.audio_duration || null,
+    };
+    if (note.id) row.id = note.id; // client-generated UUID for idempotent insert
     const { data, error } = await sb
         .from('smartstickynotes_items')
-        .insert({
-            type: note.type,
-            text: note.text,
-            tags: note.tags || [],
-            audio_path: note.audio_path || null,
-            audio_duration: note.audio_duration || null,
-        })
+        .insert(row)
         .select()
         .single();
     if (error) throw error;

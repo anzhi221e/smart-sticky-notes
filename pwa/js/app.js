@@ -283,26 +283,40 @@ async function sendTextNote() {
     }
 
     const tags = parseTags(text || '');
-    const type = window._pendingVoiceBlob ? 'voice' : 'text';
+    const clientId = crypto.randomUUID();
 
     const voiceBlob = window._pendingVoiceBlob;
     const voiceDur = window._pendingVoiceDuration;
     window._pendingVoiceBlob = null;
     window._pendingVoiceDuration = null;
 
+    // Phase 1: Database insert (only this can trigger offline queue)
+    let note;
     try {
-        let note;
         if (voiceBlob) {
-            note = await insertNote({ type: 'voice', text: text || '', tags, audio_path: '', audio_duration: voiceDur || 0 });
+            note = await insertNote({ id: clientId, type: 'voice', text: text || '', tags, audio_path: '', audio_duration: voiceDur || 0 });
             try {
                 const audioPath = await uploadAudio(note.id, voiceBlob);
                 await getSupabase().from('smartstickynotes_items').update({ audio_path: audioPath }).eq('id', note.id);
                 note.audio_path = audioPath;
-            } catch (e) { /* audio upload failed */ }
+            } catch (e) { /* audio upload failed, note still saved */ }
         } else {
-            note = await insertNote({ type: 'text', text, tags, audio_path: null, audio_duration: null });
+            note = await insertNote({ id: clientId, type: 'text', text, tags, audio_path: null, audio_duration: null });
         }
+    } catch (err) {
+        _isSending = false; sendBtn.disabled = false;
+        if (!isOnline()) {
+            await addToQueue({ id: clientId, type: voiceBlob ? 'voice' : 'text', text: text || '', tags, audio_path: null, audio_duration: null });
+            showToast('已保存到本地，联网后自动发送');
+            textInput.value = ''; toggleSendButton(false);
+        } else {
+            showToast('发送失败: ' + err.message);
+        }
+        return;
+    }
 
+    // Phase 2: UI update (from here on, note is in DB — never addToQueue)
+    try {
         textInput.value = '';
         toggleSendButton(false);
 
@@ -310,23 +324,19 @@ async function sendTextNote() {
         const bubble = renderNoteBubble(note, null, (bubble, noteId, noteText, noteTags) => {
             startEditing(bubble, noteId, noteText, () => loadNotes());
         });
-        list.appendChild(bubble);  // append at bottom (oldest first)
+        list.appendChild(bubble);
         list.scrollTop = list.scrollHeight;
 
         const noteData = Array.from(list.querySelectorAll('.note-bubble')).map(b => ({
-            id: b.dataset.noteId, type, text, tags, created_at: new Date().toISOString(),
+            id: b.dataset.noteId, type: note.type, text: note.text, tags: note.tags, created_at: note.created_at || new Date().toISOString(),
         }));
         await cacheNotes(noteData);
-        _isSending = false; sendBtn.disabled = false;
     } catch (err) {
+        // Note is already saved in DB. UI render/cache failed — just reload.
+        console.warn('Note saved but UI update failed:', err);
+        await loadNotes();
+    } finally {
         _isSending = false; sendBtn.disabled = false;
-        if (!isOnline()) {
-            await addToQueue({ type, text: text || '', tags, audio_path: null, audio_duration: null });
-            showToast('已保存到本地，联网后自动发送');
-            textInput.value = ''; toggleSendButton(false);
-        } else {
-            showToast('发送失败: ' + err.message);
-        }
     }
 }
 

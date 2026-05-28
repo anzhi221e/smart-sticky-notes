@@ -93,6 +93,12 @@ export async function flushQueue(sendFn) {
             await removeFromQueue(item.id);
             sent++;
         } catch (e) {
+            // Duplicate key = already sent, treat as success
+            if (e.code === '23505' || (e.message && e.message.includes('duplicate key'))) {
+                await removeFromQueue(item.id);
+                sent++;
+                continue;
+            }
             console.error('Failed to send queued item:', e);
             break;
         }
