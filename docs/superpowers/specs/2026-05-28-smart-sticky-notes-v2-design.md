@@ -93,7 +93,10 @@ PWA delete → status=deleted, deleted_at=now in Supabase
     - PC catches up on next sync cycle
 ```
 
-Purge is triggered by PWA, not PC — ensuring cleanup happens even if PC is offline. PC simply removes the note from trash/deleted.md on next sync.
+**Purge execution**:
+- **Primary**: PWA on open checks for `deleted_at < NOW()-30d` → deletes audio from Storage → deletes row from `smartstickynotes_items`
+- **Fallback**: PC sync script, before export, also checks for expired deleted notes and performs the same cleanup. This ensures purge happens even if user never opens PWA again.
+- Audio GC on PC: after snapshot export, scan `audio/` — delete files not referenced by any active or deleted (<30d) note.
 
 ## 3. Data Model Changes
 
@@ -112,7 +115,8 @@ Purge is triggered by PWA, not PC — ensuring cleanup happens even if PC is off
 | created_at | timestamptz | (unchanged) |
 | updated_at | timestamptz | (unchanged) |
 | deleted_at | timestamptz | Set on soft-delete, used for 30-day timer |
-| synced_at | timestamptz | (unchanged) |
+
+**Removed from v1**: `synced_at` — no longer meaningful under full snapshot export. Replaced by `last_sync_at` in config.
 
 ### `smartstickynotes_config` — new keys
 
@@ -121,6 +125,7 @@ Purge is triggered by PWA, not PC — ensuring cleanup happens even if PC is off
 | `theme` | `"pink-light"` `"green-light"` `"blue-light"` `"dark-blue"` `"pure-black"` `"pink-dark"` | User's selected theme |
 | `sync_interval` | minutes (default 30) | Configurable poll interval |
 | `pinned_tags` | JSON array of tag names | Pinned tags for quick bar |
+| `last_sync_at` | ISO timestamp | When PC last completed a successful sync |
 
 ### Local Folder Structure (v2)
 
@@ -144,6 +149,48 @@ Purge is triggered by PWA, not PC — ensuring cleanup happens even if PC is off
 
 Old snapshots auto-rotated, keeping last 5.
 
+After a successful snapshot, PC copies the new snapshot to `current/` directory as a stable landing point for AI:
+```
+current/
+├── manifest.json
+├── 产品.md
+├── 设计.md
+└── 未分类.md
+```
+AI should prefer reading from `current/`. The `snapshots/` directory holds the rotation history.
+
+### Manifest Specification
+
+```json
+{
+  "schema_version": 1,
+  "generated_at": "2026-05-28T14:30:00+08:00",
+  "source": "supabase",
+  "notes_count": 123,
+  "active_notes_count": 120,
+  "deleted_notes_count": 3,
+  "files": [
+    {
+      "tag": "产品",
+      "filename": "产品.md",
+      "note_ids": ["abc123", "def456"],
+      "sha256": "abc123def..."
+    }
+  ],
+  "tag_filename_map": {
+    "产品": "产品.md",
+    "产品/设计": "产品_设计.md"
+  }
+}
+```
+
+### Tag Frequency Tracking
+
+- **Recently used**: last 5 tags ordered by most recent `created_at` of notes bearing that tag. Updated on each note send/edit.
+- **Most frequently used**: top 5 tags by total note count across all time.
+- Both computed from Supabase query on PWA open, cached in localStorage for session stability.
+- Tag bar does NOT reorder mid-session; refreshes on next PWA open.
+
 ### Tag Filename Safety
 
 Tags are sanitized for Windows filename compatibility:
@@ -152,9 +199,12 @@ Tags are sanitized for Windows filename compatibility:
 - Max 100 characters, truncated if longer
 - Unicode (emoji, CJK) preserved as-is
 - Empty tag → `untagged`
-- Tag `产品/设计` → file `产品_设计.md`
 
-The mapping `original_tag → safe_filename` is stored in `manifest.json`.
+**Collision detection**: If two distinct tags produce the same slug (e.g. `产品/设计` and `产品:设计` both → `产品_设计.md`), append short hash:
+- First: `产品_设计.md`
+- Second: `产品_设计__a1b2c3.md`
+
+The mapping `original_tag → safe_filename` is stored in `manifest.json`. Collision resolution is deterministic based on tag sort order.
 
 ### Tag MD File Format
 
@@ -170,7 +220,7 @@ Each note is wrapped in an HTML comment boundary for AI dedup:
 2. 第二步
 
 tags: #产品 #设计
-> [收听录音](../audio/abc123.opus) (0:32)
+> [收听录音](../../audio/abc123.opus) (0:32)
 
 ---
 
@@ -317,6 +367,8 @@ Two display modes, toggled via top-right button.
 - Tap → enter that tag's note list
 - Long press → menu: Pin toggle / Delete tag's notes
 
+**Batch delete confirmation**: "Delete tag's notes" triggers a dialog: "确定删除 #产品 下的 12 条笔记？它们将移至回收站，30 天后自动清除。" → [取消] [确定删除]
+
 **Pinned tags**: Appear first with a pushpin SVG icon. Pinned tags also appear first in the tag quick bar.
 
 ### Search
@@ -327,7 +379,8 @@ Top bar search input. As user types, filter notes in real-time by text content (
 
 - Initial load: 50 most recent notes
 - Scroll to top → load next 50
-- Uses Supabase `range(offset, offset+50)` with cursor-based pagination on created_at
+- Cursor: `(created_at, id)` composite key — ensures stable ordering even for notes created in the same second
+- Tag-filtered view uses same cursor. If a note's tags are edited between pages, the note may shift position (acceptable for real-time data)
 
 ### Recycle Bin
 
@@ -352,14 +405,30 @@ CREATE TABLE sync_requests (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid NOT NULL DEFAULT auth.uid(),
     requested_at timestamptz NOT NULL DEFAULT now(),
-    status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed'))
+    status text NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'timeout')),
+    processing_started_at timestamptz,
+    completed_at timestamptz,
+    error_message text,
+    client_id text
 );
 ```
 
-- PWA inserts `pending` row on manual sync request
-- PC script checks: if `pending` rows exist → poll at 30s instead of 30min
-- PC sets `processing` → runs sync → sets `completed`
-- PWA shows sync status based on most recent request state
+**Lifecycle**:
+1. PWA inserts `pending` row on manual sync request
+2. PC picks up `pending` (or `processing` where `processing_started_at > 10 min ago` = stuck) → sets `processing` + `processing_started_at`
+3. Success → `completed` + `completed_at`
+4. Failure → `failed` + `error_message`
+5. If `processing` and `processing_started_at > 10 min ago` → no PC response → PWA treats as `timeout`
+
+**PWA status display**:
+| State | PWA shows |
+|-------|-----------|
+| `pending` (fresh, < 30s) | "已请求同步 · 等待 PC 响应" |
+| `pending` (> 30s) | "等待 PC 响应..." |
+| `processing` | "同步中..." |
+| `completed` | "上次同步 · N 分钟前" |
+| `failed` / `timeout` | "PC 未响应 · 点击重试" |
 
 ## 5. Themes
 
@@ -390,18 +459,20 @@ Dark themes use the existing v1 dark style as base.
 ### Sync Loop (Revised)
 
 ```
-1. Check sync_requests table for pending requests → if found, poll at 30s
+1. Check sync_requests table for pending/timeout requests → if found, poll at 30s
 2. Query all active notes (status=active) from Supabase
-3. Build tag slug map from tags (sanitize for filename safety)
-4. Create new snapshot directory: snapshots/{ISO timestamp}/
-5. For each unique tag → generate {tag_slug}.md with all belonging notes
+3. Query all deleted notes (status=deleted, deleted_at > NOW()-30d) from Supabase
+4. Build tag slug map (sanitize, detect collisions, append short hash if needed)
+5. Create new snapshot directory: snapshots/{ISO timestamp}/
+6. For each unique tag → generate {tag_slug}.md with all belonging notes
    - Each note wrapped in <!-- note:id=uuid ... --> boundary
    - Multi-tag notes appear in all relevant files
    - Notes with no tags → 未分类.md
-6. Query deleted notes → generate trash/deleted.md
-7. Write manifest.json LAST (marks snapshot complete)
-8. Clean up old snapshots (keep 5, delete oldest)
-9. Mark sync_request row as completed (if manual trigger)
+7. Generate trash/deleted.md from deleted notes
+8. Write manifest.json LAST (marks snapshot complete)
+9. Clean up old snapshots (keep 5, delete oldest)
+10. Audio GC: list all active+deleted note audio_paths; delete orphaned files in audio/
+11. Mark sync_request row as completed/failed (if manual trigger)
 ```
 
 ### Removed Features from v1
@@ -409,12 +480,15 @@ Dark themes use the existing v1 dark style as base.
 - Individual note `.md` files — replaced by tag aggregation
 - Conflict detection (hash comparison) — not applicable to read-only export
 - Local file missing detection — not applicable
-- `deletion_events` table — still used, PC cleans up local trash on purge
+- `deletion_events` table — no longer needed; PC does full snapshot rebuild each cycle
+- `synced_at` column — no longer meaningful; replaced by `last_sync_at` in config
 - `filename_template` config — replaced by fixed `{tag_slug}.md`
 
 ### Auth
 
-Service role key (stored in `sync/.env`, gitignored) for PC script. This is a local trusted process, not a shared client. v1's working approach is maintained.
+PC sync script uses **service_role key** (stored in `sync/.env`, gitignored). This is appropriate for **personal self-hosted use** where each user runs their own Supabase project and sync script on their own machine. The service_role key never leaves the user's PC.
+
+For a future multi-tenant SaaS version, PC auth would need to switch to user JWT + refresh_token with OAuth PKCE flow. That is out of scope for v2.
 
 ## 7. Voice & Audio (Unchanged from v1)
 
