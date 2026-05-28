@@ -281,7 +281,7 @@ Left group — rich text (inserts Markdown syntax):
 | •• | Bullet list | `- item` |
 | 1. | Numbered list | `1. item` |
 
-Right group — Obsidian syntax:
+Right group — Obsidian syntax + user-customizable (sortable):
 | Button | Insert |
 |--------|--------|
 | # | `# ` |
@@ -289,6 +289,17 @@ Right group — Obsidian syntax:
 | ### | `### ` |
 | :: | `::` |
 | > | `> ` |
+| ! | `> [!note]\n> ` |
+
+Default set shown above. Users can add, remove, and reorder buttons in Settings. Custom buttons define: label (single character recommended), before-text, after-text.
+
+**Customizable Toolbar Editor** (Settings):
+- All syntax buttons shown as a sortable list with `≡` drag handles
+- Each row: handle | label | inserted text | delete button
+- "添加按钮" to add custom: label + before + after fields
+- "恢复默认" to reset to factory defaults
+- Rich text buttons (B I U etc.) are fixed and not customizable
+- Stored in config key `toolbar_buttons` as JSON array: `[{"label":"#","before":"# ","after":""},...]`
 
 ### Toolbar — Row 2: Tag Quick Bar
 

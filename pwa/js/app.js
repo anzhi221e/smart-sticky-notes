@@ -86,6 +86,7 @@ function setupMainUI() {
             const screen = item.dataset.screen;
             if (screen === 'recycle-bin') showRecycleBin();
             else if (screen === 'tags') showTagsView();
+            else if (screen === 'calendar-view') { navigateTo('calendar'); renderCalendarMonth(new Date()); }
             else if (screen === 'settings') showSettings();
             else navigateTo('main');
         });

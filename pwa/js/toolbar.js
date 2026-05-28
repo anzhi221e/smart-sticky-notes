@@ -10,6 +10,7 @@ const MARKDOWN_ACTIONS = {
     h3:            { before: '### ', after: '', placeholder: '' },
     smartconn:     { before: '::', after: '', placeholder: '' },
     quote:         { before: '> ', after: '', placeholder: '' },
+    callout:       { before: '> [!note]\n> ', after: '', placeholder: '' },
 };
 
 let _targetInput = null;
