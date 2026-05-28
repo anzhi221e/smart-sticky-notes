@@ -7,7 +7,7 @@ import sys
 import os
 import threading
 
-from sync_loop import SyncLoop, run_sync_loop
+from sync_loop import SyncLoopV2, run_sync_loop
 from tray_app import TrayApp, HAS_TRAY
 from auth import ensure_session
 from config import read_config
@@ -37,19 +37,19 @@ def main():
         print("Or run: python -c \"from supabase_client import get_client; ...\" to insert config.")
         sys.exit(1)
 
-    loop = SyncLoop(on_alert=on_alert)
+    loop = SyncLoopV2(on_alert=on_alert)
 
     if HAS_TRAY:
         sync_thread = threading.Thread(
             target=run_sync_loop,
-            kwargs={"interval_seconds": 300, "on_alert": on_alert},
+            kwargs={"interval_seconds": 1800, "on_alert": on_alert},
             daemon=True,
         )
         sync_thread.start()
         tray = TrayApp(loop, folder)
         tray.run()
     else:
-        run_sync_loop(interval_seconds=300, on_alert=on_alert)
+        run_sync_loop(interval_seconds=1800, on_alert=on_alert)
 
 
 if __name__ == "__main__":

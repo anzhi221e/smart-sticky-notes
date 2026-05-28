@@ -1,126 +1,157 @@
-"""Generate Markdown files with YAML frontmatter for synced notes."""
-import yaml
+"""Generate tag-aggregated Markdown files with note boundaries for snapshot export."""
+import hashlib
+import json
 from pathlib import Path
 from datetime import datetime
+from tag_slug import build_tag_map
 
 
-def _parse_template(template: str, note: dict) -> str:
-    """Replace template variables with actual values."""
-    created = datetime.fromisoformat(note["created_at"].replace("Z", "+00:00"))
-    short_id = note["id"][:8]
-    result = template
-    result = result.replace("{id}", short_id)
-    result = result.replace("{date}", created.strftime("%Y-%m-%d"))
-    result = result.replace("{time}", created.strftime("%H%M%S"))
-    result = result.replace("{type}", note.get("type", "text"))
-    if note.get("tags") and len(note["tags"]) > 0:
-        result = result.replace("{tag}", note["tags"][0])
-    else:
-        result = result.replace("{tag}", "note")
-    # Ensure {id} is present
-    if "{id}" not in template and short_id not in result:
-        result = f"{result}_{short_id}"
-    return result
+def _format_time(iso_str: str) -> str:
+    try:
+        dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+        return dt.strftime("%Y-%m-%d %H:%M")
+    except (ValueError, AttributeError):
+        return iso_str
 
 
-def make_frontmatter(note: dict, remote_content_hash: str) -> str:
-    """Generate YAML frontmatter block."""
-    created = note.get("created_at", "")
-    if created:
-        try:
-            dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
-            display_time = dt.strftime("%Y-%m-%d %H:%M")
-        except (ValueError, AttributeError):
-            display_time = created
-    else:
-        display_time = ""
+def _note_boundary(note: dict) -> str:
+    tags_str = ",".join(note.get("tags", []))
+    return (
+        f"<!-- note:id={note['id']} "
+        f"created_at={note['created_at']} "
+        f"updated_at={note.get('updated_at', note['created_at'])} "
+        f"tags={tags_str} -->"
+    )
 
-    frontmatter = {
-        "id": note["id"],
-        "type": note.get("type", "text"),
-        "created_at": created,
-        "updated_at": note.get("updated_at", created),
-        "status": note.get("status", "active"),
-        "tags": note.get("tags", []),
-        "remote_hash": remote_content_hash,
-    }
+
+def _render_note(note: dict) -> str:
+    lines = [
+        _note_boundary(note),
+        "",
+        note.get("text", ""),
+        "",
+    ]
+    if note.get("tags"):
+        tags_str = " ".join(f"#{t}" for t in note["tags"])
+        lines.append(f"tags: {tags_str}")
     if note.get("audio_path"):
         note_id_short = note["id"][:8]
-        frontmatter["audio"] = f"../audio/{note_id_short}.opus"
-    if note.get("audio_duration"):
-        frontmatter["audio_duration"] = note["audio_duration"]
-
-    yaml_block = yaml.dump(frontmatter, allow_unicode=True, default_flow_style=False, sort_keys=False)
-    return f"---\n{yaml_block}---\n\n# {display_time}\n\n{note.get('text', '')}\n"
-
-
-def make_audio_footer(note: dict) -> str:
-    """Generate audio link footer for voice notes."""
-    note_id_short = note["id"][:8]
-    duration = note.get("audio_duration", 0)
-    mins, secs = divmod(duration, 60) if duration else (0, 0)
-    duration_str = f"({mins}:{secs:02d})" if duration else ""
-    return f"\n> [收听录音](../audio/{note_id_short}.opus) {duration_str}\n"
+        dur = note.get("audio_duration", 0) or 0
+        mins, secs = divmod(int(dur), 60) if dur else (0, 0)
+        lines.append(
+            f"> [收听录音](../../audio/{note_id_short}.opus) ({mins}:{secs:02d})"
+        )
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    return "\n".join(lines)
 
 
-def write_note(note: dict, folder: str, template: str, remote_content_hash: str) -> str:
-    """Write a note as a Markdown file. Returns the relative path of the created file."""
-    active_dir = Path(folder) / "active"
-    active_dir.mkdir(parents=True, exist_ok=True)
+def build_tag_files(notes: list[dict]) -> tuple[dict[str, str], dict[str, str]]:
+    all_tags = set()
+    for note in notes:
+        for tag in note.get("tags", []):
+            if tag.strip():
+                all_tags.add(tag.strip())
 
-    filename = _parse_template(template, note) + ".md"
-    filepath = active_dir / filename
+    tag_map = build_tag_map(list(all_tags))
+    tag_notes: dict[str, list[str]] = {filename: [] for filename in tag_map.values()}
+    untagged_notes = []
 
-    content = make_frontmatter(note, remote_content_hash)
-    if note.get("type") == "voice" and note.get("audio_path"):
-        content += make_audio_footer(note)
+    for note in notes:
+        rendered = _render_note(note)
+        note_tags = [t.strip() for t in note.get("tags", []) if t.strip()]
+        if not note_tags:
+            untagged_notes.append(rendered)
+        else:
+            seen_files = set()
+            for tag in note_tags:
+                filename = tag_map.get(tag)
+                if filename and filename not in seen_files:
+                    tag_notes[filename].append(rendered)
+                    seen_files.add(filename)
 
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write(content)
+    result = {}
+    for filename, note_texts in tag_notes.items():
+        if note_texts:
+            tag_display = filename.replace(".md", "")
+            content = f"# {tag_display}\n\n" + "\n".join(note_texts)
+            result[filename] = content
 
-    return f"active/{filename}"
+    if untagged_notes:
+        result["未分类.md"] = "# 未分类\n\n" + "\n".join(untagged_notes)
+
+    return result, tag_map
 
 
-def move_to_trash(note_id: str, folder: str, local_path: str) -> str | None:
-    """Move a file from active/ to trash/. Returns new path or None."""
-    src = Path(folder) / local_path
-    if not src.exists():
-        return None
+def write_snapshot(active_notes: list[dict], deleted_notes: list[dict], folder: str) -> dict:
+    timestamp = datetime.now().strftime("%Y-%m-%dT%H%M%S")
+    snap_dir = Path(folder) / "snapshots" / timestamp
+    snap_dir.mkdir(parents=True, exist_ok=True)
+
+    tag_files, tag_map = build_tag_files(active_notes)
+    manifest_files = []
+
+    for filename, content in tag_files.items():
+        filepath = snap_dir / filename
+        filepath.write_text(content, encoding="utf-8")
+        sha = hashlib.sha256(content.encode()).hexdigest()[:16]
+        tag = next((t for t, f in tag_map.items() if f == filename), filename)
+        note_ids = []
+        for note in active_notes:
+            note_tags = [t.strip() for t in note.get("tags", [])]
+            file_matches = [tag_map.get(t) for t in note_tags if t in tag_map]
+            if filename in file_matches:
+                note_ids.append(note["id"])
+        manifest_files.append({
+            "tag": tag,
+            "filename": filename,
+            "note_ids": note_ids,
+            "sha256": sha,
+        })
+
+    # Deleted notes export
     trash_dir = Path(folder) / "trash"
     trash_dir.mkdir(parents=True, exist_ok=True)
-    dst = trash_dir / f"_deleted_{src.name}"
-    src.rename(dst)
-    return f"trash/{dst.name}"
+    if deleted_notes:
+        trash_content = "# 已删除的笔记\n\n"
+        for note in deleted_notes:
+            trash_content += _render_note(note)
+        (trash_dir / "deleted.md").write_text(trash_content, encoding="utf-8")
+    else:
+        (trash_dir / "deleted.md").write_text("# 已删除的笔记\n\n回收站为空\n", encoding="utf-8")
+
+    # Manifest LAST
+    manifest = {
+        "schema_version": 1,
+        "generated_at": datetime.now().isoformat(),
+        "source": "supabase",
+        "notes_count": len(active_notes) + len(deleted_notes),
+        "active_notes_count": len(active_notes),
+        "deleted_notes_count": len(deleted_notes),
+        "files": manifest_files,
+        "tag_filename_map": {k: v for k, v in tag_map.items()},
+    }
+    (snap_dir / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    # Copy to current/
+    current_dir = Path(folder) / "current"
+    current_dir.mkdir(parents=True, exist_ok=True)
+    for f in snap_dir.iterdir():
+        dest = current_dir / f.name
+        dest.write_bytes(f.read_bytes())
+
+    return manifest
 
 
-def move_to_active(note_id: str, folder: str, trash_path: str) -> str | None:
-    """Move a file from trash/ back to active/. Returns new path or None."""
-    src = Path(folder) / trash_path
-    if not src.exists():
-        return None
-    active_dir = Path(folder) / "active"
-    active_dir.mkdir(parents=True, exist_ok=True)
-    new_name = src.name.replace("_deleted_", "", 1) if src.name.startswith("_deleted_") else src.name
-    dst = active_dir / new_name
-    src.rename(dst)
-    return f"active/{dst.name}"
-
-
-def delete_local_files(note_id: str, folder: str, local_path: str | None) -> None:
-    """Delete .md file and audio file for a permanently-deleted note."""
-    note_id_short = note_id[:8]
-    if local_path:
-        md_file = Path(folder) / local_path
-        if md_file.exists():
-            md_file.unlink()
-    # Also check trash
-    trash_dir = Path(folder) / "trash"
-    if trash_dir.exists():
-        for f in trash_dir.iterdir():
-            if note_id_short in f.name:
-                f.unlink()
-    # Delete audio
-    audio_dir = Path(folder) / "audio"
-    audio_file = audio_dir / f"{note_id_short}.opus"
-    if audio_file.exists():
-        audio_file.unlink()
+def rotate_snapshots(folder: str, keep: int = 5) -> None:
+    snap_dir = Path(folder) / "snapshots"
+    if not snap_dir.exists():
+        return
+    dirs = sorted([d for d in snap_dir.iterdir() if d.is_dir()], reverse=True)
+    for d in dirs[keep:]:
+        for f in d.iterdir():
+            f.unlink()
+        d.rmdir()
