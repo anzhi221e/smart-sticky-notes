@@ -14,21 +14,11 @@ def _format_time(iso_str: str) -> str:
         return iso_str or ""
 
 
-def _note_boundary(note: dict) -> str:
-    tags_str = ",".join(note.get("tags", []))
-    return (
-        f"<!-- note:id={note['id']} "
-        f"created_at={note['created_at']} "
-        f"updated_at={note.get('updated_at', note['created_at'])} "
-        f"tags={tags_str} -->"
-    )
-
-
 def _render_note(note: dict) -> str:
     note_id_short = note["id"][:8]
     text = (note.get("text") or "").strip()
     lines = [
-        f"### {_format_time(note.get('created_at'))} · `{note_id_short}` {_note_boundary(note)}",
+        f"### {_format_time(note.get('created_at'))} | `id:{note_id_short}`",
         "",
         text,
     ]
