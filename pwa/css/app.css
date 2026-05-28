@@ -353,6 +353,20 @@ html, body {
 .theme-swatch.selected { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent); }
 .theme-label { pointer-events: none; }
 
+/* iOS toggle switch */
+.toggle-switch {
+    width: 51px; height: 31px; border-radius: 16px; cursor: pointer;
+    background: #e2e8f0; position: relative; transition: background 0.2s;
+    flex-shrink: 0;
+}
+.toggle-switch::after {
+    content: ''; position: absolute; width: 27px; height: 27px;
+    border-radius: 50%; background: #fff; top: 2px; left: 2px;
+    transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.toggle-switch.on { background: #3b82f6; }
+.toggle-switch.on::after { transform: translateX(20px); }
+
 /* Markdown rendered in bubbles */
 .note-text h1 { font-size: 1.2em; margin: 4px 0; }
 .note-text h2 { font-size: 1.1em; margin: 3px 0; }

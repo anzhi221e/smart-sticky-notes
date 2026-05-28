@@ -69,7 +69,7 @@ export async function showSettings() {
         <div class="setting-group"><h3>偏好</h3>
             <div class="setting-row" style="flex-direction:row;align-items:center;justify-content:space-between;">
                 <label>显示录音按钮</label>
-                <input type="checkbox" id="cfg-show-mic" ${cfg.show_mic_button !== 'false' ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--accent);">
+                <span class="toggle-switch ${cfg.show_mic_button !== 'false' ? 'on' : ''}" id="cfg-show-mic" data-value="${cfg.show_mic_button !== 'false' ? 'true' : 'false'}"></span>
             </div>
             <div class="setting-row"><label>默认日历视图</label>
                 <select id="cfg-calendar-view">
@@ -102,9 +102,13 @@ export async function showSettings() {
     document.getElementById('cfg-sync-interval').addEventListener('change', e => writeConfig('sync_interval', e.target.value));
     document.getElementById('cfg-pinned-tags').addEventListener('change', e => writeConfig('pinned_tags', e.target.value));
     document.getElementById('cfg-calendar-view').addEventListener('change', e => writeConfig('default_calendar_view', e.target.value));
-    document.getElementById('cfg-show-mic').addEventListener('change', e => {
-        writeConfig('show_mic_button', e.target.checked ? 'true' : 'false');
-        document.getElementById('mic-btn').style.display = e.target.checked ? '' : 'none';
+    document.getElementById('cfg-show-mic').addEventListener('click', function() {
+        const cur = this.dataset.value === 'true';
+        const next = !cur;
+        this.dataset.value = next ? 'true' : 'false';
+        this.classList.toggle('on', next);
+        writeConfig('show_mic_button', next ? 'true' : 'false');
+        document.getElementById('mic-btn').style.display = next ? '' : 'none';
     });
 
     // Manual sync
