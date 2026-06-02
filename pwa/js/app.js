@@ -112,12 +112,16 @@ function setupMainUI() {
     document.getElementById('sidebar-close').addEventListener('click', toggleSidebar);
 
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', async () => {
             const screen = item.dataset.screen;
             if (screen === 'recycle-bin') showRecycleBin();
             else if (screen === 'tags') showTagsView();
             else if (screen === 'calendar-view') { navigateTo('calendar'); renderCalendarMonth(new Date()); }
             else if (screen === 'settings') showSettings();
+            else if (screen === 'workspace-manager') {
+                const { showWorkspaceManager } = await import('./workspaces.js');
+                showWorkspaceManager();
+            }
             else navigateTo('main');
         });
     });
@@ -594,17 +598,9 @@ function setupPullToRefresh() {
 // Tag navigation (called from notes.js tag pill clicks)
 export async function navigateToTags(tag) {
     navigateTo('tags');
-    const { getWorkspaces, renderWorkspaceFilter } = await import('./workspaces.js');
-    const workspaces = await getWorkspaces();
-    const filterContainer = document.getElementById('tags-workspace-filter');
-    if (filterContainer) {
-        renderWorkspaceFilter(filterContainer, workspaces, _currentWorkspace, async (ws) => {
-            await showTagsView(ws);
-        });
-    }
     const content = document.getElementById('tags-content');
     const { fetchNotesByTag } = await import('./db.js');
-    const notes = await fetchNotesByTag(tag, _currentWorkspace);
+    const notes = await fetchNotesByTag(tag);
     content.innerHTML = `
         <div style="padding:8px 16px;display:flex;align-items:center;gap:8px;">
             <button id="tag-filter-back" class="icon-btn">
@@ -617,5 +613,5 @@ export async function navigateToTags(tag) {
     document.documentElement.dataset.multi = '0';
     notes.forEach(n => content.appendChild(renderNoteBubble(n)));
     document.documentElement.dataset.multi = savedMulti;
-    document.getElementById('tag-filter-back').addEventListener('click', () => showTagsView(_currentWorkspace));
+    document.getElementById('tag-filter-back').addEventListener('click', showTagsView);
 }

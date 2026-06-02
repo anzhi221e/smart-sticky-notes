@@ -2,38 +2,13 @@ import { fetchTags, fetchNotesByTag, softDeleteNote, readConfig, writeConfig } f
 import { renderNoteBubble } from './notes.js';
 import { showToast, navigateTo, getTagColor, getPalette } from './ui.js';
 
-let _tagsFilterWorkspace = '__all__';
-
-export async function showTagsView(initialWorkspace = null) {
+export async function showTagsView() {
     navigateTo('tags');
     const content = document.getElementById('tags-content');
     if (!content) return;
 
-    if (initialWorkspace) _tagsFilterWorkspace = initialWorkspace;
-
-    // Render workspace filter bar
-    const { getWorkspaces } = await import('./workspaces.js');
-    const workspaces = await getWorkspaces();
-    const filterContainer = document.getElementById('tags-workspace-filter');
-    if (filterContainer) {
-        const { renderWorkspaceFilter } = await import('./workspaces.js');
-        renderWorkspaceFilter(filterContainer, workspaces, _tagsFilterWorkspace, async (ws) => {
-            _tagsFilterWorkspace = ws;
-            await refreshTagsView();
-        });
-    }
-
-    await refreshTagsView();
-}
-
-async function refreshTagsView() {
-    const content = document.getElementById('tags-content');
-    if (!content) return;
-
     let tags;
-    try {
-        tags = _tagsFilterWorkspace === '__all__' ? await fetchTags() : await fetchTags(_tagsFilterWorkspace);
-    } catch { tags = {}; }
+    try { tags = await fetchTags(); } catch { tags = {}; }
     let cfg;
     try { cfg = await readConfig(); } catch { cfg = {}; }
     const pinned = JSON.parse(cfg.pinned_tags || '[]');
@@ -203,8 +178,7 @@ async function showColorPicker(tag) {
 }
 
 async function batchDeleteTag(tag) {
-    const wsFilter = _tagsFilterWorkspace === '__all__' ? null : _tagsFilterWorkspace;
-    const notes = await fetchNotesByTag(tag, wsFilter);
+    const notes = await fetchNotesByTag(tag);
     for (const note of notes) await softDeleteNote(note.id);
     showToast(`已删除 ${notes.length} 条笔记`);
     showTagsView();
@@ -213,8 +187,7 @@ async function batchDeleteTag(tag) {
 async function showTagNotes(tag) {
     navigateTo('tags');
     const content = document.getElementById('tags-content');
-    const wsFilter = _tagsFilterWorkspace === '__all__' ? null : _tagsFilterWorkspace;
-    const notes = await fetchNotesByTag(tag, wsFilter);
+    const notes = await fetchNotesByTag(tag);
     content.innerHTML = `
         <div style="padding:8px 16px;display:flex;align-items:center;gap:8px;">
             <button id="tag-notes-back" class="icon-btn">

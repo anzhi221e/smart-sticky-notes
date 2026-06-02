@@ -2,6 +2,7 @@ import { readConfig, writeConfig, batchUpdateWorkspace, batchSoftDeleteByWorkspa
 import { showToast } from './ui.js';
 
 const DEFAULT_WORKSPACE = '默认';
+const PIN_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:1px;"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>';
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
@@ -99,7 +100,7 @@ export function renderWorkspaceDropdown(workspaces, current, onSelect, onManage)
     dropdown.className = 'workspace-dropdown';
     dropdown.innerHTML = workspaces.map(w => `
         <div class="workspace-dropdown-item ${w === current ? 'workspace-dropdown-item--active' : ''}" data-workspace="${esc(w)}">
-            <span>${w === DEFAULT_WORKSPACE ? '📌 ' : ''}${esc(w)}</span>
+            <span>${w === DEFAULT_WORKSPACE ? PIN_ICON : ''}${esc(w)}</span>
             ${w === current ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
         </div>
     `).join('');
@@ -185,7 +186,7 @@ async function renderWorkspaceList(container, workspaces, defaultWs, current) {
         const safeName = esc(w);
         item.innerHTML = `
             <div class="workspace-item-info">
-                <span class="workspace-item-name">${isDefault ? '📌 ' : ''}${safeName}</span>
+                <span class="workspace-item-name">${isDefault ? PIN_ICON : ''}${safeName}</span>
                 <span class="workspace-item-meta">
                     ${isDefault ? '系统保留' : ''}
                     ${isDefaultOpen ? ' · 默认打开' : ''}
@@ -281,9 +282,11 @@ export async function updateSidebarWorkspaces(sidebarNav) {
     workspaces.forEach(w => {
         const btn = document.createElement('button');
         btn.className = 'nav-item nav-workspace-item' + (w === current ? ' nav-item--active' : '');
-        btn.textContent = (w === DEFAULT_WORKSPACE ? '📌 ' : '') + w;
+        btn.innerHTML = (w === DEFAULT_WORKSPACE ? PIN_ICON : '') + esc(w);
         btn.dataset.workspace = w;
         btn.addEventListener('click', async () => {
+            const { navigateTo } = await import('./ui.js');
+            navigateTo('main');
             setCurrentWorkspace(w);
             const { switchWorkspace } = await import('./app.js');
             await switchWorkspace(w);
