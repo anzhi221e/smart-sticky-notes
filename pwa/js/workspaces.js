@@ -3,6 +3,8 @@ import { showToast } from './ui.js';
 
 const DEFAULT_WORKSPACE = '默认';
 
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
 export function getDefaultWorkspaceName() { return DEFAULT_WORKSPACE; }
 
 export async function getWorkspaces() {
@@ -96,8 +98,8 @@ export function renderWorkspaceDropdown(workspaces, current, onSelect, onManage)
     const dropdown = document.createElement('div');
     dropdown.className = 'workspace-dropdown';
     dropdown.innerHTML = workspaces.map(w => `
-        <div class="workspace-dropdown-item ${w === current ? 'workspace-dropdown-item--active' : ''}" data-workspace="${w}">
-            <span>${w === DEFAULT_WORKSPACE ? '📌 ' : ''}${w}</span>
+        <div class="workspace-dropdown-item ${w === current ? 'workspace-dropdown-item--active' : ''}" data-workspace="${esc(w)}">
+            <span>${w === DEFAULT_WORKSPACE ? '📌 ' : ''}${esc(w)}</span>
             ${w === current ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
         </div>
     `).join('');
@@ -180,9 +182,10 @@ async function renderWorkspaceList(container, workspaces, defaultWs, current) {
 
         const item = document.createElement('div');
         item.className = 'workspace-item';
+        const safeName = esc(w);
         item.innerHTML = `
             <div class="workspace-item-info">
-                <span class="workspace-item-name">${isDefault ? '📌 ' : ''}${w}</span>
+                <span class="workspace-item-name">${isDefault ? '📌 ' : ''}${safeName}</span>
                 <span class="workspace-item-meta">
                     ${isDefault ? '系统保留' : ''}
                     ${isDefaultOpen ? ' · 默认打开' : ''}
@@ -190,13 +193,13 @@ async function renderWorkspaceList(container, workspaces, defaultWs, current) {
                 </span>
             </div>
             <div class="workspace-item-actions">
-                ${!isDefault ? `<button class="workspace-action-btn" data-action="rename" data-workspace="${w}" title="重命名">
+                ${!isDefault ? `<button class="workspace-action-btn" data-action="rename" data-workspace="${safeName}" title="重命名">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>` : ''}
-                ${!isDefaultOpen ? `<button class="workspace-action-btn" data-action="setDefault" data-workspace="${w}" title="设为默认">
+                ${!isDefaultOpen ? `<button class="workspace-action-btn" data-action="setDefault" data-workspace="${safeName}" title="设为默认">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 </button>` : ''}
-                ${!isDefault ? `<button class="workspace-action-btn workspace-action-btn--danger" data-action="delete" data-workspace="${w}" title="删除">
+                ${!isDefault ? `<button class="workspace-action-btn workspace-action-btn--danger" data-action="delete" data-workspace="${safeName}" title="删除">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 </button>` : ''}
             </div>
