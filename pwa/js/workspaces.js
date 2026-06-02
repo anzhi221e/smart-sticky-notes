@@ -255,17 +255,7 @@ export async function updateSidebarWorkspaces(sidebarNav) {
     const workspaces = await getWorkspaces();
     const current = getCurrentWorkspace();
 
-    if (workspaces.length <= 1) {
-        const manageBtn = document.createElement('button');
-        manageBtn.className = 'nav-item nav-item-workspace-manager';
-        manageBtn.textContent = '对话管理';
-        manageBtn.addEventListener('click', async () => {
-            const { showWorkspaceManager } = await import('./workspaces.js');
-            showWorkspaceManager();
-        });
-        sidebarNav.appendChild(manageBtn);
-        return;
-    }
+    if (workspaces.length <= 1) return;
 
     const sep = document.createElement('div');
     sep.className = 'nav-workspace-separator';
@@ -295,15 +285,6 @@ export async function updateSidebarWorkspaces(sidebarNav) {
         });
         sidebarNav.appendChild(btn);
     });
-
-    const manageBtn = document.createElement('button');
-    manageBtn.className = 'nav-item nav-item-workspace-manager';
-    manageBtn.textContent = '对话管理';
-    manageBtn.addEventListener('click', async () => {
-        const { showWorkspaceManager } = await import('./workspaces.js');
-        showWorkspaceManager();
-    });
-    sidebarNav.appendChild(manageBtn);
 }
 
 export async function showWorkspaceManager() {
