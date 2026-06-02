@@ -1,13 +1,15 @@
 import { getSupabase } from './supabase.js';
 
-export async function fetchNotes(limit = 50) {
+export async function fetchNotes(limit = 50, workspace = null) {
     const sb = getSupabase();
-    const { data, error } = await sb
+    let query = sb
         .from('smartstickynotes_items')
         .select('*')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(limit);
+    if (workspace) query = query.eq('workspace', workspace);
+    const { data, error } = await query;
     if (error) throw error;
     return data;
 }
@@ -23,25 +25,29 @@ export async function fetchDeletedNotes() {
     return data;
 }
 
-export async function fetchNotesByDateRange(from, to) {
+export async function fetchNotesByDateRange(from, to, workspace = null) {
     const sb = getSupabase();
-    const { data, error } = await sb
+    let query = sb
         .from('smartstickynotes_items')
         .select('id, type, text, tags, audio_path, audio_duration, created_at, status')
         .eq('status', 'active')
         .gte('created_at', from)
         .lte('created_at', to)
         .order('created_at', { ascending: false });
+    if (workspace) query = query.eq('workspace', workspace);
+    const { data, error } = await query;
     if (error) throw error;
     return data;
 }
 
-export async function fetchNoteDates() {
+export async function fetchNoteDates(workspace = null) {
     const sb = getSupabase();
-    const { data, error } = await sb
+    let query = sb
         .from('smartstickynotes_items')
         .select('created_at')
         .eq('status', 'active');
+    if (workspace) query = query.eq('workspace', workspace);
+    const { data, error } = await query;
     if (error) throw error;
     return data.map(d => d.created_at);
 }
@@ -52,10 +58,11 @@ export async function insertNote(note) {
         type: note.type,
         text: note.text,
         tags: note.tags || [],
+        workspace: note.workspace || '默认',
         audio_path: note.audio_path || null,
         audio_duration: note.audio_duration || null,
     };
-    if (note.id) row.id = note.id; // client-generated UUID for idempotent insert
+    if (note.id) row.id = note.id;
     const { data, error } = await sb
         .from('smartstickynotes_items')
         .insert(row)
@@ -117,12 +124,14 @@ export async function getAudioSignedUrl(audioPath) {
     return data.signedUrl;
 }
 
-export async function fetchTags() {
+export async function fetchTags(workspace = null) {
     const sb = getSupabase();
-    const { data, error } = await sb
+    let query = sb
         .from('smartstickynotes_items')
         .select('tags')
         .eq('status', 'active');
+    if (workspace) query = query.eq('workspace', workspace);
+    const { data, error } = await query;
     if (error) throw error;
     const tagCounts = {};
     data.forEach(row => {
@@ -133,14 +142,16 @@ export async function fetchTags() {
     return tagCounts;
 }
 
-export async function fetchNotesByTag(tag) {
+export async function fetchNotesByTag(tag, workspace = null) {
     const sb = getSupabase();
-    const { data, error } = await sb
+    let query = sb
         .from('smartstickynotes_items')
         .select('*')
         .eq('status', 'active')
         .contains('tags', [tag])
         .order('created_at', { ascending: false });
+    if (workspace) query = query.eq('workspace', workspace);
+    const { data, error } = await query;
     if (error) throw error;
     return data;
 }
@@ -163,5 +174,25 @@ export async function writeConfig(key, value) {
     const { error } = await sb
         .from('smartstickynotes_config')
         .upsert({ user_id: user.id, key, value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' });
+    if (error) throw error;
+}
+
+export async function batchUpdateWorkspace(oldName, newName) {
+    const sb = getSupabase();
+    const { error } = await sb
+        .from('smartstickynotes_items')
+        .update({ workspace: newName, updated_at: new Date().toISOString() })
+        .eq('workspace', oldName);
+    if (error) throw error;
+}
+
+export async function batchSoftDeleteByWorkspace(name) {
+    const sb = getSupabase();
+    const now = new Date().toISOString();
+    const { error } = await sb
+        .from('smartstickynotes_items')
+        .update({ status: 'deleted', deleted_at: now, updated_at: now })
+        .eq('workspace', name)
+        .eq('status', 'active');
     if (error) throw error;
 }

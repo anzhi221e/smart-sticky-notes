@@ -378,6 +378,84 @@ html, body {
 .note-text li { margin-left: 16px; }
 .note-text code { background: var(--bg); padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
 
+/* Workspace toggle (top bar) */
+.workspace-toggle {
+    display: flex; align-items: center; gap: 4px;
+    background: var(--accent-dim); border: 1px solid var(--accent);
+    color: var(--accent); padding: 5px 10px; border-radius: 16px;
+    font-size: 13px; font-family: var(--font); cursor: pointer;
+    white-space: nowrap; flex-shrink: 0; font-weight: 500;
+    transition: background 0.15s;
+}
+.workspace-toggle:hover { background: var(--accent); color: #fff; }
+.workspace-toggle:hover svg { stroke: #fff; }
+.workspace-toggle svg { flex-shrink: 0; }
+
+/* Workspace dropdown */
+.workspace-dropdown {
+    position: fixed;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; min-width: 180px; z-index: 150;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    overflow: hidden; animation: dropdownIn 0.15s ease;
+}
+@keyframes dropdownIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.workspace-dropdown-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; cursor: pointer; font-size: 14px;
+    transition: background 0.1s;
+}
+.workspace-dropdown-item:hover { background: var(--surface-hover); }
+.workspace-dropdown-item--active { color: var(--accent); font-weight: 600; }
+.workspace-dropdown-item--manage { color: var(--text-secondary); font-size: 13px; }
+.workspace-dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* Workspace filter bar (tags screen) */
+.workspace-filter {
+    border-bottom: 1px solid var(--border);
+    background: var(--bg); flex-shrink: 0;
+}
+.workspace-filter-scroll {
+    display: flex; gap: 6px; padding: 8px 16px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.workspace-filter-scroll::-webkit-scrollbar { display: none; }
+.workspace-filter-btn {
+    padding: 5px 14px; border-radius: 16px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-secondary);
+    font-size: 13px; font-family: var(--font); cursor: pointer;
+    white-space: nowrap; flex-shrink: 0; transition: all 0.15s;
+}
+.workspace-filter-btn:hover { background: var(--surface-hover); color: var(--text); }
+.workspace-filter-btn--active {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+}
+
+/* Workspace list items (manager page) */
+.workspace-list { display: flex; flex-direction: column; gap: 6px; }
+.workspace-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+}
+.workspace-item-info { display: flex; flex-direction: column; gap: 2px; }
+.workspace-item-name { font-size: 15px; font-weight: 500; }
+.workspace-item-meta { font-size: 11px; color: var(--text-secondary); }
+.workspace-item-actions { display: flex; gap: 4px; }
+.workspace-action-btn {
+    width: 34px; height: 34px; display: flex; align-items: center;
+    justify-content: center; background: none; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-secondary); cursor: pointer;
+    transition: all 0.15s;
+}
+.workspace-action-btn:hover { background: var(--surface-hover); color: var(--text); }
+.workspace-action-btn--danger:hover { background: rgba(224,85,85,0.1); border-color: var(--danger); color: var(--danger); }
+
+/* Sidebar workspace section */
+.nav-item--active {
+    background: var(--accent-dim); color: var(--accent); font-weight: 600;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

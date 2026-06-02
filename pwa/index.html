@@ -74,6 +74,10 @@
                 <button id="calendar-toggle" class="icon-btn" aria-label="日历">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </button>
+                <button id="workspace-toggle" class="workspace-toggle" aria-label="切换工作区">
+                    <span id="current-workspace-label">默认</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
             </header>
 
             <div id="notes-list" class="notes-list"></div>
@@ -165,6 +169,7 @@
                 <h2>标签</h2>
                 <span></span>
             </header>
+            <div id="tags-workspace-filter" class="workspace-filter"></div>
             <div id="tags-content" class="tags-content"></div>
         </div>
 
@@ -178,6 +183,18 @@
                 <span></span>
             </header>
             <div id="settings-content" class="settings-content"></div>
+        </div>
+
+        <!-- Workspace manager view -->
+        <div id="screen-workspace-manager" class="screen">
+            <header class="top-bar">
+                <button id="workspace-manager-back" class="icon-btn" aria-label="返回">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <h2>对话管理</h2>
+                <span></span>
+            </header>
+            <div id="workspace-manager-content" class="settings-content"></div>
         </div>
 
         <!-- Toast container -->

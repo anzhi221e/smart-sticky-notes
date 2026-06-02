@@ -13,9 +13,10 @@ import { showRecycleBin } from './recycle-bin.js';
 import { showSettings } from './settings.js';
 
 // --- Module-level state ---
-console.log('[SSN] v2.3 loaded — ' + new Date().toISOString());
+console.log('[SSN] v2.4 loaded — ' + new Date().toISOString());
 let _loadingMore = false;
 let _oldestCursor = null;
+let _currentWorkspace = '默认';
 
 async function refreshTagColorCache() {
     try {
@@ -43,10 +44,15 @@ async function doInit() {
     const session = await getSession();
     if (session) {
         applyTheme(localStorage.getItem('ssn-theme') || 'blue-light');
+        const cfg = await readConfig().catch(() => ({}));
+        const { getDefaultWorkspace, getCurrentWorkspace, setCurrentWorkspace } = await import('./workspaces.js');
+        const defaultWs = await getDefaultWorkspace();
+        const savedWs = getCurrentWorkspace();
+        _currentWorkspace = savedWs !== '默认' ? savedWs : defaultWs;
+        setCurrentWorkspace(_currentWorkspace);
         navigateTo('main');
         await loadNotes();
         setupMainUI();
-        const cfg = await readConfig().catch(() => ({}));
         // Auto-hide mic if speech recognition not supported
         if (cfg.show_mic_button === undefined) {
             const speechOk = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
@@ -284,19 +290,67 @@ function setupMainUI() {
         }
     });
 
+    // Workspace toggle
+    setupWorkspaceToggle();
+    // Workspace manager back button
+    document.getElementById('workspace-manager-back')?.addEventListener('click', () => navigateTo('main'));
+
+    // Render sidebar workspaces
+    updateSidebarWs();
+
     setSyncStatus('已同步');
+}
+
+async function setupWorkspaceToggle() {
+    const toggle = document.getElementById('workspace-toggle');
+    if (!toggle) return;
+    updateWorkspaceLabel(_currentWorkspace);
+
+    toggle.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const existing = document.querySelector('.workspace-dropdown');
+        if (existing) { existing.remove(); return; }
+        const { getWorkspaces, renderWorkspaceDropdown, showWorkspaceManager } = await import('./workspaces.js');
+        const workspaces = await getWorkspaces();
+        const dropdown = renderWorkspaceDropdown(workspaces, _currentWorkspace, async (name) => {
+            dropdown.remove();
+            await switchWorkspace(name);
+        }, () => {
+            dropdown.remove();
+            showWorkspaceManager();
+        });
+        // Position dropdown below the toggle button
+        const rect = toggle.getBoundingClientRect();
+        dropdown.style.top = (rect.bottom + 4) + 'px';
+        dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+        document.body.appendChild(dropdown);
+        setTimeout(() => {
+            document.addEventListener('click', function closeDropdown() {
+                dropdown.remove();
+                document.removeEventListener('click', closeDropdown);
+            }, { once: true });
+        }, 10);
+    });
+}
+
+async function updateSidebarWs() {
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    if (!sidebarNav) return;
+    const { updateSidebarWorkspaces } = await import('./workspaces.js');
+    await updateSidebarWorkspaces(sidebarNav);
 }
 
 async function loadOlderNotes() {
     const sb = getSupabase();
     if (!_oldestCursor) { _loadingMore = false; return; }
-    const query = sb
+    let query = sb
         .from('smartstickynotes_items')
         .select('*')
         .eq('status', 'active')
         .lt('created_at', _oldestCursor.created_at)
         .order('created_at', { ascending: false })
         .limit(50);
+    if (_currentWorkspace) query = query.eq('workspace', _currentWorkspace);
     try {
         const { data } = await query;
         if (data && data.length > 0) {
@@ -316,7 +370,7 @@ async function loadOlderNotes() {
 
 async function loadTagBar() {
     try {
-        const tags = await fetchTags();
+        const tags = await fetchTags(_currentWorkspace);
         const cfg = await readConfig().catch(() => ({}));
         const pinned = JSON.parse(cfg.pinned_tags || '[]');
         renderTagBar(Object.keys(tags), pinned);
@@ -408,19 +462,19 @@ async function sendTextNote(caller = 'unknown') {
     let note;
     try {
         if (voiceBlob) {
-            note = await insertNote({ id: clientId, type: 'voice', text: text || '', tags, audio_path: '', audio_duration: voiceDur || 0 });
+            note = await insertNote({ id: clientId, type: 'voice', text: text || '', tags, workspace: _currentWorkspace, audio_path: '', audio_duration: voiceDur || 0 });
             try {
                 const audioPath = await uploadAudio(note.id, voiceBlob);
                 await getSupabase().from('smartstickynotes_items').update({ audio_path: audioPath }).eq('id', note.id);
                 note.audio_path = audioPath;
             } catch (e) { /* audio upload failed, note still saved */ }
         } else {
-            note = await insertNote({ id: clientId, type: 'text', text, tags, audio_path: null, audio_duration: null });
+            note = await insertNote({ id: clientId, type: 'text', text, tags, workspace: _currentWorkspace, audio_path: null, audio_duration: null });
         }
     } catch (err) {
         _isSending = false; sendBtn.disabled = false;
         if (!isOnline()) {
-            await addToQueue({ id: clientId, type: voiceBlob ? 'voice' : 'text', text: text || '', tags, audio_path: null, audio_duration: null });
+            await addToQueue({ id: clientId, type: voiceBlob ? 'voice' : 'text', text: text || '', tags, workspace: _currentWorkspace, audio_path: null, audio_duration: null });
             showToast('已保存到本地，联网后自动发送');
             textInput.value = ''; toggleSendButton(false);
         } else {
@@ -467,7 +521,9 @@ export async function loadNotes() {
         if (!isOnline()) notes = await getCachedNotes();
         else {
             const sb = getSupabase();
-            const { data } = await sb.from('smartstickynotes_items').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(50);
+            let query = sb.from('smartstickynotes_items').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(50);
+            if (_currentWorkspace) query = query.eq('workspace', _currentWorkspace);
+            const { data } = await query;
             notes = (data || []).reverse();
             await cacheNotes(notes);
         }
@@ -497,10 +553,27 @@ async function filterNotes(query) {
     if (!query.trim()) { loadNotes(); return; }
     try {
         const sb = getSupabase();
-        const { data } = await sb.from('smartstickynotes_items').select('*').eq('status', 'active').ilike('text', `%${query}%`).order('created_at', { ascending: false }).limit(50);
+        let q = sb.from('smartstickynotes_items').select('*').eq('status', 'active').ilike('text', `%${query}%`).order('created_at', { ascending: false }).limit(50);
+        if (_currentWorkspace) q = q.eq('workspace', _currentWorkspace);
+        const { data } = await q;
         list.innerHTML = '';
         (data || []).forEach(n => list.appendChild(renderNoteBubble(n)));
     } catch (e) { /* offline, ignore */ }
+}
+
+export async function switchWorkspace(name) {
+    _currentWorkspace = name;
+    const { setCurrentWorkspace } = await import('./workspaces.js');
+    setCurrentWorkspace(name);
+    updateWorkspaceLabel(name);
+    await updateSidebarWs();
+    _oldestCursor = null;
+    await loadNotes();
+}
+
+function updateWorkspaceLabel(name) {
+    const label = document.getElementById('current-workspace-label');
+    if (label) label.textContent = name;
 }
 
 function setupPullToRefresh() {
@@ -520,11 +593,18 @@ function setupPullToRefresh() {
 
 // Tag navigation (called from notes.js tag pill clicks)
 export async function navigateToTags(tag) {
-    const { showTagNotes } = await import('./tags.js');
     navigateTo('tags');
+    const { getWorkspaces, renderWorkspaceFilter } = await import('./workspaces.js');
+    const workspaces = await getWorkspaces();
+    const filterContainer = document.getElementById('tags-workspace-filter');
+    if (filterContainer) {
+        renderWorkspaceFilter(filterContainer, workspaces, _currentWorkspace, async (ws) => {
+            await showTagsView(ws);
+        });
+    }
     const content = document.getElementById('tags-content');
     const { fetchNotesByTag } = await import('./db.js');
-    const notes = await fetchNotesByTag(tag);
+    const notes = await fetchNotesByTag(tag, _currentWorkspace);
     content.innerHTML = `
         <div style="padding:8px 16px;display:flex;align-items:center;gap:8px;">
             <button id="tag-filter-back" class="icon-btn">
@@ -537,5 +617,5 @@ export async function navigateToTags(tag) {
     document.documentElement.dataset.multi = '0';
     notes.forEach(n => content.appendChild(renderNoteBubble(n)));
     document.documentElement.dataset.multi = savedMulti;
-    document.getElementById('tag-filter-back').addEventListener('click', showTagsView);
+    document.getElementById('tag-filter-back').addEventListener('click', () => showTagsView(_currentWorkspace));
 }
