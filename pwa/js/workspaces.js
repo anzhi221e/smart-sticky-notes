@@ -2,7 +2,7 @@ import { readConfig, writeConfig, batchUpdateWorkspace, batchSoftDeleteByWorkspa
 import { showToast } from './ui.js';
 
 const DEFAULT_WORKSPACE = 'Main';
-const PIN_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2" fill="currentColor"/><line x1="12" y1="7" x2="12" y2="17"/><path d="M7 13a5 5 0 0 0 10 0"/></svg>';
+const PIN_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:1px;"><circle cx="12" cy="5" r="2" fill="currentColor"/><line x1="12" y1="7" x2="12" y2="17"/><path d="M7 13a5 5 0 0 0 10 0"/></svg>';
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
