@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Sticky Notes — 项目 Reflection</title>
+<title>Smart Sticky Notes — Multi-Workspace 功能开发 Reflection</title>
 <style>
 :root {
   --bg: #0f0f1a;
@@ -19,385 +19,369 @@
   --blue: #60a5fa;
   --purple: #a78bfa;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   background: var(--bg); color: var(--text);
   font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  line-height: 1.7; padding: 40px 20px;
+  line-height: 1.7; padding: 40px 20px 80px;
 }
 .container { max-width: 960px; margin: 0 auto; }
-h1 { font-size: 2rem; color: #fff; margin-bottom: 4px; }
-h2 { font-size: 1.4rem; color: #fff; margin: 48px 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-h3 { font-size: 1.1rem; color: var(--text); margin: 24px 0 10px 0; }
-p, li { color: var(--text-secondary); font-size: 0.95rem; }
-a { color: var(--blue); }
-.subtitle { font-size: 1rem; color: var(--text-secondary); margin-bottom: 32px; }
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; color: #fff; }
+.subtitle { color: var(--text-secondary); font-size: 15px; margin-bottom: 40px; }
+h2 { font-size: 20px; font-weight: 700; margin: 48px 0 16px; color: #fff; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+h3 { font-size: 16px; font-weight: 600; margin: 24px 0 10px; color: var(--blue); }
+p { margin-bottom: 12px; color: var(--text-secondary); }
+strong { color: var(--text); }
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
 
-.highlight-box {
-  background: var(--card); border-left: 4px solid var(--accent);
-  padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 16px 0;
-}
-.highlight-box.green { border-color: var(--green); }
-.highlight-box.yellow { border-color: var(--yellow); }
-.highlight-box.blue { border-color: var(--blue); }
-.highlight-box.purple { border-color: var(--purple); }
-.highlight-box p { margin: 0; }
-
-.tag {
-  display: inline-block; padding: 2px 10px; border-radius: 10px;
-  font-size: 0.8rem; font-weight: 600; margin-right: 6px;
-}
-.tag.green { background: rgba(74,222,128,0.15); color: var(--green); }
-.tag.red { background: rgba(248,113,113,0.15); color: var(--red); }
-.tag.blue { background: rgba(96,165,250,0.15); color: var(--blue); }
-.tag.yellow { background: rgba(251,191,36,0.15); color: var(--yellow); }
-.tag.purple { background: rgba(167,139,250,0.15); color: var(--purple); }
-
-.two-col {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
-}
-@media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
-
-.code-block {
-  background: var(--code-bg); border-radius: 8px; padding: 16px 20px;
-  overflow-x: auto; margin: 12px 0; border: 1px solid var(--border);
-  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
-  font-size: 0.85rem; line-height: 1.6; color: var(--text);
-}
-.code-block .kw { color: var(--purple); }
-.code-block .str { color: var(--green); }
-.code-block .fn { color: var(--blue); }
-.code-block .cm { color: var(--text-secondary); font-style: italic; }
-
+/* Cards */
 .file-card {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: 8px; padding: 14px 18px; margin: 8px 0;
+  border-radius: 10px; padding: 14px 18px; margin-bottom: 8px;
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
 }
-.file-card .name { font-weight: 600; color: #fff; font-family: monospace; }
-.file-card .desc { color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px; }
+.file-card .name { font-weight: 600; color: var(--text); font-family: "Cascadia Code", "Fira Code", monospace; font-size: 13px; }
+.file-card .desc { color: var(--text-secondary); font-size: 13px; }
+.file-card.new { border-left: 3px solid var(--green); }
+.file-card.mod { border-left: 3px solid var(--blue); }
 
+/* Tags */
+.tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-right: 6px; }
+.tag.green { background: rgba(74,222,128,0.12); color: var(--green); }
+.tag.blue { background: rgba(96,165,250,0.12); color: var(--blue); }
+.tag.yellow { background: rgba(251,191,36,0.12); color: var(--yellow); }
+.tag.red { background: rgba(248,113,113,0.12); color: var(--red); }
+.tag.purple { background: rgba(167,139,250,0.12); color: var(--purple); }
+
+/* Highlight boxes */
+.highlight-box { border-left: 4px solid var(--accent); background: rgba(233,69,96,0.06); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.highlight-box.green { border-color: var(--green); background: rgba(74,222,128,0.05); }
+.highlight-box.yellow { border-color: var(--yellow); background: rgba(251,191,36,0.05); }
+.highlight-box.blue { border-color: var(--blue); background: rgba(96,165,250,0.05); }
+.highlight-box.purple { border-color: var(--purple); background: rgba(167,139,250,0.05); }
+
+/* Code */
+.code-block {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px 20px; margin: 12px 0;
+  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
+  font-size: 13px; line-height: 1.6; overflow-x: auto; white-space: pre; color: var(--text);
+}
+code { font-family: "Cascadia Code", "Fira Code", monospace; font-size: 12px; background: var(--code-bg); padding: 1px 6px; border-radius: 3px; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--text); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+td { color: var(--text-secondary); }
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* Two column */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+/* Timeline */
 .timeline-item {
-  padding: 12px 0 12px 24px; border-left: 2px solid var(--border);
-  position: relative; margin-left: 8px;
+  border-left: 2px solid var(--border); padding: 6px 0 6px 24px;
+  margin-left: 12px; position: relative;
 }
 .timeline-item::before {
-  content: ''; position: absolute; left: -5px; top: 18px;
+  content: ''; position: absolute; left: -5px; top: 14px;
   width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
 }
-.timeline-item .time { font-size: 0.8rem; color: var(--text-secondary); }
-.timeline-item .text { margin-top: 2px; }
+.timeline-item .time { font-size: 11px; color: var(--text-secondary); margin-bottom: 2px; }
+.timeline-item .content { font-size: 14px; }
 
-table {
-  width: 100%; border-collapse: collapse; margin: 12px 0;
-}
-th, td {
-  padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
-  font-size: 0.9rem;
-}
-th { color: #fff; font-weight: 600; font-size: 0.85rem; }
-td { color: var(--text-secondary); }
+/* Divider */
+.divider { height: 1px; background: var(--border); margin: 40px 0; }
 
-.divider { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
-
-footer {
-  margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border);
-  color: var(--text-secondary); font-size: 0.85rem;
-}
+/* Footer */
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); text-align: center; }
+footer span { margin: 0 8px; }
 </style>
 </head>
 <body>
 <div class="container">
 
-<h1>Smart Sticky Notes</h1>
-<p class="subtitle">完整开发过程 Reflection — 从需求到交付</p>
+<h1>Smart Sticky Notes — 多工作区功能</h1>
+<p class="subtitle">完整开发过程 Reflection — 从需求到交付 &nbsp;|&nbsp; 2026-06-02</p>
 
-<!-- 时间线 -->
+<!-- Timeline -->
 <h2>会话时间线</h2>
+<div class="timeline-item"><div class="time">阶段一 · 需求提出</div><div class="content">用户提出"对话/工作区"概念——每条笔记属于一个工作区，类似聊天软件中的多个会话。询问是否合理。</div></div>
+<div class="timeline-item"><div class="time">阶段二 · 方案讨论</div><div class="content">逐项确认 7 个设计决策：一对一归属、删除→回收站、标签跨工作区、筛选栏位置、同步脚本不改、工作区切换在顶部、侧边栏双入口。确认无冲突。</div></div>
+<div class="timeline-item"><div class="time">阶段三 · 计划生成</div><div class="content">2 个 Explore Agent 并行探查代码库（DB 层 + UI 层），生成 9 步实施计划，用户批准后进入实现。</div></div>
+<div class="timeline-item"><div class="time">阶段四 · 核心实现</div><div class="content">数据库层 → workspaces.js 核心模块 → UI 层（HTML/CSS/app.js/tags.js）。8 个文件，~600 行新增代码。</div></div>
+<div class="timeline-item"><div class="time">阶段五 · 安全修复</div><div class="content">自动安全审查发现 innerHTML XSS 风险（用户可控的工作区名直接拼入 HTML），添加 esc() 转义函数。</div></div>
+<div class="timeline-item"><div class="time">阶段六 · 部署排障</div><div class="content">Vercel 部署 404 —— <code>vercel project inspect</code> 发现 Root Directory 为 . 未指向 pwa/ 子目录。Dashboard 手动修复。确认项目 ID：<code>prj_fagxYdVMoeJP6QGLcKrSnAgQlW7H</code></div></div>
+<div class="timeline-item"><div class="time">阶段七 · UX 打磨</div><div class="content">侧边栏重构（去重）、"默认"→"Main"、大头针图标从 emoji 换 SVG 锚点样式、16 选 1 图标选择器</div></div>
 
-<div class="timeline-item"><div class="time">需求提出</div><div class="text">用户需要一个跨端（手机+电脑）的笔记工具，支持语音转文字、文本输入，所有内容最终汇入本地 Markdown 文件夹供 AI 读取。</div></div>
-<div class="timeline-item"><div class="time">方案探索</div><div class="text">评估了 3 种架构方案：PWA+本地同步服务、Telegram Bot、微信企业号。最终选择 PWA + Supabase 云中转 + PC 同步脚本。</div></div>
-<div class="timeline-item"><div class="time">设计评审</div><div class="text">设计文档经历 4 轮 review（v1→v4），外部反馈发现 20+ 问题，全部在设计阶段修复。</div></div>
-<div class="timeline-item"><div class="time">实现</div><div class="text">11 次 git 提交，32 个文件，约 6500 行代码。Supabase 配置 + PC 同步脚本（Python）+ PWA（vanilla JS）。</div></div>
-<div class="timeline-item"><div class="time">调试</div><div class="text">解决 esm.sh CDN 被墙、CSS !important 黑屏、Supabase auth token 旋转、配置 RLS 写入失败等问题。</div></div>
-<div class="timeline-item"><div class="time">部署</div><div class="text">Vercel 部署成功但手机端慢（海外节点）。Cloudflare 登录被墙后终于成功，建立 GitHub 私有仓库 + Cloudflare Pages 自动部署流水线。但 Workers Dev 域名在手机端仍被屏蔽。最终建议 Tailscale 私有网络方案。</div></div>
-<div class="timeline-item"><div class="time">CI/CD 建立</div><div class="text">创建 GitHub 私有仓库 <code>ychen02/smart-sticky-notes</code>，连接 Cloudflare Pages，每次 git push 自动部署到 <code>smart-sticky-notes.chen-cy-ying.workers.dev</code>。</div></div>
-<div class="timeline-item"><div class="time">v2 需求提出</div><div class="text">用户在实际使用中发现真实需求：标签工具栏、富文本编辑、多彩主题、标签聚合 Markdown 导出等 20+ 项功能需求。</div></div>
-<div class="timeline-item"><div class="time">v2 设计评审</div><div class="text">经历 3 轮外部评审，解决快照导出原子性、多标签文件一致性、删除-恢复流程、标签文件名冲突等核心架构问题。</div></div>
-<div class="timeline-item"><div class="time">v2 实现</div><div class="text">16 任务分 4 阶段实施：数据库迁移、PC 同步脚本重写（快照导出+标签聚合）、PWA 8 大新模块、集成组装。</div></div>
-<div class="timeline-item"><div class="time">双发送 Bug 攻坚战</div><div class="text">持续 14 次提交的顽固 Bug：Enter/点击出现两条笔记。经历 8 次失败尝试（preventDefault、stopPropagation、keypress、时间戳防抖、_isSending 锁），最终根因是滚动监听触发 loadOlderNotes 重复渲染。</div></div>
-<div class="timeline-item"><div class="time">主题系统重构</div><div class="text">从 6 套升级到 8 套（+2 多彩），引入 24 色调色盘、hash 分配算法、标签颜色自定义。经历气泡色反转、标签不可见等多轮 CSS 调试。</div></div>
-<div class="timeline-item"><div class="time">UI 现代化 + 移动端适配</div><div class="text">登录界面重新设计为卡片式蓝白风格，复选框多选删除、iOS 开关按钮、语音不支持时的降级提示。</div></div>
-<div class="timeline-item"><div class="time">同步自动化</div><div class="text">Windows Task Scheduler 注册每 30 分钟自动同步任务，`--once` 模式跑完即退出不占内存，PWA 手动同步按钮接入 sync_requests 表。</div></div>
-<div class="timeline-item"><div class="time">移动端适配 + 收尾</div><div class="text">登录页蓝白卡片式重设计，iOS 开关按钮，语音不支持降级提示，复选框屏幕边缘对齐，标签视图气泡截断修复。"Designed by Anzhi" 全局品牌化。8 条持久记忆固化全部关键教训。</div></div>
+<div class="divider"></div>
 
 <!-- 1. 问题定义 -->
 <h2>1. 问题定义</h2>
 
+<h3>原始需求</h3>
 <div class="highlight-box purple">
-<p><strong>用户原话：</strong>"我平时经常会需要在各个端进行笔记记录。但是这些笔记往往是散落在各处的。我想要把它们汇总成为一份文件，并让AI读取或者是整理的话会非常困难。"</p>
+"我希望在菜单界面可以添加新的对话并且自定义对话名称，新对话的界面跟主对话框一致，只不过这里只显示该对话 workplace 中的内容。所有 workplace 中的标签在标签页显示时，可以增加筛选按钮。"
 </div>
 
-<h3>核心约束</h3>
-<ul>
-<li><strong>跨端</strong>：手机和电脑都能用</li>
-<li><strong>语音输入</strong>：录音后自动转文字，同时保留原音频</li>
-<li><strong>低成本</strong>：尽量免费（最终实现为 $0）</li>
-<li><strong>本地落盘</strong>：最终内容化为 Markdown 文件存到 OneDrive 文件夹</li>
-<li><strong>国内可用</strong>：用户在中国大陆，访问海外服务有障碍</li>
-<li><strong>不关注前端形态</strong>：只要能随时随地记录，最终汇总到 Markdown 文件夹</li>
-</ul>
+<h3>核心约束（用户确认）</h3>
+<table>
+<tr><th>约束</th><th>用户决策</th></tr>
+<tr><td>笔记-工作区关系</td><td>一对一，每条笔记只属于一个工作区</td></tr>
+<tr><td>删除行为</td><td>删除工作区 → 其中笔记全部移入回收站（30天保留）</td></tr>
+<tr><td>标签</td><td>跨工作区</td></tr>
+<tr><td>同步脚本</td><td>不改动，底层继续按标签分类导出</td></tr>
+<tr><td>筛选栏位置</td><td>标签界面（后改为移除，与侧边栏重复）</td></tr>
+<tr><td>工作区切换入口</td><td>顶部工具栏最右侧 + 侧边栏</td></tr>
+<tr><td>系统保留工作区名称</td><td>"默认" → "Main"</td></tr>
+<tr><td>侧边栏顶级导航</td><td>"全部笔记" → "对话管理"</td></tr>
+</table>
+
+<div class="divider"></div>
 
 <!-- 2. 技术调研 -->
 <h2>2. 技术调研过程</h2>
 
-<h3>探索的方案</h3>
+<h3>代码库探查</h3>
+<p>启动两个并行 Explore Agent 完成：</p>
 
-<table>
-<tr><th>方案</th><th>评估</th><th>结论</th></tr>
-<tr><td>微信企业号/测试号 + 后端</td><td>体验最贴近习惯，但需要服务器、注册审核、消息接口限制</td><td><span class="tag red">放弃</span></td></tr>
-<tr><td>Telegram Bot + 本地拉取</td><td>技术简单，但国内需代理，违背"随时随地"</td><td><span class="tag red">放弃</span></td></tr>
-<tr><td>PWA + 本地同步服务</td><td>零成本、国内无障碍，但 PC 需要开机</td><td><span class="tag yellow">改进</span></td></tr>
-<tr><td>PWA + Supabase + PC 同步脚本</td><td>加入云中转层，解决 PC 离线问题。免费额度够用</td><td><span class="tag green">采纳</span></td></tr>
-</table>
-
-<h3>关键技术验证</h3>
-
-<div class="highlight-box yellow">
-<p><strong>Web Speech API 限制：</strong>设计初稿假设离线录音后可以自动转写，但验证发现 SpeechRecognition 只能处理实时麦克风输入，不能对音频文件做转写。修正：语音功能仅在线可用，离线时禁用并提示使用文字输入。</p>
+<div class="two-col">
+<div>
+<h3 style="margin-top:0;">DB Agent 发现</h3>
+<ul style="color:var(--text-secondary);margin-left:16px;font-size:13px;">
+<li><code>smartstickynotes_items</code> 无 workspace / category / group 列</li>
+<li>所有查询委托 RLS 做用户隔离，不显式传 user_id</li>
+<li>配置用 <code>smartstickynotes_config</code> 表的 JSON 存储</li>
+<li>无数据库迁移机制，需手动 SQL</li>
+<li>标签是唯一的组织维度（扁平 #tag）</li>
+</ul>
+</div>
+<div>
+<h3 style="margin-top:0;">UI Agent 发现</h3>
+<ul style="color:var(--text-secondary);margin-left:16px;font-size:13px;">
+<li>侧边栏用 <code>data-screen</code> + <code>navigateTo()</code> 路由</li>
+<li>顶栏 flex 布局，search-input 占 flex:1</li>
+<li>标签页由 <code>tags.js</code> 动态渲染</li>
+<li>现有 4 种选择器模式：context-menu、cal-tab、toggle-switch、bubble-sheet</li>
+<li>无 dropdown 组件，需新建</li>
+</ul>
+</div>
 </div>
 
-<div class="highlight-box yellow">
-<p><strong>Supabase refresh_token 一次性使用：</strong>尝试让 PWA 和 PC 脚本共享 refresh_token 时发现，每次 refresh 后旧 token 立即失效。结论：PC 脚本使用 service_role key 独立认证，不与 PWA 共享用户态 token。</p>
-</div>
-
-<div class="highlight-box blue">
-<p><strong>esm.sh CDN 国内被墙：</strong>PWA 使用 <code>esm.sh/@supabase/supabase-js@2</code> 加载 SDK，导致国内用户打开即黑屏。切换到 <code>jsdelivr.net</code> + import map 方案解决。</p>
-</div>
+<div class="divider"></div>
 
 <!-- 3. 方案设计 -->
 <h2>3. 方案设计</h2>
 
-<h3>最终架构</h3>
+<h3>数据模型</h3>
+<div class="code-block">smartstickynotes_items 新增列:
+  workspace text NOT NULL DEFAULT 'Main'
 
-<div class="code-block">
-<span class="cm"># 数据流</span>
-手机 PWA ──HTTP──→ Supabase (cloud relay) ←── PC Sync Script ──→ OneDrive/Markdown ──→ AI 读取
+smartstickynotes_config 新增 keys:
+  workspaces       → JSON: ["工作区A", "项目B"]
+  default_workspace → "Main"
 
-<span class="cm"># 认证分离</span>
-PWA:      anon key + magic link (RLS 隔离)
-PC 脚本:  service_role key (本地受信)
-</div>
+新增索引:
+  idx_items_user_workspace ON (user_id, workspace, status)</div>
 
-<h3>技术栈</h3>
-
+<h3>技术栈选型</h3>
 <table>
 <tr><th>层面</th><th>选择</th><th>理由</th></tr>
-<tr><td>前端</td><td>Vanilla HTML/CSS/JS (PWA)</td><td>零构建工具，手机浏览器原生支持，体量极小</td></tr>
-<tr><td>云后端</td><td>Supabase (免费版)</td><td>PostgreSQL + Auth + Storage，自带 REST API，无需写后端代码</td></tr>
-<tr><td>语音识别</td><td>Web Speech API</td><td>浏览器内置，免费，中文识别良好（仅实时）</td></tr>
-<tr><td>音频编码</td><td>Opus 16kbps mono</td><td>~120KB/min，免费额度可存 4+ 年</td></tr>
-<tr><td>PC 同步</td><td>Python + pystray</td><td>跨平台，Windows 系统托盘，后台静默运行</td></tr>
-<tr><td>部署</td><td>Vercel (静态)</td><td>免费，一键部署，全球 CDN</td></tr>
+<tr><td>工作区切换状态</td><td>sessionStorage</td><td>刷新从 config 恢复，跨标签不污染</td></tr>
+<tr><td>工作区元数据</td><td>smartstickynotes_config JSON</td><td>复用现有表，无需迁移</td></tr>
+<tr><td>批量操作</td><td>Supabase JS <code>.update().eq('workspace', ...)</code></td><td>RLS 保证只影响当前用户数据</td></tr>
+<tr><td>下拉菜单</td><td>fixed div + getBoundingClientRect 定位</td><td>与现有 context-menu 模式一致，无第三方依赖</td></tr>
+<tr><td>大头针图标</td><td>内联 SVG（用户选择 #14 锚点）</td><td>纯矢量、可着色、与 UI 图标风格统一</td></tr>
 </table>
 
-<h3>数据模型</h3>
+<h3>架构流程</h3>
+<div class="code-block">用户点击工作区切换按钮
+    │
+    ▼
+setupWorkspaceToggle()
+    │ 调用 getWorkspaces() → 从 config 读取
+    ▼
+renderWorkspaceDropdown(workspaces, current, onSelect)
+    │ 动态创建下拉菜单 DOM
+    ▼
+用户选择工作区 → onSelect(name)
+    │
+    ▼
+switchWorkspace(name)
+    ├─ setCurrentWorkspace(name) → sessionStorage
+    ├─ updateWorkspaceLabel(name) → 顶部按钮文字
+    ├─ updateSidebarWs()          → 侧边栏高亮
+    └─ loadNotes()                → 重新查询 Supabase</div>
 
-<div class="code-block">
-<span class="kw">smartstickynotes_items</span>
-├── id (uuid), user_id (FK auth.users)
-├── type: <span class="str">"voice"</span> | <span class="str">"text"</span>
-├── text, tags, audio_path, audio_duration
-├── status: <span class="str">"active"</span> | <span class="str">"deleted"</span>
-├── created_at, updated_at, deleted_at, synced_at
-
-<span class="kw">deletion_events</span>     <span class="cm">// 轻量墓碑，PC 可见</span>
-├── note_id, audio_path
-
-<span class="kw">smartstickynotes_config</span>
-├── key, value (PWA + PC 共享配置)</div>
+<div class="divider"></div>
 
 <!-- 4. 安全分析 -->
 <h2>4. 安全分析</h2>
 
-<h3>认证架构</h3>
+<div class="highlight-box yellow">
+<strong>XSS via innerHTML</strong>：<code>renderWorkspaceDropdown</code> 和 <code>renderWorkspaceList</code> 将工作区名直接拼入 innerHTML。若名称含 <code>&lt;script&gt;</code> 标签将被执行。虽然数据受 RLS 保护（用户只能创建自己的工作区），仍作为防御措施修复。
+</div>
+
+<div class="highlight-box green">
+<strong>修复</strong>：添加 <code>esc()</code> 函数——利用浏览器原生 textContent→innerHTML 转义，零依赖。所有工作区名在插入 HTML 前调用 <code>esc(w)</code>。
+</div>
+
+<div class="code-block">function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}</div>
+
+<h3>边界覆盖</h3>
 <table>
-<tr><th>场景</th><th>密钥类型</th><th>安全边界</th></tr>
-<tr><td>PWA 前端</td><td>anon key (公开)</td><td>RLS 策略限制到 auth.uid()，所有表+Storage 均有行级安全</td></tr>
-<tr><td>PC 同步脚本</td><td>service_role key (仅本地 .env)</td><td>.env 被 gitignore，不提交到任何仓库</td></tr>
-<tr><td>用户登录</td><td>Magic Link (无密码)</td><td>邮箱验证，JWT 有过期时间</td></tr>
+<tr><th>场景</th><th>处理</th></tr>
+<tr><td>Main 不可删除</td><td>UI 隐藏按钮 + JS 抛错</td></tr>
+<tr><td>删除确认</td><td>弹窗告知笔记数量 + 回收站倒计时</td></tr>
+<tr><td>名称冲突</td><td>创建/重命名时遍历检查</td></tr>
+<tr><td>离线队列</td><td>队列项携带 workspace 字段</td></tr>
+<tr><td>DB 未迁移</td><td>wizard.js 提供 ALTER TABLE SQL；insertNote 兜底 'Main'</td></tr>
 </table>
 
-<h3>数据安全边界</h3>
-<ul>
-<li>anon key 暴露在前端是正常且预期的 — 安全来自 RLS 而非密钥隐藏</li>
-<li>所有 RLS 策略包含 <code>USING</code> + <code>WITH CHECK</code>，覆盖 SELECT/INSERT/UPDATE/DELETE</li>
-<li>Storage bucket 为 private，访问通过临时签名 URL</li>
-</ul>
-
-<h3>关键风险评估</h3>
-<table>
-<tr><th>风险</th><th>级别</th><th>缓解措施</th></tr>
-<tr><td>PC 脚本文件覆盖本地修改</td><td><span class="tag red">高</span></td><td>Hash 对比冲突检测，本地修改不被覆盖</td></tr>
-<tr><td>文件名碰撞</td><td><span class="tag red">高</span></td><td>模板强制包含 {id} 变量保证唯一性</td></tr>
-<tr><td>本地文件误删导致云端被删</td><td><span class="tag yellow">中</span></td><td>三级预警机制，不自动标记删除</td></tr>
-<tr><td>Supabase 免费额度超限</td><td><span class="tag green">低</span></td><td>Opus 低码率编码，预估 4 年容量</td></tr>
-</table>
+<div class="divider"></div>
 
 <!-- 5. 实现产出 -->
 <h2>5. 实现产出</h2>
 
-<div class="two-col">
-<div>
-<h3>PC 同步脚本 (sync/)</h3>
-<div class="file-card"><div class="name">main.py</div><div class="desc">入口：验证凭证 → 读取配置 → 启动同步循环 + 系统托盘</div></div>
-<div class="file-card"><div class="name">sync_loop.py</div><div class="desc">核心轮询：拉取变更 → 冲突检测 → 生成 Markdown → 处理删除事件</div></div>
-<div class="file-card"><div class="name">auth.py</div><div class="desc">使用 service_role key，无需 OAuth 交互</div></div>
-<div class="file-card"><div class="name">markdown_writer.py</div><div class="desc">YAML frontmatter + 音频链接生成</div></div>
-<div class="file-card"><div class="name">conflict.py</div><div class="desc">Hash 对比：区分覆盖/跳过/碰撞</div></div>
-<div class="file-card"><div class="name">sync_state.py</div><div class="desc">.sync_state.json 管理：游标、哈希、缺失追踪</div></div>
-<div class="file-card"><div class="name">tray_app.py</div><div class="desc">Windows 系统托盘：绿/橙/红状态 + 菜单</div></div>
+<div class="file-card new">
+  <div><span class="name">pwa/js/workspaces.js</span> <span class="tag green">新建</span></div>
+  <div class="desc">工作区管理核心模块 — CRUD + 下拉菜单 + 侧边栏渲染 + 对话管理页面</div>
 </div>
-<div>
-<h3>PWA 前端 (pwa/)</h3>
-<div class="file-card"><div class="name">index.html + app.css</div><div class="desc">多屏 SPA：连接→登录→向导→聊天→日历→标签→回收站→设置</div></div>
-<div class="file-card"><div class="name">js/app.js</div><div class="desc">主控制器：路由、事件绑定、笔记发送、设置管理</div></div>
-<div class="file-card"><div class="name">js/db.js</div><div class="desc">Supabase 查询：CRUD、标签、配置、音频签名 URL</div></div>
-<div class="file-card"><div class="name">js/voice.js</div><div class="desc">MediaRecorder + SpeechRecognition 实时转写</div></div>
-<div class="file-card"><div class="name">js/audio-player.js</div><div class="desc">内联播放器：进度拖拽、倍速、签名 URL 缓存</div></div>
-<div class="file-card"><div class="name">js/calendar.js</div><div class="desc">日/周/月/年 四视图日历</div></div>
-<div class="file-card"><div class="name">js/offline.js</div><div class="desc">IndexedDB 离线队列 + 笔记缓存</div></div>
-<div class="file-card"><div class="name">js/wizard.js</div><div class="desc">三步初始化向导：路径→SQL→脚本</div></div>
+<div class="file-card mod">
+  <div><span class="name">pwa/js/db.js</span> <span class="tag blue">修改</span></div>
+  <div class="desc">7 个查询函数新增 workspace 参数；新增 batchUpdateWorkspace / batchSoftDeleteByWorkspace</div>
 </div>
+<div class="file-card mod">
+  <div><span class="name">pwa/js/app.js</span> <span class="tag blue">修改</span></div>
+  <div class="desc">_currentWorkspace 状态、switchWorkspace、setupWorkspaceToggle、updateSidebarWs</div>
 </div>
+<div class="file-card mod">
+  <div><span class="name">pwa/js/tags.js</span> <span class="tag blue">修改</span></div>
+  <div class="desc">移除 workspace filter bar（最终版），简化回直读 fetchTags()</div>
+</div>
+<div class="file-card mod">
+  <div><span class="name">pwa/js/wizard.js</span> <span class="tag blue">修改</span></div>
+  <div class="desc">CREATE TABLE 添加 workspace 列 + 索引 + 迁移 SQL 注释</div>
+</div>
+<div class="file-card mod">
+  <div><span class="name">pwa/index.html</span> <span class="tag blue">修改</span></div>
+  <div class="desc">顶栏 workspace-toggle、sidebar 对话管理、screen-workspace-manager</div>
+</div>
+<div class="file-card mod">
+  <div><span class="name">pwa/css/app.css</span> <span class="tag blue">修改</span></div>
+  <div class="desc">6 组新样式：toggle、dropdown、filter、manager、item、nav-item--active</div>
+</div>
+<div class="file-card new">
+  <div><span class="name">pin-picker.html</span> <span class="tag purple">新建</span></div>
+  <div class="desc">大头针图标选择器 — 16 个 SVG 备选，点击选中生成替换代码</div>
+</div>
+
+<h3>提交记录</h3>
+<table>
+<tr><th>Commit</th><th>消息</th></tr>
+<tr><td><code>07a98ee</code></td><td>feat: add multi-workspace (对话) support</td></tr>
+<tr><td><code>da43cf0</code></td><td>fix: escape workspace names in innerHTML to prevent stored XSS</td></tr>
+<tr><td><code>3ab5ba1</code></td><td>fix: sidebar UX improvements — workspace navigation and pin icon</td></tr>
+<tr><td><code>dfb1495</code></td><td>fix: remove duplicate "对话管理" from bottom of sidebar</td></tr>
+<tr><td><code>2b8e88b</code></td><td>refactor: rename default workspace from "默认" to "Main"</td></tr>
+<tr><td><code>6e8bfec</code></td><td>feat: switch pin icon to anchor style (#14) + pin picker page</td></tr>
+</table>
+
+<div class="divider"></div>
 
 <!-- 6. 部署 -->
 <h2>6. 部署方式</h2>
 
-<h3>当前部署</h3>
+<h3>数据库迁移（已有项目）</h3>
+<div class="code-block">-- 在 Supabase SQL Editor 中执行
+ALTER TABLE smartstickynotes_items
+  ADD COLUMN IF NOT EXISTS workspace text NOT NULL DEFAULT 'Main';
+
+CREATE INDEX IF NOT EXISTS idx_items_user_workspace
+  ON smartstickynotes_items(user_id, workspace, status);
+
+-- 如果之前已迁移为 '默认'，还需要：
+UPDATE smartstickynotes_items
+  SET workspace = 'Main'
+  WHERE workspace = '默认';</div>
+
+<h3>Vercel 部署配置</h3>
 <table>
-<tr><th>组件</th><th>位置</th></tr>
-<tr><td>PWA (Vercel)</td><td><code>smartstickynotes.vercel.app</code></td></tr>
-<tr><td>PWA (Cloudflare)</td><td><code>smart-sticky-notes.chen-cy-ying.workers.dev</code></td></tr>
-<tr><td>源代码</td><td>GitHub: <code>ychen02/smart-sticky-notes</code> (私有)</td></tr>
-<tr><td>数据库</td><td>Supabase: <code>hbqccdhnzrkhgyaasfts.supabase.co</code></td></tr>
-<tr><td>PC 同步</td><td>本地: <code>python sync/main.py</code></td></tr>
-<tr><td>笔记落盘</td><td><code>E:\OneDrive\Smart Sticky Notes\</code></td></tr>
+<tr><th>设置</th><th>值</th></tr>
+<tr><td>Project ID</td><td><code>prj_fagxYdVMoeJP6QGLcKrSnAgQlW7H</code></td></tr>
+<tr><td>项目名</td><td>smart_sticky_notes</td></tr>
+<tr><td>域名</td><td>smartstickynotes.vercel.app</td></tr>
+<tr><td>GitHub</td><td>ychen02/smart-sticky-notes（master 自动部署）</td></tr>
+<tr><td>Root Directory</td><td><strong>pwa</strong>（必须，否则 404）</td></tr>
 </table>
 
-<h3>CI/CD 流水线</h3>
-<div class="code-block">
-<span class="cm"># 开发→部署 流程</span>
-git push → GitHub (私有) → Cloudflare Pages (自动) → 域名更新
-
-<span class="cm"># 修改代码后</span>
-git add -A && git commit -m <span class="str">"fix: xxx"</span> && git push
-<span class="cm"># Cloudflare 自动构建部署，无需手动操作</span>
-</div>
-
-<h3>国内访问问题</h3>
-<div class="highlight-box yellow">
-<p>经实测：Vercel（vercel.app）手机端慢，Cloudflare Workers Dev（workers.dev）手机端完全被屏蔽。所有海外托管免费域名在中国大陆手机网络下均不可靠。建议方案：Tailscale 私有网络（免费 100 设备），手机通过 WireGuard 直连电脑 PWA。</p>
-</div>
+<div class="divider"></div>
 
 <!-- 7. 问题与洞察 -->
 <h2>7. 问题与洞察</h2>
 
-<h3>CSS !important 的隐秘陷阱</h3>
-<p>黑屏 Bug 持续了约 30 分钟才定位到。根因：HTML 元素同时有 <code>.screen</code>（display:none）和 <code>.hidden</code>（display:none!important）。JS 切换 <code>.active</code> 时 <code>!important</code> 优先级高于 class 切换，导致所有页面永远不可见。教训：避免在 CSS 中使用 <code>!important</code>，尤其是会被 JS 动态切换的元素。</p>
+<table>
+<tr><th>问题</th><th>根因</th><th>解决</th></tr>
+<tr>
+  <td>Vercel 部署 404</td>
+  <td>Root Directory 未指向 pwa/</td>
+  <td><code>vercel project inspect</code> 定位 → Dashboard 改为 pwa</td>
+</tr>
+<tr>
+  <td>innerHTML XSS</td>
+  <td>工作区名直接拼入 HTML</td>
+  <td>添加 esc() 转义函数</td>
+</tr>
+<tr>
+  <td>侧边栏两个"对话管理"</td>
+  <td>静态 HTML + 动态 JS 各创建一个</td>
+  <td>删除 workspaces.js 中的底部副本</td>
+</tr>
+<tr>
+  <td>"默认"→"Main"需全量更新</td>
+  <td>5 个文件硬编码了"默认"</td>
+  <td>逐一替换 + 提供 UPDATE SQL</td>
+</tr>
+</table>
 
-<h3>Supabase Refresh Token 旋转机制</h3>
-<p>尝试让 PWA 和 PC 脚本共享 refresh_token 时反复遇到 "Already Used" 错误。Supabase 的 refresh_token 是一次性使用：每次 refresh 返回新 token，旧 token 立即失效。这意味着不能把同一个 token 同时给两个客户端用。最终用 service_role 绕过了这个限制，代价是 PC 脚本获得了更高权限。</p>
+<h3>关键洞察</h3>
+<ul style="color:var(--text-secondary);margin-left:20px;">
+<li><strong>快速迭代 > 一次完美</strong>：标签页的 workspace filter bar 是最初核心设计，上线后发现与侧边栏重复，被移除。用户在实际使用中才能做出最准确的判断。</li>
+<li><strong>sessionStorage 作为 UI 状态层</strong>：优于 localStorage——刷新后从 config 恢复默认值，跨标签不污染。这是 PWA 中处理临时 UI 状态的最佳实践。</li>
+<li><strong>JSON in config 的灵活性</strong>：复用 <code>smartstickynotes_config</code> 表存储工作区列表（与 pinned_tags 一致），避免了新建表、新 RLS 策略、新迁移的整套开销。</li>
+<li><strong>安全审查自动化</strong>：Stop hook 在提交后自动扫描新代码，在 push 前就发现了 XSS 问题。这是"左移安全"的好例子。</li>
+</ul>
 
-<h3>国内网络环境的现实约束</h3>
-<p>esm.sh CDN 被墙、Vercel 手机访问慢、Cloudflare 登录被墙——这些都不是代码问题，但决定了用户体验。一个"能用"的系统，在中国大陆需要：可访问的 CDN（jsdelivr）、可访问的云服务（Supabase 恰好可用）、以及 VPN/代理作为兜底。</p>
+<div class="divider"></div>
 
-<div class="highlight-box purple">
-<p><strong>用户反复确认的关注点：</strong>低成本和简洁是最高优先级。用户多次拒绝引入付费服务（Whisper API）、拒绝复杂的初始化流程、选择浏览器内置的免费方案。这不是技术妥协，而是正确的产品决策——MVP 不需要完美，需要能用。</p>
-</div>
-
-<!-- 8. 交付清单 -->
+<!-- 8. 最终交付清单 -->
 <h2>8. 最终交付清单</h2>
 
 <table>
 <tr><th>文件</th><th>状态</th><th>说明</th></tr>
-<tr><td>supabase/migrations/001_initial.sql</td><td><span class="tag green">完成</span></td><td>3 表 + RLS + 索引</td></tr>
-<tr><td>sync/ (10 文件)</td><td><span class="tag green">完成</span></td><td>PC 同步脚本，已测试同步成功</td></tr>
-<tr><td>pwa/ (16 文件)</td><td><span class="tag green">完成</span></td><td>PWA，已部署到 Vercel</td></tr>
-<tr><td>docs/.../design.md</td><td><span class="tag green">完成</span></td><td>设计文档 v4</td></tr>
-<tr><td>docs/.../plan.md</td><td><span class="tag green">完成</span></td><td>实现计划 19 任务</td></tr>
-<tr><td>.gitignore</td><td><span class="tag green">完成</span></td><td>.env + __pycache__ 排除</td></tr>
-<tr><td>sync/.env.example</td><td><span class="tag green">完成</span></td><td>密钥模板</td></tr>
-<tr><td>手机端访问</td><td><span class="tag yellow">需 VPN</span></td><td>Vercel 海外节点</td></tr>
-<tr><td>Cloudflare 部署</td><td><span class="tag red">受阻</span></td><td>登录被墙</td></tr>
+<tr><td><code>pwa/js/workspaces.js</code></td><td><span class="tag green">新建</span></td><td>工作区管理核心模块</td></tr>
+<tr><td><code>pwa/js/db.js</code></td><td><span class="tag blue">修改</span></td><td>查询层 workspace 支持</td></tr>
+<tr><td><code>pwa/js/app.js</code></td><td><span class="tag blue">修改</span></td><td>工作区状态 + 切换逻辑</td></tr>
+<tr><td><code>pwa/js/tags.js</code></td><td><span class="tag blue">修改</span></td><td>精简标签视图</td></tr>
+<tr><td><code>pwa/js/wizard.js</code></td><td><span class="tag blue">修改</span></td><td>Schema + 迁移 SQL</td></tr>
+<tr><td><code>pwa/index.html</code></td><td><span class="tag blue">修改</span></td><td>UI 组件</td></tr>
+<tr><td><code>pwa/css/app.css</code></td><td><span class="tag blue">修改</span></td><td>样式</td></tr>
+<tr><td><code>pin-picker.html</code></td><td><span class="tag green">新建</span></td><td>图标选择器工具</td></tr>
+<tr><td>Supabase SQL 迁移</td><td><span class="tag yellow">手动</span></td><td>需在 SQL Editor 执行</td></tr>
 </table>
-
-<h2>v2 关键洞察</h2>
-
-<h3>双发送 Bug —— 最顽固的 UI 联动 Bug</h3>
-
-<div class="highlight-box red">
-<p><strong>根因</strong>：发送 → <code>appendChild</code> → <code>scrollTop = scrollHeight</code> → 触发滚动监听 → "接近底部" → <code>loadOlderNotes()</code> → 把刚发的同一条从数据库查回来再次 append → DOM 里两条。</p>
-</div>
-
-<p>数据库只有一条，UI 渲染了两条。刷新后重新加载只有一条——这就是"清缓存后两条变一条"的原因。</p>
-
-<p><strong>8 次失败尝试</strong>：</p>
-<ul>
-<li><code>e.preventDefault()</code> + <code>stopPropagation()</code> — 无效，问题不在事件层</li>
-<li><code>stopImmediatePropagation()</code> — 无效</li>
-<li>切换 keydown → keypress — 无效</li>
-<li>时间戳防抖（800ms → 1000ms） — 无效，第二次调用在 12 秒后</li>
-<li>重新引入 <code>_isSending</code> 锁 — 无效，锁在第一次完成后已释放</li>
-<li><code>setupMainUI</code> 防重复注册 — 无效</li>
-<li>禁用 Enter、仅用发送按钮 — 仍然两条</li>
-<li>拆分 try/catch + 客户端 UUID 幂等 — 无效，问题在 DOM 层</li>
-</ul>
-
-<p><strong>教训</strong>：<code>scrollTop = scrollHeight</code> 是副作用炸弹。任何"滚到底"操作都可能触发已有的滚动监听逻辑。解决方案：去重检查（发送新笔记后跳过一轮滚动加载）、或者滚动监听加 <code>data-note-id</code> 已存在判断。</p>
-
-<h3>CSS 优先级——标签不可见之谜</h3>
-
-<div class="highlight-box yellow">
-<p>标签 pill 在彩色气泡上不可见，因为 CSS 有两个 <code>.note-bubble .note-tag</code> 规则互相覆盖——后者用 <code>var(--accent-dim)</code> 做背景，在粉色气泡上等于"粉色字放在粉色背景上"。</p>
-</div>
-
-<p><strong>教训</strong>：永远检查合并后的 CSS 规则。两个同选择器规则，后者覆盖前者，不管看起来是否"应该合并"。</p>
-
-<h3>Service Worker 缓存——网络优先 vs 缓存优先</h3>
-
-<p>开发阶段缓存优先策略导致每次代码更新都需要手动 Unregister SW。改为网络优先（Network First）后，在线时永远拿最新代码。</p>
-
-<h3>主题系统复杂度</h3>
-
-<p>8 套主题 × 2 种渲染模式（统一色 / 多色）= 16 种视觉效果。CSS 变量 + JS inline style 混用导致切换主题时气泡颜色不一致。最终方案：统一通过 <code>--bubble-bg</code> + <code>--bubble-text</code> CSS 变量控制，多色模式通过 <code>dataset.multi</code> 标记 + inline style 覆盖。</p>
-
-<h2>v2 最终交付清单</h2>
-
-<table>
-<tr><th>功能</th><th>状态</th><th>说明</th></tr>
-<tr><td>标签聚合 Markdown 导出</td><td><span class="tag green">完成</span></td><td>快照式，manifest.json 原子标记</td></tr>
-<tr><td>8 套主题（6 统一 + 2 多彩）</td><td><span class="tag green">完成</span></td><td>36 色调色盘，hash 分色</td></tr>
-<tr><td>富文本编辑 + Markdown 存储</td><td><span class="tag green">完成</span></td><td>工具栏双行：格式 + Obsidian 语法</td></tr>
-<tr><td>自定义语法按钮</td><td><span class="tag green">完成</span></td><td>排序/添加/删除/恢复默认</td></tr>
-<tr><td>标签视图（卡片/列表）</td><td><span class="tag green">完成</span></td><td>置顶、颜色自定义、预览</td></tr>
-<tr><td>回收站 30 天自动清理</td><td><span class="tag green">完成</span></td><td>批量选择、恢复、撤销</td></tr>
-<tr><td>多选删除</td><td><span class="tag green">完成</span></td><td>复选框屏幕边缘对齐</td></tr>
-<tr><td>搜索 + 无限滚动</td><td><span class="tag green">完成</span></td><td>复合游标去重</td></tr>
-<tr><td>PC 同步自动化</td><td><span class="tag green">完成</span></td><td>Task Scheduler 30min，--once 模式</td></tr>
-<tr><td>移动端语音降级</td><td><span class="tag green">完成</span></td><td>iOS 自动隐藏麦克风</td></tr>
-<tr><td>登录页重设计</td><td><span class="tag green">完成</span></td><td>蓝白卡片式</td></tr>
-<tr><td>"Designed by Anzhi"</td><td><span class="tag green">完成</span></td><td>侧边栏 + 设置页</td></tr>
-<tr><td>手机端国内直连</td><td><span class="tag yellow">需 VPN</span></td><td>Vercel 海外节点</td></tr>
-</table>
-
-<hr class="divider">
 
 <footer>
-<p>项目路径: D:\My Documents\Claude Code\projects\smart_sticky_notes</p>
-<p>技术栈: Vanilla JS PWA + Supabase + Python + Vercel</p>
-<p>日期: 2026-05-27 ~ 2026-05-28</p>
-<p>Git 提交: 40+ 次 | 总文件: 38 个 | ~8000 行代码</p>
-<p>持久记忆: 8 条 | 设计文档: v1 + v2 | Bug 报告: 2 份</p>
+<span>Smart Sticky Notes v2.4</span><span>·</span>
+<span>D:\My Documents\Claude Code\projects\smart_sticky_notes</span><span>·</span>
+<span>PWA + Supabase + Vanilla JS</span><span>·</span>
+<span>2026-06-02</span>
 </footer>
 
 </div>
