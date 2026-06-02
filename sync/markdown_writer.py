@@ -1,6 +1,9 @@
 """Generate compact tag-aggregated Markdown snapshot exports."""
 import hashlib
 import json
+import os
+import shutil
+import stat
 from pathlib import Path
 from datetime import datetime
 from tag_slug import build_tag_map
@@ -136,6 +139,17 @@ def rotate_snapshots(folder: str, keep: int = 5) -> None:
         return
     dirs = sorted([d for d in snap_dir.iterdir() if d.is_dir()], reverse=True)
     for d in dirs[keep:]:
-        for f in d.iterdir():
-            f.unlink()
-        d.rmdir()
+        try:
+            shutil.rmtree(d, onerror=_make_writable_and_retry)
+        except OSError:
+            # OneDrive can leave read-only/reparse-point snapshot folders that
+            # temporarily reject deletion. Rotation should not block syncing.
+            continue
+
+
+def _make_writable_and_retry(func, path, exc_info):
+    try:
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+    except OSError:
+        raise
