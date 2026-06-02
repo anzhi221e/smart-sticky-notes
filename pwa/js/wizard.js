@@ -10,7 +10,7 @@ CREATE TABLE smartstickynotes_items (
     type text NOT NULL CHECK (type IN ('voice', 'text')),
     text text NOT NULL DEFAULT '',
     tags text[] NOT NULL DEFAULT '{}',
-    workspace text NOT NULL DEFAULT '默认',
+    workspace text NOT NULL DEFAULT 'Main',
     audio_path text,
     audio_duration integer,
     status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'deleted')),
@@ -64,8 +64,10 @@ CREATE INDEX idx_items_tags ON smartstickynotes_items USING gin(tags);
 CREATE INDEX idx_deletion_user ON deletion_events(user_id);
 
 -- ★ 已有数据库迁移（如果你已经创建过表，单独执行这两条）：
--- ALTER TABLE smartstickynotes_items ADD COLUMN IF NOT EXISTS workspace text NOT NULL DEFAULT '默认';
+-- ALTER TABLE smartstickynotes_items ADD COLUMN IF NOT EXISTS workspace text NOT NULL DEFAULT 'Main';
 -- CREATE INDEX IF NOT EXISTS idx_items_user_workspace ON smartstickynotes_items(user_id, workspace, status);
+-- ★ 如果你已经迁移过（默认值是 '默认'），还需要执行：
+-- UPDATE smartstickynotes_items SET workspace = 'Main' WHERE workspace = '默认';
 
 -- Then create Storage bucket "smartstickynotes_audio"
 -- via Supabase Dashboard -> Storage -> New Bucket

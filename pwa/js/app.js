@@ -16,7 +16,7 @@ import { showSettings } from './settings.js';
 console.log('[SSN] v2.4 loaded — ' + new Date().toISOString());
 let _loadingMore = false;
 let _oldestCursor = null;
-let _currentWorkspace = '默认';
+let _currentWorkspace = 'Main';
 
 async function refreshTagColorCache() {
     try {
@@ -48,7 +48,7 @@ async function doInit() {
         const { getDefaultWorkspace, getCurrentWorkspace, setCurrentWorkspace } = await import('./workspaces.js');
         const defaultWs = await getDefaultWorkspace();
         const savedWs = getCurrentWorkspace();
-        _currentWorkspace = savedWs !== '默认' ? savedWs : defaultWs;
+        _currentWorkspace = savedWs !== 'Main' ? savedWs : defaultWs;
         setCurrentWorkspace(_currentWorkspace);
         navigateTo('main');
         await loadNotes();

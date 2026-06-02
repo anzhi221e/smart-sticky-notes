@@ -1,7 +1,7 @@
 import { readConfig, writeConfig, batchUpdateWorkspace, batchSoftDeleteByWorkspace } from './db.js';
 import { showToast } from './ui.js';
 
-const DEFAULT_WORKSPACE = '默认';
+const DEFAULT_WORKSPACE = 'Main';
 const PIN_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:1px;"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>';
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -51,7 +51,7 @@ export async function createWorkspace(name) {
 }
 
 export async function renameWorkspace(oldName, newName) {
-    if (oldName === DEFAULT_WORKSPACE) throw new Error('不能重命名默认工作区');
+    if (oldName === DEFAULT_WORKSPACE) throw new Error(`不能重命名 ${DEFAULT_WORKSPACE} 工作区`);
     if (!newName || !newName.trim()) throw new Error('名称不能为空');
     const trimmed = newName.trim();
     if (trimmed === DEFAULT_WORKSPACE) throw new Error('不能使用保留名称');
@@ -74,7 +74,7 @@ export async function renameWorkspace(oldName, newName) {
 }
 
 export async function deleteWorkspace(name) {
-    if (name === DEFAULT_WORKSPACE) throw new Error('不能删除默认工作区');
+    if (name === DEFAULT_WORKSPACE) throw new Error(`不能删除 ${DEFAULT_WORKSPACE} 工作区`);
     await batchSoftDeleteByWorkspace(name);
     const custom = await getCustomWorkspaces();
     const idx = custom.indexOf(name);

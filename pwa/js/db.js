@@ -58,7 +58,7 @@ export async function insertNote(note) {
         type: note.type,
         text: note.text,
         tags: note.tags || [],
-        workspace: note.workspace || '默认',
+        workspace: note.workspace || 'Main',
         audio_path: note.audio_path || null,
         audio_duration: note.audio_duration || null,
     };
