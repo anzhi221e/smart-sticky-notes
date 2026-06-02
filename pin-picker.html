@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大头针图标选择</title>
+<style>
+:root {
+    --bg: #0f1119;
+    --surface: #1a1d2e;
+    --border: #2a2d40;
+    --text: #e8e8e8;
+    --text-secondary: #888;
+    --accent: #6c8cff;
+    --accent-dim: rgba(108,140,255,0.15);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font); padding: 32px 16px;
+    max-width: 800px; margin: 0 auto;
+}
+h1 { text-align: center; margin-bottom: 8px; font-size: 22px; }
+.subtitle { text-align: center; color: var(--text-secondary); font-size: 13px; margin-bottom: 28px; }
+.grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+@media (max-width: 500px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+.card {
+    background: var(--surface); border: 2px solid var(--border);
+    border-radius: var(--radius); padding: 24px 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    cursor: pointer; transition: all 0.2s;
+}
+.card:hover { border-color: var(--accent); background: var(--accent-dim); }
+.card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
+.card svg { stroke: var(--text); transition: stroke 0.15s; }
+.card.selected svg { stroke: var(--accent); }
+.card .label { font-size: 12px; color: var(--text-secondary); }
+.card.selected .label { color: var(--accent); }
+.actions { text-align: center; margin-top: 28px; }
+.actions button {
+    padding: 12px 32px; border-radius: 10px; border: none;
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font);
+}
+.btn-confirm { background: var(--accent); color: #fff; }
+.btn-reset { background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border) !important; margin-right: 12px; }
+.result {
+    margin-top: 24px; padding: 16px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    text-align: center; font-size: 13px; color: var(--text-secondary);
+}
+.result code {
+    background: var(--bg); padding: 4px 10px; border-radius: 4px;
+    font-size: 12px; color: var(--accent); display: inline-block; margin: 6px 0;
+}
+</style>
+</head>
+<body>
+
+<h1>选择工作区大头针图标</h1>
+<p class="subtitle">点击卡片选中，再点底部"确认选择"即可。当前风格：细线条、圆角端点、与 UI 一致。</p>
+
+<div class="grid" id="grid"></div>
+
+<div class="actions">
+    <button class="btn-reset" onclick="resetSelection()">清除选择</button>
+    <button class="btn-confirm" onclick="confirmSelection()">确认选择</button>
+</div>
+
+<div class="result" id="result" style="display:none;"></div>
+
+<script>
+const ICONS = [
+    { id: 1,  label: '经典图钉',        paths: '<line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>' },
+    { id: 2,  label: '简约图钉',        paths: '<path d="M12 2v8l-2 4v2h4v-2l-2-4V2"/><circle cx="12" cy="21" r="1" fill="currentColor"/>' },
+    { id: 3,  label: '书签',           paths: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>' },
+    { id: 4,  label: '尖角书签',       paths: '<path d="M18 2H6a2 2 0 0 0-2 2v18l8-5 8 5V4a2 2 0 0 0-2-2z"/><line x1="12" y1="2" x2="12" y2="7"/>' },
+    { id: 5,  label: '旗帜',           paths: '<path d="M4 21V4"/><path d="M4 4h16l-4 5 4 5H4"/>' },
+    { id: 6,  label: '三角旗',         paths: '<line x1="4" y1="21" x2="4" y2="3"/><polygon points="4,5 18,4 14,10 18,16 4,15"/>' },
+    { id: 7,  label: '星标',           paths: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>' },
+    { id: 8,  label: '五角星',         paths: '<polygon points="12 2 15 9 22 9 16 14 18 22 12 17 6 22 8 14 2 9 9 9"/>' },
+    { id: 9,  label: '菱形钉',         paths: '<path d="M12 2v6l4 4-4 4v6"/><polygon points="8,12 12,8 16,12 12,16"/>' },
+    { id: 10, label: '圆点钉',         paths: '<line x1="12" y1="3" x2="12" y2="16"/><circle cx="12" cy="18" r="2" fill="currentColor"/><circle cx="12" cy="3" r="1.5" fill="currentColor"/>' },
+    { id: 11, label: '定位标记',        paths: '<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>' },
+    { id: 12, label: '瞄准点',         paths: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" fill="currentColor"/>' },
+    { id: 13, label: '竖线标记',        paths: '<line x1="12" y1="2" x2="12" y2="22"/><circle cx="12" cy="6" r="2" fill="currentColor"/><polygon points="12,22 9,16 15,16"/>' },
+    { id: 14, label: '锚点',           paths: '<circle cx="12" cy="5" r="2" fill="currentColor"/><line x1="12" y1="7" x2="12" y2="17"/><path d="M7 13a5 5 0 0 0 10 0"/>' },
+    { id: 15, label: '回形针',         paths: '<path d="M6 2v16a4 4 0 0 0 8 0V5a2.5 2.5 0 0 0-5 0v13a1 1 0 0 0 2 0V6"/>' },
+    { id: 16, label: '迷你图钉(双线)',  paths: '<path d="M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2"/><path d="M9 6v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6"/><circle cx="12" cy="20" r="1" fill="currentColor"/>' },
+];
+
+let selectedId = null;
+
+function makeSvg(id, paths, size) {
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+}
+
+function renderGrid() {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    ICONS.forEach(icon => {
+        const card = document.createElement('div');
+        card.className = 'card' + (selectedId === icon.id ? ' selected' : '');
+        card.innerHTML = makeSvg(icon.id, icon.paths, 32) + `<span class="label">#${icon.id} ${icon.label}</span>`;
+        card.addEventListener('click', () => {
+            selectedId = icon.id;
+            renderGrid();
+        });
+        grid.appendChild(card);
+    });
+}
+
+function resetSelection() {
+    selectedId = null;
+    document.getElementById('result').style.display = 'none';
+    renderGrid();
+}
+
+function confirmSelection() {
+    if (!selectedId) return;
+    const icon = ICONS.find(i => i.id === selectedId);
+    const svgCode = makeSvg(icon.id, icon.paths, 14).replace(/"/g, "'");
+    const pinIconConst = `const PIN_ICON = '${svgCode}';`;
+
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('result').innerHTML = `
+        <p>已选择 <strong>#${icon.id} ${icon.label}</strong></p>
+        <p style="margin-top:8px;">将此行替换 <code>workspaces.js</code> 中的 PIN_ICON：</p>
+        <code style="word-break:break-all;text-align:left;white-space:pre-wrap;max-width:100%;overflow-x:auto;">${pinIconConst}</code>
+    `;
+}
+
+renderGrid();
+</script>
+</body>
+</html>
