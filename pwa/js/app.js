@@ -204,10 +204,6 @@ function setupMainUI() {
     selectToggle.addEventListener('click', () => {
         _selectMode = !_selectMode;
         _selectedIds.clear();
-        document.querySelectorAll('.note-bubble').forEach(b => {
-            const cb = b.querySelector('.select-checkbox');
-            if (cb) cb.checked = false;
-        });
         updateSelectModeUI();
     });
 
@@ -220,10 +216,49 @@ function setupMainUI() {
                 bar.style.cssText = 'display:flex;gap:8px;padding:10px 16px;background:var(--surface);border-top:1px solid var(--border);align-items:center;';
                 bar.innerHTML = `
                     <span id="select-count" style="font-size:13px;color:var(--text-secondary);flex:1;">已选 0 项</span>
+                    <button id="select-move-btn" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:16px;cursor:pointer;font-size:13px;">移动</button>
                     <button id="select-delete-btn" style="padding:8px 16px;background:var(--danger);color:#fff;border:none;border-radius:16px;cursor:pointer;font-size:13px;">删除所选</button>
                     <button id="select-cancel-btn" style="padding:8px 16px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:16px;cursor:pointer;font-size:13px;">取消</button>
                 `;
                 document.getElementById('screen-main').appendChild(bar);
+                bar.querySelector('#select-move-btn').addEventListener('click', async () => {
+                    if (_selectedIds.size === 0) return;
+                    const { getWorkspaces, getCurrentWorkspace } = await import('./workspaces.js');
+                    const workspaces = await getWorkspaces();
+                    const currentWs = getCurrentWorkspace();
+                    const targets = workspaces.filter(w => w !== currentWs);
+                    if (targets.length === 0) { showToast('没有其他对话'); return; }
+                    // Show a simple picker
+                    const picker = document.createElement('div');
+                    picker.className = 'bubble-menu bubble-menu-sheet';
+                    picker.innerHTML = `
+                        <div class="bubble-menu-sheet-inner">
+                            <div style="padding:12px 16px;font-size:15px;font-weight:600;text-align:center;color:var(--text);">移动 ${_selectedIds.size} 条到</div>
+                            ${targets.map(w => `<button class="bubble-menu-item" data-workspace="${w.replace(/"/g,'&quot;')}">${w.replace(/&/g,'&amp;')}</button>`).join('')}
+                            <button class="bubble-menu-item" data-action="cancel" style="margin-top:4px;">取消</button>
+                        </div>
+                    `;
+                    function closePicker() { picker.remove(); }
+                    picker.addEventListener('click', (e) => { if (e.target === picker) closePicker(); });
+                    picker.querySelector('[data-action="cancel"]')?.addEventListener('click', closePicker);
+                    picker.querySelectorAll('[data-workspace]').forEach(btn => {
+                        btn.addEventListener('click', async () => {
+                            const targetWs = btn.dataset.workspace;
+                            closePicker();
+                            const { moveNoteToWorkspace } = await import('./db.js');
+                            let moved = 0;
+                            for (const id of _selectedIds) {
+                                try { await moveNoteToWorkspace(id, targetWs); moved++; } catch (e) { /* skip */ }
+                            }
+                            showToast(`已移动 ${moved} 条到 ${targetWs}`);
+                            _selectMode = false; _selectedIds.clear();
+                            document.getElementById('select-action-bar')?.remove();
+                            updateSelectModeUI();
+                            loadNotes();
+                        });
+                    });
+                    document.body.appendChild(picker);
+                });
                 bar.querySelector('#select-delete-btn').addEventListener('click', async () => {
                     if (_selectedIds.size === 0) return;
                     if (!confirm(`确定删除 ${_selectedIds.size} 条笔记？`)) return;
@@ -245,31 +280,29 @@ function setupMainUI() {
             if (selectBar) selectBar.remove();
         }
         // Show/hide checkboxes
-        document.querySelectorAll('.note-bubble').forEach(b => {
-            let cb = b.querySelector('.select-checkbox');
-            if (_selectMode) {
-                if (!cb) {
-                    cb = document.createElement('input');
-                    cb.type = 'checkbox';
-                    cb.className = 'select-checkbox';
-                    cb.addEventListener('change', () => {
-                        if (cb.checked) _selectedIds.add(b.dataset.noteId);
-                        else _selectedIds.delete(b.dataset.noteId);
-                        const count = document.getElementById('select-count');
-                        if (count) count.textContent = `已选 ${_selectedIds.size} 项`;
-                    });
-                }
-                cb.style.display = '';
-                // Position at left edge of notes-list, aligned with bubble top
-                const list = document.getElementById('notes-list');
-                list.style.position = 'relative';
+        const list = document.getElementById('notes-list');
+        if (_selectMode) {
+            // Remove any stale checkboxes first
+            list.querySelectorAll('.select-checkbox').forEach(cb => cb.remove());
+            list.style.position = 'relative';
+            document.querySelectorAll('.note-bubble').forEach(b => {
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'select-checkbox';
+                cb.dataset.noteId = b.dataset.noteId;
+                cb.addEventListener('change', () => {
+                    if (cb.checked) _selectedIds.add(cb.dataset.noteId);
+                    else _selectedIds.delete(cb.dataset.noteId);
+                    const count = document.getElementById('select-count');
+                    if (count) count.textContent = `已选 ${_selectedIds.size} 项`;
+                });
                 list.appendChild(cb);
-                cb.style.cssText = 'position:absolute;left:16px;width:20px;height:20px;accent-color:var(--accent);cursor:pointer;z-index:5;';
+                cb.style.cssText = 'position:absolute;left:8px;width:20px;height:20px;accent-color:var(--accent);cursor:pointer;z-index:5;';
                 cb.style.top = (b.offsetTop + 14) + 'px';
-            } else {
-                if (cb) cb.remove();
-            }
-        });
+            });
+        } else {
+            list.querySelectorAll('.select-checkbox').forEach(cb => cb.remove());
+        }
         updateSelectCount();
     }
 

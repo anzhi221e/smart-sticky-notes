@@ -79,10 +79,10 @@ export async function showSettings() {
                 </select></div>
         </div>
         <div class="setting-group"><h3>账户</h3>
-            <p style="font-size:11px;color:var(--text-secondary);text-align:center;margin-top:24px;opacity:0.6;">Designed by Anzhi</p>
             <button id="copy-token-btn" style="padding:10px 20px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:20px;cursor:pointer;font-size:14px;margin-bottom:8px;display:block;">复制同步令牌</button>
             <button id="logout-btn" style="padding:10px 20px;background:var(--danger);color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:14px;">退出登录</button>
         </div>
+        <p style="font-size:11px;color:var(--text-secondary);text-align:center;padding:16px;opacity:0.6;">Designed by Anzhi</p>
     `;
 
     // Theme swatches
