@@ -169,7 +169,7 @@ async function showMoveDialog(note, bubble, onDelete) {
         <div class="bubble-menu-sheet-inner">
             <div style="padding:12px 16px;font-size:15px;font-weight:600;text-align:center;color:var(--text);">移动到</div>
             ${workspaces.filter(w => w !== currentWs).map(w => `
-                <button class="bubble-menu-item" data-workspace="${w.replace(/"/g, '&quot;')}">${w.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</button>
+                <button class="bubble-menu-item" data-workspace="${w.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')}">${w.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</button>
             `).join('')}
             ${workspaces.filter(w => w !== currentWs).length === 0 ? '<div style="padding:16px;text-align:center;color:var(--text-secondary);font-size:13px;">没有其他对话</div>' : ''}
             <button class="bubble-menu-item" data-action="cancel" style="margin-top:4px;">取消</button>

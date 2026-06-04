@@ -234,7 +234,7 @@ function setupMainUI() {
                     picker.innerHTML = `
                         <div class="bubble-menu-sheet-inner">
                             <div style="padding:12px 16px;font-size:15px;font-weight:600;text-align:center;color:var(--text);">移动 ${_selectedIds.size} 条到</div>
-                            ${targets.map(w => `<button class="bubble-menu-item" data-workspace="${w.replace(/"/g,'&quot;')}">${w.replace(/&/g,'&amp;')}</button>`).join('')}
+                            ${targets.map(w => `<button class="bubble-menu-item" data-workspace="${w.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}">${w.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</button>`).join('')}
                             <button class="bubble-menu-item" data-action="cancel" style="margin-top:4px;">取消</button>
                         </div>
                     `;
