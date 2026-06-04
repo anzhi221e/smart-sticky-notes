@@ -82,7 +82,8 @@ export function renderTagBar(tags, pinnedTags = []) {
     const bar = document.getElementById('tag-quick-bar');
     if (!bar) return;
     bar.innerHTML = '';
-    const sorted = [...pinnedTags, ...tags.filter(t => !pinnedTags.includes(t))];
+    const validPinned = pinnedTags.filter(t => tags.includes(t));
+    const sorted = [...validPinned, ...tags.filter(t => !validPinned.includes(t))];
     sorted.slice(0, 12).forEach(tag => {
         const pill = document.createElement('button');
         pill.className = 'tag-pill';

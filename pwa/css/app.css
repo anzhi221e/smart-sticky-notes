@@ -44,11 +44,21 @@ html, body {
     display: flex; align-items: center; justify-content: space-between;
     padding: 12px 16px; border-bottom: 1px solid var(--border);
     background: var(--bg); min-height: 52px; flex-shrink: 0;
-    overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 4px;
 }
-.top-bar::-webkit-scrollbar { display: none; }
 .top-bar h2 { font-size: 17px; font-weight: 600; }
 .sync-status { font-size: 12px; color: var(--text-secondary); }
+
+#search-input {
+    flex: 1; min-width: 0; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 8px 12px; color: var(--text); font-size: 14px;
+    outline: none; margin: 0 8px; font-family: var(--font);
+}
+@media (max-width: 400px) {
+    #search-input { flex: 0 1 auto; width: 80px; padding: 8px 8px; margin: 0 4px; font-size: 13px; }
+    .top-bar { padding: 12px 8px; }
+    .workspace-toggle { padding: 5px 8px; font-size: 12px; }
+}
 
 /* Icon buttons */
 .icon-btn {
@@ -195,7 +205,7 @@ html, body {
 .auth-container, .wizard-container {
     flex: 1; display: flex; flex-direction: column; align-items: center;
     justify-content: center; padding: 40px 24px; text-align: center;
-    background: #f5f8ff url('../smart-sticky-notes.png') no-repeat center 15% / 140px auto;
+    background: linear-gradient(180deg, #f5f8ff 0%, #e8f0fe 100%);
 }
 .auth-card {
     background: #fff; border-radius: 20px; padding: 40px 32px;
@@ -266,7 +276,9 @@ html, body {
 /* Toolbar */
 .toolbar { border-top: 1px solid var(--border); background: var(--bg); padding: 8px 12px 4px; }
 .toolbar-row { display: flex; gap: 4px; overflow-x: auto; padding: 4px 0; -webkit-overflow-scrolling: touch; }
-.toolbar-row::-webkit-scrollbar { display: none; }
+.toolbar-row::-webkit-scrollbar { height: 4px; }
+.toolbar-row::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.toolbar-row { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 .toolbar-row--format { justify-content: space-between; }
 .toolbar-group { display: flex; gap: 3px; flex-shrink: 0; }
 .tb-btn {
@@ -421,7 +433,9 @@ html, body {
     display: flex; gap: 6px; padding: 8px 16px;
     overflow-x: auto; -webkit-overflow-scrolling: touch;
 }
-.workspace-filter-scroll::-webkit-scrollbar { display: none; }
+.workspace-filter-scroll::-webkit-scrollbar { height: 4px; }
+.workspace-filter-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.workspace-filter-scroll { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 .workspace-filter-btn {
     padding: 5px 14px; border-radius: 16px; border: 1px solid var(--border);
     background: var(--surface); color: var(--text-secondary);
