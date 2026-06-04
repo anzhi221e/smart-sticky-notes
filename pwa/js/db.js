@@ -124,6 +124,15 @@ export async function getAudioSignedUrl(audioPath) {
     return data.signedUrl;
 }
 
+export async function moveNoteToWorkspace(noteId, newWorkspace) {
+    const sb = getSupabase();
+    const { error } = await sb
+        .from('smartstickynotes_items')
+        .update({ workspace: newWorkspace, updated_at: new Date().toISOString() })
+        .eq('id', noteId);
+    if (error) throw error;
+}
+
 export async function fetchTags(workspace = null) {
     const sb = getSupabase();
     let query = sb

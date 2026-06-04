@@ -283,6 +283,9 @@ function setupMainUI() {
         searchTimeout = setTimeout(() => filterNotes(e.target.value), 300);
     });
 
+    // Periodic background refresh (reads sync_interval from config)
+    setupPeriodicRefresh();
+
     // Infinite scroll: load older notes when scrolling to the top.
     document.getElementById('notes-list')?.addEventListener('scroll', () => {
         const list = document.getElementById('notes-list');
@@ -505,6 +508,7 @@ async function sendTextNote(caller = 'unknown') {
             id: b.dataset.noteId, type: note.type, text: note.text, tags: note.tags, created_at: note.created_at || new Date().toISOString(),
         }));
         await cacheNotes(noteData);
+        requestPcSync(); // auto-request PC sync after saving a note
     } catch (err) {
         // Note is already saved in DB. UI render/cache failed — just reload.
         console.warn('Note saved but UI update failed:', err);
@@ -614,4 +618,41 @@ export async function navigateToTags(tag) {
     notes.forEach(n => content.appendChild(renderNoteBubble(n)));
     document.documentElement.dataset.multi = savedMulti;
     document.getElementById('tag-filter-back').addEventListener('click', showTagsView);
+}
+
+function setupPeriodicRefresh() {
+    let _refreshInterval = null;
+
+    async function updateInterval() {
+        if (_refreshInterval) clearInterval(_refreshInterval);
+        try {
+            const cfg = await readConfig().catch(() => ({}));
+            const minutes = parseInt(cfg.sync_interval) || 30;
+            const ms = Math.max(minutes * 60 * 1000, 30000); // min 30 seconds
+            _refreshInterval = setInterval(async () => {
+                if (!document.getElementById('screen-main')?.classList.contains('active')) return;
+                try {
+                    await loadNotes();
+                    setSyncStatus('已同步');
+                } catch (e) { /* silent */ }
+            }, ms);
+        } catch (e) { /* use default */ }
+    }
+
+    updateInterval();
+
+    // Re-check interval when returning to main screen (in case config changed)
+    const observer = new MutationObserver(() => {
+        if (document.getElementById('screen-main')?.classList.contains('active')) {
+            updateInterval();
+        }
+    });
+    observer.observe(document.getElementById('app'), { attributes: true, subtree: true, attributeFilter: ['class'] });
+}
+
+async function requestPcSync() {
+    try {
+        const sb = getSupabase();
+        await sb.from('sync_requests').insert({ status: 'pending' });
+    } catch (e) { /* ignore — PC will pick up on its next poll anyway */ }
 }

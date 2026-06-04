@@ -249,6 +249,8 @@ export async function updateSidebarWorkspaces(sidebarNav) {
     existingWs.forEach(el => el.remove());
     const existingSep = sidebarNav.querySelector('.nav-workspace-separator');
     if (existingSep) existingSep.remove();
+    const existingLabels = sidebarNav.querySelectorAll('.nav-section-label');
+    existingLabels.forEach(el => el.remove());
     const existingManage = sidebarNav.querySelector('.nav-item-workspace-manager');
     if (existingManage) existingManage.remove();
 

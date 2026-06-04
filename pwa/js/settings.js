@@ -143,6 +143,7 @@ export async function showSettings() {
         if (!editor) return;
         editor.innerHTML = '';
         toolbarButtons.forEach((btn, i) => {
+            const row = document.createElement('div');
             row.style.cssText = 'display:flex;gap:4px;align-items:center;overflow-x:auto;';
             row.innerHTML = `
                 <button class="tb-move-btn" data-dir="up" data-idx="${i}" ${i===0?'disabled':''} style="flex-shrink:0;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:14px;padding:2px 4px;">▲</button>

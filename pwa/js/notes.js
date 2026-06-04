@@ -140,6 +140,7 @@ function showBubbleMenu(bubble, note, onDelete, onEdit) {
     menu.innerHTML = `
         <div class="bubble-menu-sheet-inner">
             <button class="bubble-menu-item" data-action="edit">编辑</button>
+            <button class="bubble-menu-item" data-action="move">移动</button>
             <button class="bubble-menu-item" data-action="copy">复制</button>
             <button class="bubble-menu-item bubble-menu-item--danger" data-action="delete">删除</button>
             <button class="bubble-menu-item" data-action="cancel">取消</button>
@@ -147,6 +148,7 @@ function showBubbleMenu(bubble, note, onDelete, onEdit) {
     `;
 
     menu.querySelector('[data-action="edit"]').addEventListener('click', () => { cleanup(); if (onEdit) onEdit(bubble, note.id, note.text, note.tags); });
+    menu.querySelector('[data-action="move"]').addEventListener('click', () => { cleanup(); showMoveDialog(note, bubble, onDelete); });
     menu.querySelector('[data-action="delete"]').addEventListener('click', () => { cleanup(); deleteBubble(bubble, note, onDelete); });
     menu.querySelector('[data-action="copy"]').addEventListener('click', () => { cleanup(); navigator.clipboard.writeText(note.text); showToast('已复制'); });
     menu.querySelector('[data-action="cancel"]').addEventListener('click', cleanup);
@@ -155,6 +157,44 @@ function showBubbleMenu(bubble, note, onDelete, onEdit) {
     menu.addEventListener('click', (e) => { if (e.target === menu) cleanup(); });
 
     document.body.appendChild(menu);
+}
+
+async function showMoveDialog(note, bubble, onDelete) {
+    const workspaces = (await import('./workspaces.js')).getWorkspaces ? await (await import('./workspaces.js')).getWorkspaces() : ['Main'];
+    const currentWs = (await import('./workspaces.js')).getCurrentWorkspace ? (await import('./workspaces.js')).getCurrentWorkspace() : 'Main';
+
+    const sheet = document.createElement('div');
+    sheet.className = 'bubble-menu bubble-menu-sheet';
+    sheet.innerHTML = `
+        <div class="bubble-menu-sheet-inner">
+            <div style="padding:12px 16px;font-size:15px;font-weight:600;text-align:center;color:var(--text);">移动到</div>
+            ${workspaces.filter(w => w !== currentWs).map(w => `
+                <button class="bubble-menu-item" data-workspace="${w.replace(/"/g, '&quot;')}">${w.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</button>
+            `).join('')}
+            ${workspaces.filter(w => w !== currentWs).length === 0 ? '<div style="padding:16px;text-align:center;color:var(--text-secondary);font-size:13px;">没有其他对话</div>' : ''}
+            <button class="bubble-menu-item" data-action="cancel" style="margin-top:4px;">取消</button>
+        </div>
+    `;
+
+    function cleanup() { sheet.remove(); }
+    sheet.addEventListener('click', (e) => { if (e.target === sheet) cleanup(); });
+    sheet.querySelector('[data-action="cancel"]')?.addEventListener('click', cleanup);
+
+    sheet.querySelectorAll('[data-workspace]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const targetWs = btn.dataset.workspace;
+            cleanup();
+            try {
+                const { moveNoteToWorkspace } = await import('./db.js');
+                await moveNoteToWorkspace(note.id, targetWs);
+                showToast('已移动到 ' + targetWs);
+                bubble.remove();
+                if (onDelete) onDelete(note.id);
+            } catch (e) { showToast('移动失败: ' + e.message); }
+        });
+    });
+
+    document.body.appendChild(sheet);
 }
 
 let _deletingBubble = false;
