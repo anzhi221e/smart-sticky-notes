@@ -359,10 +359,10 @@ async function setupWorkspaceToggle() {
             dropdown.remove();
             showWorkspaceManager();
         });
-        // Position dropdown below the toggle button
+        // Position dropdown below the toggle button (left-aligned)
         const rect = toggle.getBoundingClientRect();
         dropdown.style.top = (rect.bottom + 4) + 'px';
-        dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+        dropdown.style.left = rect.left + 'px';
         document.body.appendChild(dropdown);
         setTimeout(() => {
             document.addEventListener('click', function closeDropdown() {

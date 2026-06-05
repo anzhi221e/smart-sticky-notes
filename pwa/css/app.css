@@ -389,7 +389,6 @@ html, body {
 .note-text strong { font-weight: 600; }
 .note-text em { font-style: italic; }
 .note-text del { text-decoration: line-through; color: var(--text-secondary); }
-.note-text blockquote { border-left: 3px solid var(--accent); padding-left: 10px; margin: 6px 0; color: var(--text-secondary); }
 .note-text ul, .note-text ol { padding-left: 20px; margin: 4px 0; }
 .note-text li { margin: 2px 0; }
 .note-text p { margin: 4px 0; }
@@ -402,10 +401,13 @@ html, body {
 .note-text hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
 .note-text a { color: var(--accent); text-decoration: underline; }
 .note-text img { max-width: 100%; border-radius: 6px; }
-/* Collapse adjacent blockquotes into one */
-.note-text blockquote + blockquote { margin-top: -6px; padding-top: 0; }
-/* Callout styling */
-.note-text blockquote { position: relative; border-left: 3px solid var(--accent); padding: 8px 12px 8px 14px; margin: 8px 0; border-radius: 0 6px 6px 0; background: var(--accent-dim); color: var(--text); }
+.note-text blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 6px 12px; margin: 8px 0;
+    border-radius: 0 6px 6px 0;
+    background: var(--surface);
+    color: var(--text);
+}
 /* Reduce top margin when paragraph follows heading */
 .note-text h1 + p, .note-text h2 + p, .note-text h3 + p { margin-top: 2px; }
 
