@@ -398,7 +398,7 @@ async function loadOlderNotes() {
             const previousScrollHeight = list.scrollHeight;
             data.forEach(n => {
                 if (list.querySelector(`[data-note-id="${CSS.escape(n.id)}"]`)) return;
-                const bubble = renderNoteBubble(n, null, (b, id, text, tags) => startEditing(b, id, text, () => loadNotes()));
+                const bubble = renderNoteBubble(n, null, (b, id, text, tags) => startEditing(b, id, text));
                 list.insertBefore(bubble, list.firstChild);
             });
             _oldestCursor = data[data.length - 1];
@@ -570,7 +570,7 @@ export async function loadNotes() {
         }
         notes.forEach(note => {
             if (list.querySelector(`[data-note-id="${CSS.escape(note.id)}"]`)) return;
-            const bubble = renderNoteBubble(note, null, (b, id, text, tags) => startEditing(b, id, text, () => loadNotes()));
+            const bubble = renderNoteBubble(note, null, (b, id, text, tags) => startEditing(b, id, text));
             list.appendChild(bubble);
         });
         _oldestCursor = notes.length > 0 ? notes[0] : null;

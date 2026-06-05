@@ -6,7 +6,7 @@ let _editingBubble = null;
 let _editingNoteId = null;
 let _originalText = '';
 
-export function startEditing(bubble, noteId, text, onSaved) {
+export function startEditing(bubble, noteId, text) {
     _editingBubble = bubble;
     _editingNoteId = noteId;
     _originalText = text;
@@ -35,8 +35,8 @@ export function startEditing(bubble, noteId, text, onSaved) {
         });
     });
 
-    bubble.querySelector('.edit-btn--cancel').addEventListener('click', () => cancelEditing(onSaved));
-    bubble.querySelector('.edit-btn--save').addEventListener('click', () => saveEditing(onSaved));
+    bubble.querySelector('.edit-btn--cancel').addEventListener('click', () => cancelEditing());
+    bubble.querySelector('.edit-btn--save').addEventListener('click', () => saveEditing());
     textarea.focus();
 }
 
@@ -44,11 +44,11 @@ function escapeHtml(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-async function saveEditing(onSaved) {
+async function saveEditing() {
     const textarea = _editingBubble?.querySelector('#bubble-editor');
     if (!textarea) return;
     const newText = textarea.value;
-    if (newText === _originalText) { cancelEditing(onSaved); return; }
+    if (newText === _originalText) { cancelEditing(); return; }
 
     try {
         const { getSupabase } = await import('./supabase.js');
@@ -69,10 +69,9 @@ async function saveEditing(onSaved) {
     }
 
     finishEditing();
-    if (onSaved) onSaved();
 }
 
-function cancelEditing(onSaved) {
+function cancelEditing() {
     if (_editingBubble && _editingBubble._originalHTML) {
         _editingBubble.innerHTML = _editingBubble._originalHTML;
     }

@@ -17,20 +17,17 @@ export function parseTags(text) {
 
 export function renderMarkdown(text) {
     if (!text) return '';
+    if (typeof marked !== 'undefined') {
+        // Escape HTML first to prevent stored XSS, then parse markdown
+        const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return marked.parse(escaped);
+    }
+    // Fallback: basic inline formatting only
     let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    // Order matters: headers before bold, etc.
-    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
     html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
-    html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
-    html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
-    html = html.replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>');
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    // Line breaks
-    html = html.replace(/\n\n/g, '<br><br>');
     return html;
 }
 
