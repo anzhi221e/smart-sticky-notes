@@ -18,11 +18,21 @@ export function parseTags(text) {
 export function renderMarkdown(text) {
     if (!text) return '';
     if (typeof marked !== 'undefined') {
-        // Escape HTML first to prevent stored XSS, then parse markdown
-        const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const html = marked.parse(escaped);
-        // Strip javascript: and data: URLs from links
-        return html.replace(/\bhref="(javascript|data):[^"]*"/gi, 'href="#"');
+        const renderer = new marked.Renderer();
+        const origLink = renderer.link.bind(renderer);
+        const origImage = renderer.image.bind(renderer);
+        renderer.link = function({ href, title, text: linkText }) {
+            if (!/^(https?|mailto|ftp):\/\//i.test(href)) return linkText;
+            return origLink.apply(this, arguments);
+        };
+        renderer.image = function({ href, title, text: altText }) {
+            if (!/^(https?):\/\//i.test(href)) return altText;
+            return origImage.apply(this, arguments);
+        };
+        const html = marked.parse(text, { renderer });
+        return html
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/\son\w+\s*=\s*"[^"]*"/gi, '');
     }
     // Fallback: basic inline formatting only
     let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
