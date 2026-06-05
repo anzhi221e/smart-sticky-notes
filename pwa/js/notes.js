@@ -32,7 +32,7 @@ export function renderMarkdown(text) {
         const html = marked.parse(text, { renderer });
         return html
             .replace(/<script[\s\S]*?<\/script>/gi, '')
-            .replace(/\son\w+\s*=\s*"[^"]*"/gi, '');
+            .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '');
     }
     // Fallback: basic inline formatting only
     let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
