@@ -20,7 +20,9 @@ export function renderMarkdown(text) {
     if (typeof marked !== 'undefined') {
         // Escape HTML first to prevent stored XSS, then parse markdown
         const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        return marked.parse(escaped);
+        const html = marked.parse(escaped);
+        // Strip javascript: and data: URLs from links
+        return html.replace(/\bhref="(javascript|data):[^"]*"/gi, 'href="#"');
     }
     // Fallback: basic inline formatting only
     let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
