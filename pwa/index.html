@@ -46,8 +46,17 @@
                     <h1>Smart Sticky Notes</h1>
                     <p class="subtitle">随时随地记录，自动汇总整理</p>
                 <form id="login-form">
-                    <input type="email" id="email-input" class="auth-input" placeholder="邮箱地址" required autocomplete="email">
-                    <button type="submit" id="login-btn" class="auth-btn">发送登录链接</button>
+                    <div id="login-step-email">
+                        <label class="step-label">邮箱地址</label>
+                        <input type="email" id="email-input" class="auth-input" placeholder="输入邮箱地址" required autocomplete="email">
+                        <button type="submit" id="send-code-btn" class="auth-btn">发送验证码</button>
+                    </div>
+                    <div id="login-step-code" class="hidden">
+                        <label class="step-label">已发送验证码至 <span id="otp-email-display"></span></label>
+                        <input type="text" id="code-input" class="auth-input code-input" placeholder="输入 6 位验证码" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="\d{6}">
+                        <button type="button" id="verify-code-btn" class="auth-btn">验证</button>
+                        <button type="button" id="resend-code-btn" class="auth-btn secondary">重新发送验证码</button>
+                    </div>
                 </form>
                 <p id="login-msg" class="msg hidden"></p>
                 </div>

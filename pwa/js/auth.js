@@ -1,12 +1,27 @@
 import { getSupabase } from './supabase.js';
 
-export async function sendMagicLink(email) {
+export async function sendOtp(email) {
     const sb = getSupabase();
     const { error } = await sb.auth.signInWithOtp({
         email,
         options: { shouldCreateUser: true },
     });
     return { error };
+}
+
+export async function verifyOtp(email, token) {
+    const sb = getSupabase();
+    const { data, error } = await sb.auth.verifyOtp({
+        email,
+        token,
+        type: 'email',
+    });
+    return { data, error };
+}
+
+// Keep old name for backward compatibility — calls sendOtp internally
+export async function sendMagicLink(email) {
+    return sendOtp(email);
 }
 
 export async function getSession() {

@@ -223,13 +223,26 @@ html, body {
     font-family: var(--font); outline: none; width: 100%; transition: border-color 0.2s;
 }
 .auth-input:focus, #email-input:focus, .wizard-input:focus { border-color: #3b82f6; background: #fff; }
-.auth-btn, #login-btn, .wizard-btn {
+.auth-btn, #login-btn, #send-code-btn, #verify-code-btn, .wizard-btn {
     padding: 14px; background: #3b82f6; color: #fff; border: none;
     border-radius: 12px; font-size: 15px; cursor: pointer; font-weight: 600;
-    transition: background 0.2s;
+    transition: background 0.2s; width: 100%;
 }
-.auth-btn:hover, #login-btn:hover { background: #2563eb; }
-.auth-btn:active, #login-btn:active, .wizard-btn:active { opacity: 0.9; }
+.auth-btn:hover, #login-btn:hover, #send-code-btn:hover, #verify-code-btn:hover { background: #2563eb; }
+.auth-btn:active, #login-btn:active, #send-code-btn:active, #verify-code-btn:active, .wizard-btn:active { opacity: 0.9; }
+.auth-btn.secondary {
+    background: transparent; color: var(--text-secondary, #64748b);
+    border: 1.5px solid var(--border, #e2e8f0); margin-top: 4px;
+}
+.auth-btn.secondary:hover { background: var(--surface, #f8fafc); }
+#resend-code-btn { padding: 10px; font-size: 13px; font-weight: 500; }
+.code-input {
+    text-align: center; font-size: 24px !important; font-weight: 700;
+    letter-spacing: 8px; font-variant-numeric: tabular-nums;
+    padding: 16px 12px !important;
+}
+.step-label { display: block; font-size: 13px; color: var(--text-secondary, #64748b); margin-bottom: 6px; }
+#otp-email-display { font-weight: 600; color: var(--text, #1e293b); }
 .auth-hint { font-size: 12px; color: #94a3b8; margin-top: 16px; }
 .msg { font-size: 14px; color: #64748b; margin-top: 12px; }
 .msg.error { color: var(--danger); }

@@ -1,5 +1,5 @@
 import { initSupabase, getSupabase, getConnection, saveConnection } from './supabase.js';
-import { sendMagicLink, getSession, signOut, onAuthStateChange } from './auth.js';
+import { sendOtp, verifyOtp, getSession, signOut, onAuthStateChange } from './auth.js';
 import { fetchNotes, insertNote, uploadAudio, readConfig, fetchTags } from './db.js';
 import { renderNoteBubble, parseTags } from './notes.js';
 import { startRecording, stopRecording, cancelRecording, getIsRecording } from './voice.js';
@@ -86,15 +86,92 @@ function setupConnectionForm() {
 }
 
 function setupAuthUI() {
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
+    const form = document.getElementById('login-form');
+    const emailInput = document.getElementById('email-input');
+    const codeInput = document.getElementById('code-input');
+    const sendBtn = document.getElementById('send-code-btn');
+    const verifyBtn = document.getElementById('verify-code-btn');
+    const resendBtn = document.getElementById('resend-code-btn');
+    const stepEmail = document.getElementById('login-step-email');
+    const stepCode = document.getElementById('login-step-code');
+    const emailDisplay = document.getElementById('otp-email-display');
+    const msg = document.getElementById('login-msg');
+
+    function showMsg(text, isError) {
+        msg.classList.remove('hidden');
+        msg.textContent = text;
+        msg.classList.toggle('error', !!isError);
+    }
+
+    // Step 1: send OTP
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('email-input').value.trim();
+        const email = emailInput.value.trim();
         if (!email) return;
-        const msg = document.getElementById('login-msg');
-        msg.classList.remove('hidden'); msg.textContent = '正在发送登录链接...'; msg.classList.remove('error');
-        const { error } = await sendMagicLink(email);
-        msg.textContent = error ? '发送失败: ' + error.message : '登录链接已发送，请检查邮箱并点击链接';
-        if (error) msg.classList.add('error');
+
+        sendBtn.disabled = true;
+        sendBtn.textContent = '正在发送...';
+        showMsg('正在发送验证码...', false);
+
+        const { error } = await sendOtp(email);
+
+        if (error) {
+            showMsg('发送失败: ' + error.message, true);
+            sendBtn.disabled = false;
+            sendBtn.textContent = '发送验证码';
+            return;
+        }
+
+        showMsg('验证码已发送，请查收邮件', false);
+        stepEmail.classList.add('hidden');
+        stepCode.classList.remove('hidden');
+        emailDisplay.textContent = email;
+        codeInput.value = '';
+        codeInput.focus();
+    });
+
+    // Step 2: verify OTP
+    verifyBtn.addEventListener('click', async () => {
+        const email = emailInput.value.trim();
+        const token = codeInput.value.trim();
+        if (!token || token.length !== 6) {
+            showMsg('请输入 6 位验证码', true);
+            return;
+        }
+
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = '正在验证...';
+        showMsg('正在验证...', false);
+
+        const { data, error } = await verifyOtp(email, token);
+
+        if (error) {
+            showMsg('验证失败: ' + error.message, true);
+            verifyBtn.disabled = false;
+            verifyBtn.textContent = '验证';
+            return;
+        }
+
+        // Session is set — onAuthStateChange will fire and navigate to main
+        showMsg('登录成功！', false);
+    });
+
+    // Step 3: resend OTP
+    resendBtn.addEventListener('click', async () => {
+        const email = emailInput.value.trim();
+        resendBtn.disabled = true;
+        resendBtn.textContent = '正在重新发送...';
+        showMsg('正在重新发送...', false);
+
+        const { error } = await sendOtp(email);
+
+        resendBtn.disabled = false;
+        resendBtn.textContent = '重新发送验证码';
+        if (error) {
+            showMsg('重新发送失败: ' + error.message, true);
+        } else {
+            showMsg('验证码已重新发送', false);
+        }
     });
     onAuthStateChange((event, session) => {
         if (session) {
