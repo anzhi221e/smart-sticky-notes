@@ -134,8 +134,8 @@ function setupAuthUI() {
     verifyBtn.addEventListener('click', async () => {
         const email = emailInput.value.trim();
         const token = codeInput.value.trim();
-        if (!token || token.length !== 6) {
-            showMsg('请输入 6 位验证码', true);
+        if (!token || token.length !== 8) {
+            showMsg('请输入 8 位验证码', true);
             return;
         }
 

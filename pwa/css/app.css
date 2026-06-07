@@ -238,8 +238,8 @@ html, body {
 #resend-code-btn { padding: 10px; font-size: 13px; font-weight: 500; }
 .code-input {
     text-align: center; font-size: 24px !important; font-weight: 700;
-    letter-spacing: 8px; font-variant-numeric: tabular-nums;
-    padding: 16px 12px !important;
+    letter-spacing: 4px; font-variant-numeric: tabular-nums;
+    padding: 16px 12px !important; margin-bottom: 12px;
 }
 .step-label { display: block; font-size: 13px; color: var(--text-secondary, #64748b); margin-bottom: 6px; }
 #otp-email-display { font-weight: 600; color: var(--text, #1e293b); }
