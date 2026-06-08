@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Sticky Notes — 三轮 Bug 修复 Reflection</title>
+<title>Smart Sticky Notes — Markdown 引擎升级 Reflection</title>
 <style>
 :root {
   --bg: #0f0f1a;
@@ -19,333 +19,346 @@
   --blue: #60a5fa;
   --purple: #a78bfa;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--bg); color: var(--text);
-  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  line-height: 1.7; padding: 24px;
-}
-.container { max-width: 960px; margin: 0 auto; }
-h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
-.subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 40px; }
-h2 { font-size: 20px; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-h3 { font-size: 16px; margin: 24px 0 10px; color: var(--blue); }
-p { margin-bottom: 12px; color: var(--text-secondary); }
-ul, ol { margin: 8px 0 16px 20px; color: var(--text-secondary); }
-li { margin-bottom: 6px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;padding:40px 20px}
+.container{max-width:960px;margin:0 auto}
+h1{font-size:2em;margin-bottom:4px;background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{color:var(--text-secondary);font-size:1.05em;margin-bottom:40px}
+h2{font-size:1.35em;margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);color:#fff}
+h3{font-size:1.1em;margin:24px 0 10px;color:var(--blue)}
+p{margin:8px 0;color:var(--text)}
+ul,ol{padding-left:24px;margin:8px 0}
+li{margin:4px 0;color:var(--text)}
+a{color:var(--accent)}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:0.95em}
+th,td{border:1px solid var(--border);padding:10px 14px;text-align:left}
+th{background:var(--card);font-weight:600;color:#fff}
+td{color:var(--text)}
+code{font-family:"Cascadia Code","Fira Code","JetBrains Mono",monospace;font-size:0.9em;background:var(--code-bg);padding:1px 6px;border-radius:3px;color:var(--yellow)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;overflow-x:auto;margin:12px 0;line-height:1.6}
+pre code{background:none;padding:0;color:var(--text)}
 
-.highlight-box { border-left: 4px solid var(--accent); background: var(--card); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
-.highlight-box.green { border-color: var(--green); }
-.highlight-box.yellow { border-color: var(--yellow); }
-.highlight-box.blue { border-color: var(--blue); }
-.highlight-box.purple { border-color: var(--purple); }
-.highlight-box.red { border-color: var(--red); }
-.highlight-box p { margin: 4px 0; }
+.highlight-box{border-left:4px solid var(--accent);background:var(--card);padding:14px 18px;margin:16px 0;border-radius:0 8px 8px 0}
+.highlight-box.green{border-left-color:var(--green)}
+.highlight-box.yellow{border-left-color:var(--yellow)}
+.highlight-box.blue{border-left-color:var(--blue)}
+.highlight-box.purple{border-left-color:var(--purple)}
+.highlight-box p{margin:4px 0}
 
-.tag { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-right: 4px; }
-.tag.green { background: rgba(74,222,128,0.15); color: var(--green); }
-.tag.red { background: rgba(248,113,113,0.15); color: var(--red); }
-.tag.blue { background: rgba(96,165,250,0.15); color: var(--blue); }
-.tag.yellow { background: rgba(251,191,36,0.15); color: var(--yellow); }
-.tag.purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+.tag{display:inline-block;padding:2px 10px;border-radius:12px;font-size:0.8em;font-weight:600;margin-right:4px}
+.tag.green{background:rgba(74,222,128,0.15);color:var(--green)}
+.tag.red{background:rgba(248,113,113,0.15);color:var(--red)}
+.tag.blue{background:rgba(96,165,250,0.15);color:var(--blue)}
+.tag.yellow{background:rgba(251,191,36,0.15);color:var(--yellow)}
+.tag.purple{background:rgba(167,139,250,0.15);color:var(--purple)}
 
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
-@media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0}
+@media(max-width:640px){.two-col{grid-template-columns:1fr}}
 
-.code-block { background: var(--code-bg); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0; font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", monospace; font-size: 13px; line-height: 1.5; }
-.code-block .kw { color: #c792ea; }
-.code-block .fn { color: #82aaff; }
-.code-block .str { color: #c3e88d; }
-.code-block .cm { color: #546e7a; font-style: italic; }
-.code-block .err { color: #f07178; text-decoration: underline wavy; }
+.file-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin:8px 0}
+.file-card .name{font-weight:600;color:#fff;font-family:"Cascadia Code","Fira Code","JetBrains Mono",monospace;font-size:0.95em}
+.file-card .desc{color:var(--text-secondary);font-size:0.9em;margin-top:4px}
+.file-card .tag{margin-top:6px}
 
-.file-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin: 8px 0; }
-.file-card .path { font-weight: 600; font-size: 14px; color: var(--blue); }
-.file-card .desc { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.timeline-item{border-left:2px solid var(--border);padding:10px 0 10px 20px;margin:4px 0;position:relative}
+.timeline-item::before{content:'';position:absolute;left:-5px;top:17px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.timeline-item .time{font-size:0.8em;color:var(--text-secondary)}
+.timeline-item .desc{color:var(--text)}
 
-.timeline-item { border-left: 2px solid var(--border); padding-left: 20px; margin-left: 10px; position: relative; padding-bottom: 20px; }
-.timeline-item::before { content: ''; position: absolute; left: -5px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-.timeline-item:last-child { border-left-color: transparent; }
-.timeline-item .time { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
-.timeline-item .title { font-weight: 600; margin-bottom: 4px; }
+.divider{height:1px;background:var(--border);margin:40px 0}
 
-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
-th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
-th { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-td { color: var(--text); }
-
-.divider { height: 1px; background: var(--border); margin: 32px 0; }
-.footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); text-align: center; }
+.footer{text-align:center;color:var(--text-secondary);font-size:0.85em;margin-top:60px;padding-top:20px;border-top:1px solid var(--border)}
+.footer p{margin:2px 0}
 </style>
 </head>
 <body>
 <div class="container">
 
 <h1>Smart Sticky Notes</h1>
-<p class="subtitle">三轮迭代 Bug 修复 — 从问题诊断到生产部署的完整 Reflection</p>
+<p class="subtitle">Markdown 引擎升级 — 从手写正则到 marked.js 的完整 Reflection</p>
 
-<!-- Timeline -->
 <h2>会话时间线</h2>
+
 <div class="timeline-item">
-  <div class="time">2026-06-04 · Round 1 诊断</div>
-  <div class="title">用户提交 6 个问题</div>
-  登录页蓝色几何图案替换为图标、手机端工作区按钮被遮挡、侧栏重复"对话"条目、笔记缺少移动功能、PWA 无自动同步、快捷语法按钮失效。逐文件代码审查确认每个根因。
-</div>
-<div class="timeline-item">
-  <div class="time">2026-06-04 · Round 1 实施</div>
-  <div class="title">6 个修复全部实施并部署</div>
-  SVG → PNG 图标替换、top-bar overflow-x、nav-section-label 清理遗漏、气泡菜单移动对话框、PWA 周期性刷新 + 自动 sync_request、row 变量未定义修复。Commit 0a86f83。
-</div>
-<div class="timeline-item">
-  <div class="time">2026-06-04 · Round 2</div>
-  <div class="title">用户反馈 4 个问题</div>
-  登录页出现两个图标、overflow-x 滚动方案不够好、桌面端标签栏无法拖动、#测试 置顶标签残留。
-</div>
-<div class="timeline-item">
-  <div class="time">2026-06-04 · Round 2 实施</div>
-  <div class="title">精确修正：CSS 背景图标移除、搜索框自适应、滚动条可见、置顶标签过滤</div>
-  还原 auth-container 渐变、搜索框 CSS 化 + 400px 媒体查询、隐藏滚动条 → 4px 细滚动条、renderTagBar 过滤无效置顶。Commit ed49c9c。
-</div>
-<div class="timeline-item">
-  <div class="time">2026-06-04 · Round 3</div>
-  <div class="title">用户反馈 3 个问题</div>
-  选择框取消后不消失、选择模式缺移动功能、Designed by Anzhi 位置错误。
-</div>
-<div class="timeline-item">
-  <div class="time">2026-06-04 · Round 3 实施</div>
-  <div class="title">DOM 分支不匹配修复、批量移动、布局调整 + XSS 补丁</div>
-  找到 checkbox 创建/清理跨 DOM 分支的根因、选择栏新增移动 + 批量 moveNoteToWorkspace、设置页底部文字移出账户区域、完整 HTML 转义。Commit 0a30b94 + XSS fix。
+  <div class="time">Phase 1</div>
+  <div class="desc"><strong>问题提出</strong> — 用户发现 callout、blockquote、表格等 Markdown 语法在气泡中不显示</div>
 </div>
 
-<!-- 1. 问题定义 -->
+<div class="timeline-item">
+  <div class="time">Phase 2</div>
+  <div class="desc"><strong>技术调研</strong> — 分析现有 <code>renderMarkdown()</code> 手写正则渲染器，发现仅支持标题/加粗/删除线等基础语法。评估 marked.js 引入 vs 手写正则扩展两个方案</div>
+</div>
+
+<div class="timeline-item">
+  <div class="time">Phase 3</div>
+  <div class="desc"><strong>方案确定</strong> — 选择 marked.js v15 本地 bundle（39KB / gzip ~10KB），确认 PWA 缓存机制不影响轻量化</div>
+</div>
+
+<div class="timeline-item">
+  <div class="time">Phase 4</div>
+  <div class="desc"><strong>实现集成</strong> — 下载 marked.min.js，替换 renderMarkdown()，添加表格/代码块/引用等 CSS 样式</div>
+</div>
+
+<div class="timeline-item">
+  <div class="time">Phase 5</div>
+  <div class="desc"><strong>XSS 安全迭代（3 轮）</strong> — 后台安全扫描反复提醒，从 HTML 预转义 → 输出正则过滤 → 自定义 Renderer URL 验证 + 增强事件处理器正则</div>
+</div>
+
+<div class="timeline-item">
+  <div class="time">Phase 6</div>
+  <div class="desc"><strong>Bug 修复</strong> — 编辑频闪（多余 loadNotes）、blockquote 不显示（HTML 转义破坏 > 语法）、表头白字（CSS 变量冲突）、工作区下拉菜单溢出</div>
+</div>
+
+<div class="timeline-item">
+  <div class="time">Phase 7</div>
+  <div class="desc"><strong>UI 调整</strong> — 工作区切换按钮移至搜索栏左侧，blockquote 样式迭代（实色背景 → 透明背景 + 彩色左边框）</div>
+</div>
+
+<div class="divider"></div>
+
 <h2>1. 问题定义</h2>
 
 <div class="highlight-box blue">
-  <p><strong>用户原始需求（原文）</strong></p>
-  <p style="margin-top:8px;">"有几个需要修改的，第一个是在登陆界面，我希望把那个上方蓝色的几何图案替换为我们图标的这张图片。第二是手机移动端的显示问题，首页的笔记工作区切换按钮会被遮住一部分。第三，不知道为什么，有些时候设置菜单中会出现多个'对话'选择。第四，我希望在笔记的编辑选项中，可以有'移动'选项，可以把笔记移动到其他对话中去。第五，PWA端的自动同步似乎并不存在，我每次都是手动点击同步的。第六，快捷语法按钮无法正常添加。我需要你先通过检查代码找到真实存在的问题，然后再告诉我解决方案。"</p>
+  <p><strong>用户原始需求：</strong>"markdown 语法在页面上的显示是只显示那些比较基础的，对于 callout、quote（>）还有表格（|---|---|）格式语法并不会显示在气泡中，这是为什么？"</p>
 </div>
 
 <h3>核心约束</h3>
 <ul>
-  <li><strong>PWA + Supabase + Python PC sync</strong> 三层架构，修改不能破坏现有数据流</li>
-  <li><strong>移动端 + 桌面端</strong> 同时可用，布局需响应式适配</li>
-  <li><strong>Vercel 静态部署</strong>，只修改前端文件（HTML/CSS/JS），无构建步骤</li>
-  <li><strong>8 套主题系统</strong>（4 日间 + 4 夜间），CSS 修改需兼容主题变量</li>
-  <li><strong>零依赖 vanilla JS</strong>，ES Modules + importmap（Supabase CDN）</li>
+  <li>必须是 <strong>零依赖或极轻依赖</strong>——PWA 在移动端运行，不能拖慢启动速度</li>
+  <li>必须兼容 <strong>国内 CDN 环境</strong>——jsdelivr 可能不稳定，最好本地 bundle</li>
+  <li>不能破坏现有的标题、加粗、删除线等 <strong>已有功能</strong></li>
+  <li>需要保持 <strong>后续自定义语法扩展</strong> 的能力（callout 等）</li>
+  <li>安全：便签内容是用户数据，必须防止 <strong>Stored XSS</strong></li>
 </ul>
 
-<!-- 2. 技术调研 -->
+<div class="divider"></div>
+
 <h2>2. 技术调研过程</h2>
 
-<div class="two-col">
-  <div>
-    <h3>代码审查发现的关键 Bug</h3>
-    <div class="highlight-box red">
-      <p><strong>ReferenceError · settings.js:146</strong></p>
-      <p>renderToolbarEditor() 中 row.style.cssText 在 row 声明之前使用。整个渲染函数静默失败，设置页语法按钮 UI 完全不工作。</p>
-    </div>
-    <div class="highlight-box red">
-      <p><strong>DOM 分支不匹配 · app.js:249 vs 266</strong></p>
-      <p>checkbox 通过 list.appendChild 创建为 #notes-list 子元素，但清理时用 b.querySelector('.select-checkbox') 在 .note-bubble 内查找。永远返回 null，勾选框累积。</p>
-    </div>
-    <div class="highlight-box red">
-      <p><strong>清理遗漏 · workspaces.js:248</strong></p>
-      <p>updateSidebarWorkspaces 清理了 nav-workspace-item、nav-workspace-separator、nav-item-workspace-manager，但遗漏 nav-section-label。每次调用新增一个"对话"标签。</p>
-    </div>
-  </div>
-  <div>
-    <h3>架构理解与验证</h3>
-    <div class="highlight-box blue">
-      <p><strong>同步架构</strong>：PWA 直写 Supabase（实时），PC sync_loop.py 每 30 分钟轮询 Supabase → 导出 Markdown 到本地文件夹。sync_requests 表充当简易消息队列。</p>
-    </div>
-    <div class="highlight-box yellow">
-      <p><strong>配置脱节</strong>：PWA settings 中的 sync_interval 存在 Supabase config 表，但 PC sync_loop 中硬编码 interval_seconds=1800。用户改设置对 PC 端无效。</p>
-    </div>
-    <div class="highlight-box blue">
-      <p><strong>PWA 无周期性刷新</strong>：只在 doInit() 时 loadNotes() 一次 + pull-to-refresh 手动触发。未使用 setInterval 或 Background Sync API。</p>
-    </div>
-  </div>
+<h3>原渲染器分析</h3>
+<p>项目使用手写的 <code>renderMarkdown()</code> 函数（<code>pwa/js/notes.js:18-35</code>），10 个正则表达式按顺序替换：</p>
+
+<table>
+  <tr><th>语法</th><th>正则</th><th>状态</th></tr>
+  <tr><td># ## ###</td><td><code>/^#+ (.+)$/gm</code></td><td><span class="tag green">正常</span></td></tr>
+  <tr><td>**加粗**</td><td><code>/\*\*(.+?)\*\*/g</code></td><td><span class="tag green">正常</span></td></tr>
+  <tr><td>*斜体*</td><td><code>/\*(.+?)\*/g</code></td><td><span class="tag green">正常</span></td></tr>
+  <tr><td>~~删除线~~</td><td><code>/~~(.+?)~~/g</code></td><td><span class="tag green">正常</span></td></tr>
+  <tr><td>`代码`</td><td><code>/`([^`]+)`/g</code></td><td><span class="tag green">正常</span></td></tr>
+  <tr><td>> 引用</td><td><code>/^> (.+)$/gm</code></td><td><span class="tag yellow">单行 + 转义冲突</span></td></tr>
+  <tr><td>- 列表</td><td><code>/^- (.+)$/gm</code></td><td><span class="tag yellow">无 &lt;ul&gt; 包裹</span></td></tr>
+  <tr><td>表格</td><td>—</td><td><span class="tag red">不支持</span></td></tr>
+  <tr><td>代码块</td><td>—</td><td><span class="tag red">不支持</span></td></tr>
+  <tr><td>Callout</td><td>—</td><td><span class="tag red">不支持</span></td></tr>
+</table>
+
+<h3>方案对比</h3>
+
+<table>
+  <tr><th>维度</th><th>方案 A：引入 marked.js</th><th>方案 B：扩展手写正则</th></tr>
+  <tr><td>体积</td><td>39KB / gzip ~10KB</td><td>0 额外依赖</td>
+  <tr><td>表格支持</td><td><span class="tag green">开箱即用</span></td><td><span class="tag red">正则极复杂</span>（对齐、转义、嵌套）</td>
+  <tr><td>代码块</td><td><span class="tag green">围栏 + 缩进</span></td><td><span class="tag yellow">需手写跨行匹配</span></td>
+  <tr><td>自定义扩展</td><td><span class="tag green">官方 extension API</span></td><td><span class="tag yellow">手动维护顺序</span></td>
+  <tr><td>安全性</td><td>需额外处理（默认允许 HTML）</td><td>自带 HTML 转义</td>
+  <tr><td>维护成本</td><td>marked 社区维护</td><td>手写，边界 case 多</td>
+</table>
+
+<div class="highlight-box green">
+  <p><strong>选择方案 A。</strong>10KB gzip 对任何应用都可忽略，PWA Service Worker 缓存后零网络开销。marked.js 的 extension API 为未来自定义 callout 语法提供了标准化接口。</p>
 </div>
 
-<!-- 3. 方案设计 -->
+<div class="divider"></div>
+
 <h2>3. 方案设计</h2>
 
-<h3>Round 1: 初始 6 项修复</h3>
-<table>
-  <tr><th>#</th><th>问题</th><th>根因</th><th>方案</th><th>文件</th></tr>
-  <tr><td>1</td><td>登录页蓝色图案</td><td>.auth-container 使用 linear-gradient</td><td>替换 SVG 为 PNG img + 背景图标（后移除）</td><td>index.html, app.css</td></tr>
-  <tr><td>2</td><td>手机端按钮遮挡</td><td>top-bar 元素溢出无处理</td><td>搜索框 CSS 化 + 400px 媒体查询缩小宽度</td><td>index.html, app.css</td></tr>
-  <tr><td>3</td><td>重复"对话"条目</td><td>nav-section-label 清理遗漏</td><td>添加 querySelectorAll 清理</td><td>workspaces.js</td></tr>
-  <tr><td>4</td><td>笔记无移动功能</td><td>showBubbleMenu 缺移动选项</td><td>新增 moveNoteToWorkspace + 对话选择器 sheet</td><td>notes.js, db.js</td></tr>
-  <tr><td>5</td><td>PWA 无自动同步</td><td>无周期性刷新 + 无自动 sync_request</td><td>setupPeriodicRefresh() + requestPcSync()</td><td>app.js</td></tr>
-  <tr><td>6</td><td>语法按钮失效</td><td>row 变量未声明 ReferenceError</td><td>添加 const row = createElement('div')</td><td>settings.js</td></tr>
-</table>
-
-<h3>Round 2: 4 项修正</h3>
-<table>
-  <tr><th>#</th><th>问题</th><th>用户反馈</th><th>修正方案</th></tr>
-  <tr><td>1</td><td>登录页两个图标</td><td>"上面那个较大的图标没有必要"</td><td>移除 CSS 背景 url，仅保留卡片内 img</td></tr>
-  <tr><td>2</td><td>overflow-x 方案不合理</td><td>"我并不觉得这是一个合理的修复"</td><td>还原 top-bar，搜索框用媒体查询自适应</td></tr>
-  <tr><td>3</td><td>桌面端标签栏无法拖动</td><td>"电脑界面标签选择无法拖动，手机可以"</td><td>隐藏滚动条 → 4px 可见细滚动条</td></tr>
-  <tr><td>4</td><td>#测试 标签残留</td><td>"明明已经没有对应笔记归属了"</td><td>过滤 pinned tags 仅保留有笔记的</td></tr>
-</table>
-
-<h3>Round 3: 3 项修正 + XSS 补丁</h3>
-<table>
-  <tr><th>#</th><th>问题</th><th>根因</th><th>方案</th></tr>
-  <tr><td>1</td><td>选择框取消后残留</td><td>checkbox 在 #notes-list 创建，清理时在 .note-bubble 查找</td><td>统一使用 list.querySelectorAll('.select-checkbox') 管理</td></tr>
-  <tr><td>2</td><td>选择模式缺移动</td><td>选择栏只有删除按钮</td><td>新增移动按钮 + 批量 moveNoteToWorkspace</td></tr>
-  <tr><td>3</td><td>Design by Anzhi 位置</td><td>在账户 div 内部</td><td>移到 setting-group 外部，页面最底部</td></tr>
-  <tr><td>XSS</td><td>HTML 转义不完整</td><td>工作区名只转义 " 和 &，缺少 &lt; &gt;</td><td>完整四字符转义链：&amp; &lt; &gt; &quot;</td></tr>
-</table>
-
 <h3>技术栈</h3>
+
 <table>
   <tr><th>层面</th><th>选择</th><th>理由</th></tr>
-  <tr><td>前端框架</td><td>Vanilla JS (ES Modules)</td><td>零依赖、PWA 离线、Vercel 零配置</td></tr>
-  <tr><td>数据库</td><td>Supabase (PostgREST)</td><td>service_role 绕过 RLS、实时 API</td></tr>
-  <tr><td>PC 同步</td><td>Python sync_loop</td><td>轮询 Supabase，导出 Markdown</td></tr>
-  <tr><td>部署</td><td>Vercel 静态 + GitHub</td><td>自动 HTTPS、全球 CDN、git push 触发</td></tr>
-  <tr><td>认证</td><td>Supabase Magic Link</td><td>无密码、邮箱 OTP</td></tr>
+  <tr><td>Markdown 引擎</td><td>marked.js v15.0.12</td><td>成熟稳定，扩展 API 完善，gzip 仅 10KB</td>
+  <tr><td>加载方式</td><td>本地 bundle (<code>pwa/js/marked.min.js</code>)</td><td>规避 CDN 国内访问不稳定，PWA 全离线可用</td>
+  <tr><td>XSS 防护</td><td>自定义 Renderer + 输出正则</td><td>marked 默认允许原始 HTML，需自行过滤</td>
+  <tr><td>CSS</td><td>CSS 变量（主题系统兼容）</td><td>必须用全局变量（--text/--surface）而非气泡变量（--bubble-*）</td>
 </table>
 
-<!-- 4. 安全分析 -->
-<h2>4. 安全分析</h2>
-
-<h3>XSS 防护：HTML 转义</h3>
-<div class="highlight-box yellow">
-  <p><strong>安全问题</strong>：工作区名称由用户输入（存储在 Supabase config 的 workspaces JSON 数组中），在 innerHTML 模板中直接插入时必须完整转义。Round 1-2 的代码只转义了 " 和 &，遗漏了 &lt; 和 &gt;。如果工作区名包含 <code>&lt;script&gt;</code> 标签，将导致 XSS。</p>
-</div>
-<div class="highlight-box green">
-  <p><strong>修复</strong>：完整四字符转义链 <code>.replace(/&amp;/g,'&amp;amp;').replace(/&lt;/g,'&amp;lt;').replace(/&gt;/g,'&amp;gt;').replace(/"/g,'&amp;quot;')</code>。注意 <code>&amp;</code> 必须先转义，否则会破坏后续转义。</p>
-</div>
-
-<h3>边界情况覆盖</h3>
-<table>
-  <tr><th>场景</th><th>处理</th><th>位置</th></tr>
-  <tr><td>离线保存</td><td>降级到 addToQueue 本地队列，联网后 flushQueue</td><td>app.js:480-487</td></tr>
-  <tr><td>空工作区列表</td><td>移动对话框显示"没有其他对话"</td><td>notes.js:174, app.js:233</td></tr>
-  <tr><td>并发发送</td><td>_isSending 锁防止重复调用</td><td>app.js:444</td></tr>
-  <tr><td>工作区名含特殊字符</td><td>完整 HTML 转义 + dataset 属性访问</td><td>app.js, notes.js</td></tr>
-</table>
-
-<!-- 5. 实现产出 -->
-<h2>5. 实现产出</h2>
-
-<div class="file-card">
-  <div class="path">pwa/js/app.js <span class="tag green">+60 行</span></div>
-  <div class="desc">setupPeriodicRefresh() 周期刷新、requestPcSync() 自动同步请求、select mode checkbox 重写（DOM 分支不匹配修复）、选择栏移动按钮 + 批量移动逻辑、完整 HTML 转义。</div>
-</div>
-<div class="file-card">
-  <div class="path">pwa/js/settings.js <span class="tag green">+1 行</span></div>
-  <div class="desc">row 变量声明修复、Designed by Anzhi 移到底部。</div>
-</div>
-<div class="file-card">
-  <div class="path">pwa/js/workspaces.js <span class="tag green">+2 行</span></div>
-  <div class="desc">updateSidebarWorkspaces 清理添加 .nav-section-label 移除。</div>
-</div>
-<div class="file-card">
-  <div class="path">pwa/js/notes.js <span class="tag green">+42 行</span></div>
-  <div class="desc">showMoveDialog() 工作区选择器、气泡菜单"移动"按钮、完整 HTML 转义。</div>
-</div>
-<div class="file-card">
-  <div class="path">pwa/js/db.js <span class="tag green">+8 行</span></div>
-  <div class="desc">moveNoteToWorkspace() 单笔记工作区更新。</div>
-</div>
-<div class="file-card">
-  <div class="path">pwa/js/toolbar.js <span class="tag green">修改 1 行</span></div>
-  <div class="desc">renderTagBar: pinnedTags.filter(t => tags.includes(t)) 过滤无效置顶。</div>
-</div>
-<div class="file-card">
-  <div class="path">pwa/css/app.css <span class="tag green">+22 / -7 行</span></div>
-  <div class="desc">auth-container 背景还原、搜索框 CSS 化 + 400px 媒体查询、标签栏滚动条改为 4px 可见、Firefox scrollbar-width 兼容。</div>
-</div>
-<div class="file-card">
-  <div class="path">pwa/index.html <span class="tag green">修改 2 处</span></div>
-  <div class="desc">两个 auth 屏幕 SVG → img (72x72 PNG)、搜索框内联样式移入 CSS。</div>
-</div>
-<div class="file-card">
-  <div class="path">pwa/smart-sticky-notes.png <span class="tag blue">新增</span></div>
-  <div class="desc">应用图标 PNG，用于登录页卡片内显示。</div>
-</div>
-
-<h3>最复杂的修复：Checkbox DOM 分支不匹配</h3>
-<div class="code-block">
-<pre><span class="cm">/* 修复前 —— checkbox 在两个不同的 DOM 容器中被创建和查找 */</span>
-
-<span class="cm">// 创建时 → 附加到 #notes-list（list 的直接子元素）</span>
-<span class="kw">const</span> list = document.getElementById(<span class="str">'notes-list'</span>);
-list.appendChild(cb);  <span class="cm">// cb 现在是 list 的子节点</span>
-
-<span class="cm">// 清理时 → 在 .note-bubble 内查找（bubble 的子元素）</span>
-<span class="kw">let</span> cb = b.querySelector(<span class="str">'.select-checkbox'</span>);
-<span class="err">// ↑ 永远返回 null！因为 checkbox 不是 bubble 的后代</span>
-<span class="kw">if</span> (cb) cb.remove();  <span class="err">// 永远不执行 → checkbox 永久残留</span>
-
-<span class="cm">/* 修复后 —— 统一使用 #notes-list 作为容器和查找根 */</span>
-
-<span class="cm">// 进入选择模式：清理旧 + 按 noteId 重建</span>
-list.querySelectorAll(<span class="str">'.select-checkbox'</span>).forEach(cb => cb.remove());
-<span class="cm">// 退出选择模式：直接清理所有</span>
-list.querySelectorAll(<span class="str">'.select-checkbox'</span>).forEach(cb => cb.remove());
-</pre>
-</div>
-
-<!-- 6. 部署 -->
-<h2>6. 部署</h2>
-<div class="code-block"><pre>git push origin master     <span class="cm"># GitHub: ychen02/smart-sticky-notes</span>
-vercel --cwd . --prod --yes  <span class="cm"># → https://smartstickynotes.vercel.app</span></pre>
-</div>
-<p>4 次 commit，4 次 Vercel 生产部署，零构建失败。</p>
-
-<!-- 7. 洞察 -->
-<h2>7. 问题与洞察</h2>
+<h3>安全架构</h3>
+<pre><code>用户输入（原始文本）
+    │
+    ▼
+marked.parse(text)  ← 不预转义，保留 markdown 语法
+    │
+    ▼
+自定义 Renderer
+├── link: 仅允许 https?/mailto/ftp 协议
+├── image: 仅允许 https? 协议
+└── javascript:/data: → 降级为纯文本
+    │
+    ▼
+输出后处理
+├── 剥离 &lt;script&gt;...&lt;/script&gt;
+└── 剥离 on*="..." / on*='...' / on*=... 事件处理器
+    │
+    ▼
+innerHTML 注入 DOM</code></pre>
 
 <div class="highlight-box purple">
-  <p><strong>DOM 分支不匹配是静默失败之王</strong></p>
-  <p>元素在一个容器创建、在另一个容器清理——逻辑看起来正确（"我有清理代码啊"），但 querySelector 在错误的 DOM 分支上永远返回 null。不报错、不崩溃、只是默默残留。统一容器的所有权是唯一的正解。</p>
+  <p><strong>关键洞察：</strong>「先转义再解析」会破坏 markdown 语法（<code>&gt;</code> 转成 <code>&amp;gt;</code> 后 blockquote 无法识别）。正确做法是「先解析再过滤输出」。</p>
 </div>
+
+<div class="divider"></div>
+
+<h2>4. 安全分析</h2>
+
+<h3>XSS 攻击向量覆盖</h3>
+
+<table>
+  <tr><th>攻击向量</th><th>示例</th><th>防护层</th><th>状态</th></tr>
+  <tr><td>原始 HTML 标签</td><td><code>&lt;script&gt;alert(1)&lt;/script&gt;</code></td><td>输出正则剥离</td><td><span class="tag green">已覆盖</span></td></tr>
+  <tr><td>Markdown 链接注入</td><td><code>[click](javascript:alert(1))</code></td><td>Renderer.link 协议白名单</td><td><span class="tag green">已覆盖</span></td></tr>
+  <tr><td>Markdown 图片注入</td><td><code>![x](javascript:alert(1))</code></td><td>Renderer.image 协议白名单</td><td><span class="tag green">已覆盖</span></td></tr>
+  <tr><td>双引号事件处理器</td><td><code>&lt;img onerror="alert(1)"&gt;</code></td><td>输出正则剥离</td><td><span class="tag green">已覆盖</span></td></tr>
+  <tr><td>单引号事件处理器</td><td><code>&lt;img onerror='alert(1)'&gt;</code></td><td>输出正则剥离</td><td><span class="tag green">已覆盖</span></td></tr>
+  <tr><td>无引号事件处理器</td><td><code>&lt;img onerror=alert(1)&gt;</code></td><td>输出正则剥离</td><td><span class="tag green">已覆盖</span></td></tr>
+  <tr><td>data: URL</td><td><code>&lt;img src="data:text/html,..."&gt;</code></td><td>Renderer 协议白名单</td><td><span class="tag green">已覆盖</span></td></tr>
+</table>
 
 <div class="highlight-box yellow">
-  <p><strong>移动端友好 ≠ 桌面端可用</strong></p>
-  <p>display:none 隐藏滚动条对 touch swipe 完美，但桌面用户失去所有滚动入口。4px 细滚动条是兼顾两端的折中——移动端几乎看不见，桌面端可点击拖拽。</p>
+  <p><strong>残余风险（低）：</strong>正则过滤不能替代完整的 HTML 沙箱。如果未来有共享笔记/协作功能，应引入 DOMPurify。当前个人笔记场景下（用户只看到自己的内容），三层防护已足够。</p>
 </div>
 
-<div class="highlight-box blue">
-  <p><strong>用户反馈驱动方案收敛</strong></p>
-  <p>Round 1 的 overflow-x: auto 方案被 Round 2 推翻。"正确的做法不是让用户滚动，而是不要让内容溢出"——缩短搜索框比让整个 header 可滚动更合理。</p>
+<div class="divider"></div>
+
+<h2>5. 实现产出</h2>
+
+<h3>文件变更</h3>
+
+<div class="file-card">
+  <div class="name">pwa/js/marked.min.js</div>
+  <div class="desc">新增 · marked.js v15.0.12 本地 bundle，39KB</div>
+  <span class="tag blue">NEW</span>
 </div>
 
-<div class="highlight-box green">
-  <p><strong>HTML 转义必须完整</strong></p>
-  <p>用户可控数据（工作区名）插入 innerHTML 时，必须转义全部四个特殊字符：&amp; &lt; &gt; "。且 &amp; 必须先转义。只转义部分字符等于没转义。</p>
+<div class="file-card">
+  <div class="name">pwa/js/notes.js</div>
+  <div class="desc">修改 · renderMarkdown() 重构为 marked.parse() + 自定义 Renderer + 输出安全过滤</div>
+  <span class="tag purple">MODIFIED</span>
 </div>
 
-<div class="highlight-box blue">
-  <p><strong>配置脱节是隐性的架构债务</strong></p>
-  <p>PWA 的 sync_interval 存在 Supabase，PC 端硬编码 1800s。用户改了设置但 PC 不响应——这是"看起来能配置但实际没用"的 UX bug。应让 PC 端读取 Supabase config。</p>
+<div class="file-card">
+  <div class="name">pwa/js/editor.js</div>
+  <div class="desc">修改 · 移除 saveEditing 中多余的 onSaved() → loadNotes() 调用，修复编辑频闪</div>
+  <span class="tag purple">MODIFIED</span>
 </div>
 
-<!-- 8. 交付清单 -->
-<h2>8. 最终交付清单</h2>
+<div class="file-card">
+  <div class="name">pwa/js/app.js</div>
+  <div class="desc">修改 · 清理 3 处 startEditing() 调用（移除冗余 callback）；工作区下拉菜单 left 对齐</div>
+  <span class="tag purple">MODIFIED</span>
+</div>
+
+<div class="file-card">
+  <div class="name">pwa/css/app.css</div>
+  <div class="desc">修改 · 新增 table/pre/hr/a/img/blockquote 样式；修复 th 表头颜色；合并重复 blockquote 规则</div>
+  <span class="tag purple">MODIFIED</span>
+</div>
+
+<div class="file-card">
+  <div class="name">pwa/index.html</div>
+  <div class="desc">修改 · 加载 marked.min.js；工作区切换按钮移至搜索栏左侧</div>
+  <span class="tag purple">MODIFIED</span>
+</div>
+
+<div class="divider"></div>
+
+<h2>6. 部署方式</h2>
+
 <table>
-  <tr><th>文件</th><th>状态</th><th>行变更</th><th>说明</th></tr>
-  <tr><td>pwa/js/app.js</td><td><span class="tag green">已修改</span></td><td>+60</td><td>周期刷新、自动同步、select mode 重写、批量移动、XSS 转义</td></tr>
-  <tr><td>pwa/js/settings.js</td><td><span class="tag green">已修改</span></td><td>+1</td><td>row 定义修复、布局调整</td></tr>
-  <tr><td>pwa/js/workspaces.js</td><td><span class="tag green">已修改</span></td><td>+2</td><td>nav-section-label 清理</td></tr>
-  <tr><td>pwa/js/notes.js</td><td><span class="tag green">已修改</span></td><td>+42</td><td>移动对话框、XSS 转义</td></tr>
-  <tr><td>pwa/js/db.js</td><td><span class="tag green">已修改</span></td><td>+8</td><td>moveNoteToWorkspace</td></tr>
-  <tr><td>pwa/js/toolbar.js</td><td><span class="tag green">已修改</span></td><td>1 行</td><td>置顶标签过滤</td></tr>
-  <tr><td>pwa/css/app.css</td><td><span class="tag green">已修改</span></td><td>+22/-7</td><td>搜索框响应式、滚动条可见</td></tr>
-  <tr><td>pwa/index.html</td><td><span class="tag green">已修改</span></td><td>2 处</td><td>图标替换、搜索框样式外移</td></tr>
-  <tr><td>pwa/smart-sticky-notes.png</td><td><span class="tag blue">新增</span></td><td>—</td><td>应用图标</td></tr>
+  <tr><th>平台</th><th>方式</th><th>URL</th></tr>
+  <tr><td>GitHub</td><td>git push origin master</td><td>ychen02/smart-sticky-notes</td>
+  <tr><td>Vercel</td><td>vercel --prod（静态文件）</td><td>smartstickynotes.vercel.app</td>
+</table>
+
+<p>共执行 <strong>7 次 commit + deploy</strong>，全部直推生产环境。Vercel 构建时间 ~45ms（纯静态 PWA）。</p>
+
+<div class="divider"></div>
+
+<h2>7. 问题与洞察</h2>
+
+<h3>Bug 1：HTML 转义破坏 Markdown 语法</h3>
+<div class="highlight-box yellow">
+  <p><strong>现象：</strong>blockquote 语法 <code>> text</code> 输入后不显示引用样式。</p>
+  <p><strong>根因：</strong>在 <code>marked.parse()</code> 前做了 HTML 转义，<code>></code> 变成 <code>&amp;gt;</code>，marked 无法识别为 blockquote 标记。</p>
+  <p><strong>修复：</strong>改为先解析后过滤——用自定义 Renderer 在输出端验证 URL 协议，再用正则剥离危险标签。</p>
+  <p><strong>教训：</strong>Markdown 引擎和 HTML 安全过滤的先后顺序至关重要。转义是输出端的职责，不应在输入端做。</p>
+</div>
+
+<h3>Bug 2：CSS 变量主题冲突</h3>
+<div class="highlight-box yellow">
+  <p><strong>现象：</strong>表格表头文字白色不可见（白字 + 白底）。</p>
+  <p><strong>根因：</strong>单色主题（如 blue-light）设置 <code>--bubble-text: #fff</code>（白字），表头用 <code>--surface</code>（白色背景）。<code>--bubble-text</code> 和 <code>--surface</code> 配对不当。</p>
+  <p><strong>修复：</strong>表头显式设置 <code>color: var(--text)</code>——<code>--text</code> 与 <code>--surface</code> 在主题系统中是正确配对的。</p>
+  <p><strong>教训：</strong>项目的 CSS 变量有隐式配对规则。气泡外壳用 <code>--bubble-bg</code>/<code>--bubble-text</code>，气泡内部的 markdown 元素用全局 <code>--text</code>/<code>--surface</code>/<code>--bg</code>。</p>
+</div>
+
+<h3>Bug 3：编辑后不必要全量刷新</h3>
+<div class="highlight-box yellow">
+  <p><strong>现象：</strong>编辑笔记保存后屏幕闪烁（"连续频闪"）。</p>
+  <p><strong>根因：</strong><code>saveEditing()</code> 已用新 HTML 就地更新了气泡（L65），之后又调用 <code>onSaved() → loadNotes()</code> 全量清空重建列表（L558 <code>innerHTML = ''</code>）。</p>
+  <p><strong>修复：</strong>移除多余的 <code>onSaved()</code> 调用。气泡已更新，无需重新加载全部数据。</p>
+  <p><strong>教训：</strong>双写（write-twice）模式容易出现一致性问题和性能抖动。就地更新 + 全量刷新不能同时存在。</p>
+</div>
+
+<h3>Bug 4：工作区下拉菜单溢出屏幕</h3>
+<div class="highlight-box blue">
+  <p><strong>现象：</strong>切换按钮移到左侧后，下拉菜单向左飞出屏幕。</p>
+  <p><strong>根因：</strong>定位代码使用 <code>dropdown.style.right = ...</code>（右对齐），按钮移到左边后 <code>rect.right</code> 很小导致计算值过大。</p>
+  <p><strong>修复：</strong>改为 <code>dropdown.style.left = rect.left</code>（左对齐）。</p>
+</div>
+
+<h3>用户关注点</h3>
+<ul>
+  <li><strong>轻量化焦虑：</strong>多次确认 marked.js 是否会让产品变重。用数据说明 10KB gzip + PWA 缓存 = 零感知开销。</li>
+  <li><strong>自定义语法保留：</strong>确认 marked.js extension API 不会与未来自定义 callout 语法冲突。</li>
+  <li><strong>频闪问题：</strong>从"怀疑是 CSS/动画问题"到定位"多余 loadNotes()"的具体根因。</li>
+</ul>
+
+<div class="divider"></div>
+
+<h2>8. 最终交付清单</h2>
+
+<table>
+  <tr><th>Commit</th><th>描述</th><th>状态</th></tr>
+  <tr><td><code>c1e3e44</code></td><td>引入 marked.js，支持表格/代码块/多行引用</td><td><span class="tag green">已部署</span></td></tr>
+  <tr><td><code>a679973</code></td><td>XSS 防护：剥离 javascript:/data: URL</td><td><span class="tag green">已部署</span></td></tr>
+  <tr><td><code>79b3488</code></td><td>修复 blockquote 不显示 + 表头白字 bug</td><td><span class="tag green">已部署</span></td></tr>
+  <tr><td><code>3856072</code></td><td>工作区按钮移到搜索栏左侧</td><td><span class="tag green">已部署</span></td></tr>
+  <tr><td><code>7b24eb6</code></td><td>扩展 XSS 正则覆盖单引号/无引号事件处理器</td><td><span class="tag green">已部署</span></td></tr>
+  <tr><td><code>e7774e4</code></td><td>工作区下拉菜单 left 对齐 + blockquote 实色背景</td><td><span class="tag green">已部署</span></td></tr>
+  <tr><td><code>93fc042</code></td><td>blockquote 改为透明背景 + 彩色左边框</td><td><span class="tag green">已部署</span></td></tr>
+</table>
+
+<h3>当前 Markdown 支持矩阵</h3>
+
+<table>
+  <tr><th>语法</th><th>支持</th><th>备注</th></tr>
+  <tr><td>标题 # ## ### #### ##### ######</td><td><span class="tag green">全部</span></td><td>marked 原生支持 6 级标题</td></tr>
+  <tr><td>**加粗** / *斜体* / ~~删除线~~</td><td><span class="tag green">全部</span></td><td></td></tr>
+  <tr><td>> 引用（单行/多行/多段）</td><td><span class="tag green">全部</span></td><td>透明背景 + 彩色左边框</td></tr>
+  <tr><td>`代码` / ```代码块```</td><td><span class="tag green">全部</span></td><td>围栏代码块含暗色背景</td></tr>
+  <tr><td>- 无序 / 1. 有序列表</td><td><span class="tag green">全部</span></td><td>含正确 &lt;ul&gt;/&lt;ol&gt; 包裹</td></tr>
+  <tr><td>表格 |---|---|</td><td><span class="tag green">全部</span></td><td>含对齐、表头样式</td></tr>
+  <tr><td>[链接](url) / ![图片](url)</td><td><span class="tag green">全部</span></td><td>危险协议已过滤</td></tr>
+  <tr><td>--- 分割线</td><td><span class="tag green">全部</span></td><td></td></tr>
+  <tr><td>> [!note] Callout</td><td><span class="tag yellow">部分</span></td><td>作为普通引用渲染，无特殊样式</td></tr>
 </table>
 
 <div class="divider"></div>
 
 <div class="footer">
-  2026-06-04 · Smart Sticky Notes · PWA + Supabase + Vercel<br>
-  9 fixes + 1 XSS patch · 3 iterations · 4 commits · 4 deployments
+  <p>Smart Sticky Notes — Markdown Engine Upgrade Reflection</p>
+  <p>2026-06-05 · 7 commits · D:\My Documents\Claude Code\projects\smart_sticky_notes</p>
+  <p>Designed by Anzhi</p>
 </div>
 
 </div>

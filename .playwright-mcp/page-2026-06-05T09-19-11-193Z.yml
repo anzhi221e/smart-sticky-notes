@@ -1,0 +1,9 @@
+- generic [ref=e5]:
+  - img "Smart Sticky Notes" [ref=e7]
+  - heading "Smart Sticky Notes" [level=1] [ref=e8]
+  - paragraph [ref=e9]: 连接你的 Supabase 项目以开始使用
+  - generic [ref=e10]:
+    - textbox "Project URL" [ref=e11]
+    - textbox "Anon Key" [ref=e12]
+    - button "连接" [ref=e13] [cursor=pointer]
+  - paragraph [ref=e14]: 在 Supabase Dashboard › Settings › API 中可找到
