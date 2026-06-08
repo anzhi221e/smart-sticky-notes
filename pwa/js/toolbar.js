@@ -185,6 +185,7 @@ export function showQuickPhraseEditor() {
                 item.className = 'quick-phrase-item';
                 item.innerHTML = `
                     <span class="quick-phrase-item-text">${phrase.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>
+                    <button class="quick-phrase-item-edit" data-index="${i}">编辑</button>
                     <button class="quick-phrase-item-del" data-index="${i}">删除</button>
                 `;
                 item.querySelector('.quick-phrase-item-del').addEventListener('click', async () => {
@@ -194,8 +195,67 @@ export function showQuickPhraseEditor() {
                     renderList(current);
                     renderQuickPhraseBar();
                 });
+                item.querySelector('.quick-phrase-item-edit').addEventListener('click', () => {
+                    startInlineEdit(item, phrase, i);
+                });
                 list.appendChild(item);
             });
+        }
+
+        function startInlineEdit(item, oldPhrase, index) {
+            const textSpan = item.querySelector('.quick-phrase-item-text');
+            const editBtn = item.querySelector('.quick-phrase-item-edit');
+            const delBtn = item.querySelector('.quick-phrase-item-del');
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'quick-phrase-inline-input';
+            input.value = oldPhrase;
+            input.maxLength = 60;
+
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'quick-phrase-inline-save';
+            saveBtn.textContent = '保存';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'quick-phrase-inline-cancel';
+            cancelBtn.textContent = '取消';
+
+            textSpan.replaceWith(input);
+            editBtn.replaceWith(saveBtn);
+            delBtn.replaceWith(cancelBtn);
+            input.focus();
+            input.setSelectionRange(input.value.length, input.value.length);
+
+            async function doSave() {
+                const val = input.value.trim();
+                if (!val || val === oldPhrase) { doCancel(); return; }
+                const { phrases: current } = await getQuickPhrases();
+                if (current.includes(val) && val !== oldPhrase) {
+                    const { showToast } = await import('./ui.js');
+                    showToast('快捷语已存在');
+                    return;
+                }
+                current[index] = val;
+                await saveQuickPhrases(current);
+                renderList(current);
+                renderQuickPhraseBar();
+            }
+
+            function doCancel() {
+                renderList(/* will be refetched */ undefined);
+                // Re-render from saved state
+                getQuickPhrases().then(({ phrases: current }) => {
+                    renderList(current);
+                });
+            }
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') doSave();
+                else if (e.key === 'Escape') doCancel();
+            });
+            saveBtn.addEventListener('click', doSave);
+            cancelBtn.addEventListener('click', doCancel);
         }
 
         renderList(phrases);

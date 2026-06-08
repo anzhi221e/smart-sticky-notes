@@ -88,9 +88,10 @@ html, body {
     color: var(--bubble-text, var(--text));
 }
 .note-bubble .note-meta {
-    font-size: 11px; margin-top: 6px; display: flex; gap: 8px;
+    font-size: 11px; margin-top: 2px; display: flex; gap: 8px;
     align-items: center; flex-wrap: wrap; opacity: 0.8;
 }
+.note-text > :last-child { margin-bottom: 0; }
 .note-bubble .note-text { font-size: 15px; white-space: pre-wrap; word-break: break-word; }
 .note-bubble .note-tag {
     background: rgba(0,0,0,0.18); color: inherit;
@@ -352,6 +353,24 @@ html, body {
     padding: 4px 8px; border-radius: 4px; font-size: 12px; flex-shrink: 0;
 }
 .quick-phrase-item-del:active { background: var(--danger); color: #fff; }
+.quick-phrase-item-edit {
+    background: none; border: none; color: var(--accent); cursor: pointer;
+    padding: 4px 8px; border-radius: 4px; font-size: 12px; flex-shrink: 0;
+}
+.quick-phrase-item-edit:active { background: var(--accent-dim); }
+.quick-phrase-inline-input {
+    flex: 1; padding: 6px 8px; background: var(--bg); border: 1px solid var(--accent);
+    border-radius: 6px; color: var(--text); font-size: 13px; font-family: var(--font); outline: none;
+    min-width: 0;
+}
+.quick-phrase-inline-save {
+    background: var(--accent); border: none; color: #fff; cursor: pointer;
+    padding: 4px 10px; border-radius: 4px; font-size: 12px; flex-shrink: 0; font-family: var(--font);
+}
+.quick-phrase-inline-cancel {
+    background: none; border: none; color: var(--text-secondary); cursor: pointer;
+    padding: 4px 8px; border-radius: 4px; font-size: 12px; flex-shrink: 0; font-family: var(--font);
+}
 .quick-phrase-add-row { display: flex; gap: 8px; }
 .quick-phrase-add-input {
     flex: 1; padding: 9px 12px; background: var(--bg); border: 1px solid var(--border);
@@ -473,11 +492,12 @@ html, body {
 .note-text a { color: var(--accent); text-decoration: underline; }
 .note-text img { max-width: 100%; border-radius: 6px; }
 .note-text blockquote {
-    border-left: 4px solid var(--accent);
-    padding: 4px 0 4px 12px; margin: 8px 0;
+    border-left: 3px solid rgba(255,255,255,0.5);
+    padding: 0 0 0 12px; margin: 4px 0;
     background: none;
-    color: var(--text-secondary);
+    color: inherit;
 }
+.note-text blockquote p { margin: 2px 0; }
 /* Reduce top margin when paragraph follows heading */
 .note-text h1 + p, .note-text h2 + p, .note-text h3 + p { margin-top: 2px; }
 

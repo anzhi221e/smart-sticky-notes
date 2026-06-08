@@ -13,6 +13,13 @@ export function startEditing(bubble, noteId, text) {
 
     const originalHTML = bubble.innerHTML;
     bubble._originalHTML = originalHTML;
+
+    // Save meta and audio HTML for reconstruction after save
+    const metaEl = bubble.querySelector('.note-meta');
+    bubble._savedMetaHTML = metaEl ? metaEl.outerHTML : '';
+    const audioEl = bubble.querySelector('.audio-player');
+    bubble._savedAudioHTML = audioEl ? audioEl.outerHTML : '';
+
     const viewWidth = bubble.offsetWidth;
     bubble.style.minWidth = viewWidth + 'px';
     bubble.innerHTML = `
@@ -65,7 +72,29 @@ async function saveEditing() {
 
         _editingBubble._originalHTML = null;
         const html = renderMarkdown(newText);
-        _editingBubble.innerHTML = _editingBubble._savedInnerHTML = html;
+        // Rebuild proper bubble structure with .note-text wrapper
+        let newHTML = `<div class="note-text">${html}</div>`;
+        newHTML += _editingBubble._savedAudioHTML || '';
+
+        // Rebuild meta with updated tags, preserving original timestamp
+        const savedMeta = _editingBubble._savedMetaHTML || '';
+        const timeMatch = savedMeta.match(/<span>([^<]+)<\/span>/);
+        const timeStr = timeMatch ? timeMatch[1] : '';
+        const tagsHTML = newTags.map(t =>
+            `<span class="note-tag">#${t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`
+        ).join('');
+        newHTML += `<div class="note-meta"><span>${timeStr}</span>${tagsHTML}</div>`;
+
+        _editingBubble.innerHTML = newHTML;
+        _editingBubble._savedInnerHTML = newHTML;
+
+        // Re-attach tag pill click handlers
+        _editingBubble.querySelectorAll('.note-tag').forEach(tagEl => {
+            tagEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                import('./app.js').then(m => m.navigateToTags(tagEl.textContent.slice(1)));
+            });
+        });
     } catch (e) {
         alert('保存失败: ' + e.message);
         return;
