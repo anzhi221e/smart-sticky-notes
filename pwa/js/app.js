@@ -630,10 +630,10 @@ async function sendTextNote(caller = 'unknown') {
 }
 
 // --- Notes list ---
-export async function loadNotes() {
+export async function loadNotes(clearFirst = false) {
     const list = document.getElementById('notes-list');
     if (!list) return;
-    list.innerHTML = '';
+    if (clearFirst) list.innerHTML = '';
 
     try {
         let notes;
@@ -646,16 +646,26 @@ export async function loadNotes() {
             notes = (data || []).reverse();
             await cacheNotes(notes);
         }
+
+        // Track existing IDs, append only new notes (avoid clearing the DOM to prevent flicker)
+        const existingIds = new Set();
+        list.querySelectorAll('.note-bubble').forEach(b => existingIds.add(b.dataset.noteId));
+
         notes.forEach(note => {
-            if (list.querySelector(`[data-note-id="${CSS.escape(note.id)}"]`)) return;
+            if (existingIds.has(note.id)) return;
             const bubble = renderNoteBubble(note, null, (b, id, text, tags) => startEditing(b, id, text));
             list.appendChild(bubble);
         });
         _oldestCursor = notes.length > 0 ? notes[0] : null;
-        list.scrollTop = list.scrollHeight;
+        if (list.children.length === 0) {
+            // First load — scroll to bottom
+            list.scrollTop = list.scrollHeight;
+        }
     } catch (err) {
         const cached = await getCachedNotes();
-        cached.forEach(note => list.appendChild(renderNoteBubble(note)));
+        if (list.children.length === 0) {
+            cached.forEach(note => list.appendChild(renderNoteBubble(note)));
+        }
     }
     const queueCount = await getQueueCount();
     if (queueCount > 0) setSyncStatus(`${queueCount} 条待发送`);
@@ -669,7 +679,7 @@ async function flushAndReload() {
 async function filterNotes(query) {
     const list = document.getElementById('notes-list');
     if (!list) return;
-    if (!query.trim()) { loadNotes(); return; }
+    if (!query.trim()) { loadNotes(true); return; }
     try {
         const sb = getSupabase();
         let q = sb.from('smartstickynotes_items').select('*').eq('status', 'active').ilike('text', `%${query}%`).order('created_at', { ascending: false }).limit(50);
@@ -687,6 +697,8 @@ export async function switchWorkspace(name) {
     updateWorkspaceLabel(name);
     await updateSidebarWs();
     _oldestCursor = null;
+    const list = document.getElementById('notes-list');
+    if (list) list.innerHTML = '';
     await loadNotes();
 }
 
