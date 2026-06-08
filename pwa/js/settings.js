@@ -1,6 +1,7 @@
 import { readConfig, writeConfig } from './db.js';
 import { showToast, navigateTo, applyTheme, getThemeNames, getThemeMeta } from './ui.js';
 import { signOut } from './auth.js';
+import { getCurrentWorkspace } from './workspaces.js';
 
 export async function showSettings() {
     navigateTo('settings');
@@ -61,6 +62,11 @@ export async function showSettings() {
                 <button id="add-toolbar-btn" style="padding:8px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;white-space:nowrap;">添加</button>
             </div>
             <button id="reset-toolbar-btn" style="margin-top:8px;padding:8px 16px;background:var(--surface);color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px;">恢复默认</button>
+        </div>
+        <div class="setting-group"><h3>自定义快捷语</h3>
+            <p style="font-size:11px;color:var(--text-secondary);margin-bottom:8px;">在富文本工具栏和标签栏之间显示，点击即可插入常用短语</p>
+            <div id="qp-settings-info" style="font-size:13px;color:var(--text);margin-bottom:8px;"></div>
+            <button id="qp-settings-edit-btn" style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:14px;">编辑快捷语</button>
         </div>
         <div class="setting-group"><h3>置顶标签</h3>
             <div class="setting-row"><input type="text" id="cfg-pinned-tags" value="${cfg.pinned_tags || '[]'}">
@@ -197,6 +203,21 @@ export async function showSettings() {
         writeConfig('toolbar_buttons', JSON.stringify(toolbarButtons));
         renderToolbarEditor();
     });
+
+    // Quick phrases settings
+    (async () => {
+        const ws = getCurrentWorkspace();
+        const all = JSON.parse(cfg.quick_phrases || '{}');
+        const phrases = all[ws] || [];
+        const info = document.getElementById('qp-settings-info');
+        if (info) {
+            info.textContent = `当前工作区：${ws}，已配置 ${phrases.length} 条快捷语（上限 20 条）`;
+        }
+        document.getElementById('qp-settings-edit-btn').addEventListener('click', async () => {
+            const { showQuickPhraseEditor } = await import('./toolbar.js');
+            showQuickPhraseEditor();
+        });
+    })();
 
     // Logout
     document.getElementById('logout-btn').addEventListener('click', async () => {

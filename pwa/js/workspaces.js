@@ -68,6 +68,13 @@ export async function renameWorkspace(oldName, newName) {
     if (cfg.default_workspace === oldName) {
         await writeConfig('default_workspace', trimmed);
     }
+    // Migrate quick phrases
+    const allQp = JSON.parse(cfg.quick_phrases || '{}');
+    if (allQp[oldName]) {
+        allQp[trimmed] = allQp[oldName];
+        delete allQp[oldName];
+        await writeConfig('quick_phrases', JSON.stringify(allQp));
+    }
     const current = getCurrentWorkspace();
     if (current === oldName) setCurrentWorkspace(trimmed);
     return trimmed;
@@ -85,6 +92,12 @@ export async function deleteWorkspace(name) {
     const cfg = await readConfig().catch(() => ({}));
     if (cfg.default_workspace === name) {
         await writeConfig('default_workspace', DEFAULT_WORKSPACE);
+    }
+    // Clean up quick phrases
+    const allQp = JSON.parse(cfg.quick_phrases || '{}');
+    if (allQp[name]) {
+        delete allQp[name];
+        await writeConfig('quick_phrases', JSON.stringify(allQp));
     }
     const current = getCurrentWorkspace();
     if (current === name) setCurrentWorkspace(DEFAULT_WORKSPACE);

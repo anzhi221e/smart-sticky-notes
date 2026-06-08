@@ -310,6 +310,63 @@ html, body {
     font-family: var(--font); flex-shrink: 0;
 }
 
+/* Quick phrase bar */
+.quick-phrase-btn {
+    background: var(--surface); border: 1px dashed var(--border); color: var(--text-secondary);
+    padding: 5px 10px; border-radius: 14px; font-size: 12px; cursor: pointer;
+    white-space: nowrap; font-family: var(--font); flex-shrink: 0;
+}
+.quick-phrase-btn:active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+.quick-phrase-edit-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--text-secondary);
+    padding: 5px 8px; border-radius: 14px; font-size: 11px; cursor: pointer;
+    white-space: nowrap; font-family: var(--font); flex-shrink: 0;
+}
+.quick-phrase-edit-btn:active { background: var(--surface-hover); }
+
+/* Quick phrase editor modal */
+.quick-phrase-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+}
+.quick-phrase-modal-inner {
+    background: var(--surface); border-radius: 16px; padding: 20px;
+    max-width: 400px; width: 90%; max-height: 80vh; display: flex; flex-direction: column;
+}
+.quick-phrase-modal-title {
+    font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text);
+}
+.quick-phrase-modal-subtitle {
+    font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;
+}
+.quick-phrase-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; overflow-y: auto; max-height: 40vh; }
+.quick-phrase-item {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    background: var(--bg); border-radius: 8px;
+}
+.quick-phrase-item-text {
+    flex: 1; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.quick-phrase-item-del {
+    background: none; border: none; color: var(--danger); cursor: pointer;
+    padding: 4px 8px; border-radius: 4px; font-size: 12px; flex-shrink: 0;
+}
+.quick-phrase-item-del:active { background: var(--danger); color: #fff; }
+.quick-phrase-add-row { display: flex; gap: 8px; }
+.quick-phrase-add-input {
+    flex: 1; padding: 9px 12px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 13px; font-family: var(--font); outline: none;
+}
+.quick-phrase-add-input:focus { border-color: var(--accent); }
+.quick-phrase-add-btn {
+    padding: 9px 16px; background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: var(--font); flex-shrink: 0;
+}
+.quick-phrase-modal-close {
+    width: 100%; margin-top: 12px; padding: 10px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); cursor: pointer; font-size: 14px; font-family: var(--font);
+}
+
 /* Bubble editor */
 .bubble-editor {
     width: 100%; min-height: 60px; background: var(--bg);

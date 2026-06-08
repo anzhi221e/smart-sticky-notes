@@ -6,7 +6,7 @@ import { startRecording, stopRecording, cancelRecording, getIsRecording } from '
 import { navigateTo, toggleSidebar, setSyncStatus, setMicEnabled, toggleSendButton, showRecordingOverlay, hideRecordingOverlay, updateRecordingText, showToast, applyTheme } from './ui.js';
 import { isOnline, onNetworkChange, cacheNotes, getCachedNotes, addToQueue, getQueueCount, flushQueue } from './offline.js';
 import { renderCalendarDay, renderCalendarWeek, renderCalendarMonth, renderCalendarYear } from './calendar.js';
-import { initToolbar, showToolbar, hideToolbar, setToolbarTarget, renderTagBar } from './toolbar.js';
+import { initToolbar, showToolbar, hideToolbar, setToolbarTarget, renderTagBar, renderQuickPhraseBar } from './toolbar.js';
 import { startEditing } from './editor.js';
 import { showTagsView } from './tags.js';
 import { showRecycleBin } from './recycle-bin.js';
@@ -492,6 +492,7 @@ async function loadTagBar() {
         const pinned = JSON.parse(cfg.pinned_tags || '[]');
         renderTagBar(Object.keys(tags), pinned);
     } catch (e) { /* ignore */ }
+    renderQuickPhraseBar();
 }
 
 // --- Mic ---

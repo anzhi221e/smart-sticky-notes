@@ -1,4 +1,4 @@
-import { showToolbar, hideToolbar, setToolbarTarget, renderTagBar } from './toolbar.js';
+import { showToolbar, hideToolbar, setToolbarTarget, renderTagBar, renderQuickPhraseBar } from './toolbar.js';
 import { fetchTags, readConfig } from './db.js';
 import { renderMarkdown } from './notes.js';
 
@@ -13,6 +13,8 @@ export function startEditing(bubble, noteId, text) {
 
     const originalHTML = bubble.innerHTML;
     bubble._originalHTML = originalHTML;
+    const viewWidth = bubble.offsetWidth;
+    bubble.style.minWidth = viewWidth + 'px';
     bubble.innerHTML = `
         <textarea class="bubble-editor" id="bubble-editor">${escapeHtml(text)}</textarea>
         <div class="edit-actions">
@@ -34,6 +36,7 @@ export function startEditing(bubble, noteId, text) {
             renderTagBar(Object.keys(tagCounts), pinned);
         });
     });
+    renderQuickPhraseBar();
 
     bubble.querySelector('.edit-btn--cancel').addEventListener('click', () => cancelEditing());
     bubble.querySelector('.edit-btn--save').addEventListener('click', () => saveEditing());
@@ -79,6 +82,7 @@ function cancelEditing() {
 }
 
 function finishEditing() {
+    if (_editingBubble) _editingBubble.style.minWidth = '';
     hideToolbar();
     setToolbarTarget(null);
     _editingBubble = null;

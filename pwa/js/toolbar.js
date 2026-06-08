@@ -100,3 +100,137 @@ export function renderTagBar(tags, pinnedTags = []) {
         bar.appendChild(pill);
     });
 }
+
+// --- Quick phrases (per-workspace) ---
+
+async function getQuickPhrases() {
+    const { readConfig } = await import('./db.js');
+    const { getCurrentWorkspace } = await import('./workspaces.js');
+    const cfg = await readConfig().catch(() => ({}));
+    const all = JSON.parse(cfg.quick_phrases || '{}');
+    const ws = getCurrentWorkspace();
+    return { all, ws, phrases: all[ws] || [] };
+}
+
+async function saveQuickPhrases(phrases) {
+    const { writeConfig } = await import('./db.js');
+    const { all, ws } = await getQuickPhrases();
+    if (phrases.length === 0) {
+        delete all[ws];
+    } else {
+        all[ws] = phrases;
+    }
+    await writeConfig('quick_phrases', JSON.stringify(all));
+}
+
+export async function renderQuickPhraseBar() {
+    const bar = document.getElementById('quick-phrase-bar');
+    if (!bar) return;
+    bar.innerHTML = '';
+    const { phrases } = await getQuickPhrases();
+    phrases.forEach(phrase => {
+        const btn = document.createElement('button');
+        btn.className = 'quick-phrase-btn';
+        btn.textContent = phrase;
+        btn.addEventListener('click', () => {
+            if (!_targetInput) return;
+            const el = _targetInput;
+            const pos = el.selectionStart || 0;
+            el.value = el.value.substring(0, pos) + phrase + el.value.substring(pos);
+            el.focus();
+            const newPos = pos + phrase.length;
+            el.setSelectionRange(newPos, newPos);
+        });
+        bar.appendChild(btn);
+    });
+    const editBtn = document.createElement('button');
+    editBtn.className = 'quick-phrase-edit-btn';
+    editBtn.textContent = phrases.length ? '编辑' : '+ 添加快捷语';
+    editBtn.addEventListener('click', () => showQuickPhraseEditor());
+    bar.appendChild(editBtn);
+}
+
+export function showQuickPhraseEditor() {
+    const existing = document.querySelector('.quick-phrase-modal');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'quick-phrase-modal';
+
+    getQuickPhrases().then(({ phrases, ws }) => {
+        overlay.innerHTML = `
+            <div class="quick-phrase-modal-inner">
+                <div class="quick-phrase-modal-title">编辑快捷语</div>
+                <div class="quick-phrase-modal-subtitle">工作区：${ws.replace(/</g,'&lt;').replace(/>/g,'&gt;')}（最多 20 条）</div>
+                <div class="quick-phrase-list" id="qp-list"></div>
+                <div class="quick-phrase-add-row">
+                    <input class="quick-phrase-add-input" id="qp-add-input" placeholder="输入新的快捷语..." maxlength="60" autocomplete="off">
+                    <button class="quick-phrase-add-btn" id="qp-add-btn">添加</button>
+                </div>
+                <button class="quick-phrase-modal-close" id="qp-close-btn">完成</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        const list = overlay.querySelector('#qp-list');
+
+        function renderList(items) {
+            list.innerHTML = '';
+            if (items.length === 0) {
+                list.innerHTML = '<div style="text-align:center;color:var(--text-secondary);font-size:13px;padding:16px;">还没有快捷语，用下方输入框添加</div>';
+                return;
+            }
+            items.forEach((phrase, i) => {
+                const item = document.createElement('div');
+                item.className = 'quick-phrase-item';
+                item.innerHTML = `
+                    <span class="quick-phrase-item-text">${phrase.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>
+                    <button class="quick-phrase-item-del" data-index="${i}">删除</button>
+                `;
+                item.querySelector('.quick-phrase-item-del').addEventListener('click', async () => {
+                    const { phrases: current } = await getQuickPhrases();
+                    current.splice(i, 1);
+                    await saveQuickPhrases(current);
+                    renderList(current);
+                    renderQuickPhraseBar();
+                });
+                list.appendChild(item);
+            });
+        }
+
+        renderList(phrases);
+
+        overlay.querySelector('#qp-add-btn').addEventListener('click', async () => {
+            const input = overlay.querySelector('#qp-add-input');
+            const val = input.value.trim();
+            if (!val) return;
+            const { phrases: current } = await getQuickPhrases();
+            if (current.length >= 20) {
+                const { showToast } = await import('./ui.js');
+                showToast('最多 20 条快捷语');
+                return;
+            }
+            if (current.includes(val)) {
+                const { showToast } = await import('./ui.js');
+                showToast('快捷语已存在');
+                return;
+            }
+            current.push(val);
+            await saveQuickPhrases(current);
+            input.value = '';
+            renderList(current);
+            renderQuickPhraseBar();
+        });
+
+        overlay.querySelector('#qp-add-input').addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') overlay.querySelector('#qp-add-btn').click();
+        });
+
+        overlay.querySelector('#qp-close-btn').addEventListener('click', () => overlay.remove());
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+    });
+    document.body.appendChild(overlay);
+}
