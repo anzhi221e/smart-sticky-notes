@@ -87,6 +87,8 @@ async function saveEditing() {
 
         _editingBubble.innerHTML = newHTML;
         _editingBubble._savedInnerHTML = newHTML;
+        _editingBubble.dataset.noteText = newText;
+        _editingBubble.dataset.noteTags = JSON.stringify(newTags);
 
         // Re-attach tag pill click handlers
         _editingBubble.querySelectorAll('.note-tag').forEach(tagEl => {
