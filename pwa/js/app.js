@@ -208,6 +208,12 @@ function setupMainUI() {
         renderCalendarMonth(new Date());
     });
 
+    // Scroll-to-bottom button
+    document.getElementById('scroll-bottom-btn').addEventListener('click', () => {
+        const list = document.getElementById('notes-list');
+        if (list) list.scrollTop = list.scrollHeight;
+    });
+
     // Text input
     const textInput = document.getElementById('text-input');
     let toolbarBlurTimeout;
