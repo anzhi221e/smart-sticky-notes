@@ -640,7 +640,7 @@ export async function loadNotes(clearFirst = false) {
         if (!isOnline()) notes = await getCachedNotes();
         else {
             const sb = getSupabase();
-            let query = sb.from('smartstickynotes_items').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(50);
+            let query = sb.from('smartstickynotes_items').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(15);
             if (_currentWorkspace) query = query.eq('workspace', _currentWorkspace);
             const { data } = await query;
             notes = (data || []).reverse();
