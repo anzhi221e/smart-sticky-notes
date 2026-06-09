@@ -353,12 +353,273 @@ innerHTML 注入 DOM</code></pre>
   <tr><td>> [!note] Callout</td><td><span class="tag yellow">部分</span></td><td>作为普通引用渲染，无特殊样式</td></tr>
 </table>
 
+<!-- Session: 2026-06-08 ───────────────────────────────── -->
+<h2 class="session-heading">Session — 2026-06-08</h2>
+
+<h3>本次要点</h3>
+<ul>
+  <li>引用块（blockquote）样式修复：蓝色→白色、文字颜色统一、间距消除</li>
+  <li>气泡内容与标签/日期行之间的空白消除</li>
+  <li>快捷语行内编辑功能（添加/删除/修改）</li>
+  <li><strong>系统性调试教训</strong>：CSS 治标失败 → 找到真正根因（white-space: pre-wrap + marked 输出的 \n）</li>
+  <li>完整仓库隐私审计 → 双仓库架构（私有 dev + 公开 release）</li>
+  <li>用户引导修复（SQL 缺失 + service_role key 名称错误）</li>
+  <li>面向公开仓库的完整 README（含 Supabase / SMTP / Vercel 部署 + 中国用户提示）</li>
+  <li>GitHub 用户名迁移：ychen02 → anzhi221e</li>
+</ul>
+
+<h3>关键决策</h3>
+
+<div class="highlight-box blue">
+  <p><strong>决策 1：双仓库架构</strong></p>
+  <p>私有仓库 <code>anzhi221e/smart-sticky-notes-dev</code> 保留完整开发历史（调试文档、设计 spec、reflection）；公开仓库 <code>anzhi221e/smart-sticky-notes</code> 只放干净代码 + README。公开仓库从干净的初始 commit 开始，不带历史包袱。</p>
+</div>
+
+<div class="highlight-box blue">
+  <p><strong>决策 2：不硬编码任何凭证</strong></p>
+  <p>公开 README 中无任何 API key、密码或真实 URL。所有凭证在 .env.example 占位符中，真实密钥始终通过本地 .env（gitignored）注入。.claude/settings.local.json 未被 git 追踪。</p>
+</div>
+
+<div class="highlight-box blue">
+  <p><strong>决策 3：SMTP 可选 + Token 优先</strong></p>
+  <p>用户指出 SMTP 不是必须的（Supabase 自带邮件有免费额度）。邮件模板使用 <code>{{ .Token }}</code> 发送原始 8 位验证码而非确认链接——这是经过实测最适合 PWA 场景的方案。</p>
+</div>
+
+<h3>调试教训：CSS 治标 vs 根因修复</h3>
+
+<div class="highlight-box yellow">
+  <p><strong>本次最重要的技术教训</strong></p>
+</div>
+
+<p>用户报告了三个 UI 问题：引用块上下空白、蓝色侧边条、气泡内容与元信息之间空白。第一次修改只改了 CSS：</p>
+
+<table>
+  <tr><th>修改</th><th>类型</th><th>效果</th></tr>
+  <tr><td>blockquote border-left 蓝色→白色</td><td>CSS 样式</td><td>✅ 颜色正确</td></tr>
+  <tr><td>blockquote padding/margin 缩减</td><td>CSS 间距</td><td>❌ 空白仍在</td></tr>
+  <tr><td>.note-meta margin-top 6px→2px</td><td>CSS 间距</td><td>❌ 空白仍在</td></tr>
+  <tr><td>.note-text > :last-child { margin-bottom: 0 }</td><td>CSS 间距</td><td>❌ 空白仍在</td></tr>
+</table>
+
+<p>部署后用户反馈问题<strong>一个都没解决</strong>。回到系统化调试流程后，用 <code>node -e</code> 验证 marked.parse() 的实际输出：</p>
+
+<div class="code-block">
+<pre><code><span class="comment">// marked.parse('> 这是引用') 的实际输出：</span>
+<span class="string">"&lt;blockquote&gt;\n&lt;p&gt;这是引用&lt;/p&gt;\n&lt;/blockquote&gt;\n"</span>
+
+<span class="comment">// marked.parse('普通文本') 的实际输出：</span>
+<span class="string">"&lt;p&gt;普通文本&lt;/p&gt;\n"</span></code></pre>
+</div>
+
+<p><strong>真正根因</strong>：<code>.note-text { white-space: pre-wrap }</code> 会把 HTML 标签之间的 <code>\n</code> 字符渲染为可见空白行。CSS margin 对此无能为力——空间来自文字内容，不是盒模型。</p>
+
+<p><strong>正确修复</strong>：在 <code>renderMarkdown()</code> 中清洗 marked 输出：</p>
+
+<div class="code-block">
+<pre><code><span class="comment">// notes.js renderMarkdown() — 在现有安全过滤后追加：</span>
+<span class="keyword">const</span> html = marked.parse(text, { renderer });
+<span class="keyword">return</span> html
+    .replace(<span class="regex">/&lt;script[\s\S]*?&lt;\/script&gt;/gi</span>, <span class="string">''</span>)
+    .replace(<span class="regex">/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s&gt;]*)/gi</span>, <span class="string">''</span>)
+    .replace(<span class="regex">/&gt;\s+&lt;/g</span>, <span class="string">'&gt;&lt;'</span>)   <span class="comment">// ← 新增：清除标签间空白</span>
+    .trim();                                      <span class="comment">// ← 新增：清除首尾空白</span></code></pre>
+</div>
+
+<p>修复验证：</p>
+<table>
+  <tr><th>场景</th><th>修复前</th><th>修复后</th></tr>
+  <tr><td>引用 &gt; 文字</td><td><code>&lt;blockquote&gt;\n&lt;p&gt;文字&lt;/p&gt;\n&lt;/blockquote&gt;\n</code></td><td><code>&lt;blockquote&gt;&lt;p&gt;文字&lt;/p&gt;&lt;/blockquote&gt;</code></td></tr>
+  <tr><td>普通文本</td><td><code>&lt;p&gt;文字&lt;/p&gt;\n</code></td><td><code>&lt;p&gt;文字&lt;/p&gt;</code></td></tr>
+  <tr><td>多行内容</td><td><code>&lt;p&gt;行1\n行2&lt;/p&gt;\n</code></td><td><code>&lt;p&gt;行1\n行2&lt;/p&gt;</code></td></tr>
+</table>
+<p>标签间空白清除，用户内容中的 \n 保留。一行代码修复两个问题。</p>
+
+<div class="highlight-box green">
+  <p><strong>教训</strong>：修 UI 问题时不要直接从 CSS 入手。从数据流源头追踪：输入 → 处理 → 输出 → 渲染。这次 bug 在"处理→输出"环节（marked 输出含 \n），却连续两次在"渲染"环节（CSS）尝试修复。</p>
+</div>
+
+<h3>安全审计：公开仓库隐私检查</h3>
+
+<p>在公开仓库前进行了完整的隐私审计，扫描范围覆盖：</p>
+
+<table>
+  <tr><th>检查项</th><th>方法</th><th>结果</th></tr>
+  <tr><td>Supabase URL / Anon Key</td><td>grep 搜索 eyJ, supabase.co</td><td><span class="tag green">安全</span> 仅 .env.example 有占位符</td></tr>
+  <tr><td>Service Role Key</td><td>grep 搜索 service_role</td><td><span class="tag green">安全</span> 仅 env vars 引用，无硬编码值</td></tr>
+  <tr><td>Brevo SMTP 凭证</td><td>grep 搜索 brevo, smtp</td><td><span class="tag green">安全</span> 仅在 bug 报告文档中提到</td></tr>
+  <tr><td>个人文件路径</td><td>grep 搜索 D:\, C:\, Users\</td><td><span class="tag yellow">发现</span> run_sync.bat + reflection.html，已排除</td></tr>
+  <tr><td>GitHub 用户名</td><td>grep 搜索 ychen02</td><td><span class="tag yellow">发现</span> reflection.html 中，已更新</td></tr>
+  <tr><td>.claude/settings.local.json</td><td>git ls-files 验证</td><td><span class="tag green">安全</span> 未被 git 追踪（含真实凭证但不上传）</td></tr>
+  <tr><td>调试/测试文件</td><td>find + 人工分类</td><td><span class="tag yellow">已排除</span> 7 个文件不放入公开库</td></tr>
+</table>
+
+<h3>用户引导修复（wizard.js）</h3>
+
+<p>发现两个设置向导中的 bug：</p>
+
+<div class="file-card">
+  <div class="name">Bug 1：向导 SQL 缺失 002_v2.sql 内容</div>
+  <div class="desc">wizard.js 内嵌的 SQL 只包含 001_initial.sql（核心表），缺少 sync_requests 表的创建。用户跟着向导初始化数据库会缺表。</div>
+  <span class="tag red">FIXED</span>
+</div>
+
+<div class="file-card">
+  <div class="name">Bug 2：密钥名称写错</div>
+  <div class="desc">向导第 3 步写着 <code>SUPABASE_ANON_KEY=你的KEY</code>，但同步脚本实际需要 <code>SUPABASE_SERVICE_ROLE_KEY</code>。用 anon key 运行同步脚本无法建立会话。</div>
+  <span class="tag red">FIXED</span>
+</div>
+
+<h3>实现细节</h3>
+
+<div class="file-card">
+  <div class="name">pwa/js/notes.js — renderMarkdown() 空白清洗</div>
+  <div class="desc">新增 .replace(/>\s+</g, '><') + .trim()，清除 marked 输出中的标签间空白，修复 pre-wrap 导致的可见空白行</div>
+  <span class="tag green">DONE</span>
+</div>
+
+<div class="file-card">
+  <div class="name">pwa/js/editor.js — saveEditing 结构保护</div>
+  <div class="desc">保存编辑后重建完整气泡结构（.note-text 包装 + .note-meta + audio），避免丢失 CSS 作用域</div>
+  <span class="tag green">DONE</span>
+</div>
+
+<div class="file-card">
+  <div class="name">pwa/js/toolbar.js — 快捷语行内编辑</div>
+  <div class="desc">startInlineEdit() 函数：replaceWith 实现内联编辑，Enter 保存 / Escape 取消，含重复校验</div>
+  <span class="tag green">DONE</span>
+</div>
+
+<div class="file-card">
+  <div class="name">README.md — 完整部署指南</div>
+  <div class="desc">含 Supabase 建表 → SMTP 配置 → Vercel 部署 → PC 同步四步完整流程；中国用户科学上网提示；邮件模板 Token 配置说明；Brevo 发件人验证 + IP 白名单排查</div>
+  <span class="tag green">DONE</span>
+</div>
+
+<div class="file-card">
+  <div class="name">pwa/js/wizard.js — 双 Bug 修复</div>
+  <div class="desc">合并 002_v2.sql 至内嵌 SQL；SUPABASE_ANON_KEY → SUPABASE_SERVICE_ROLE_KEY</div>
+  <span class="tag green">DONE</span>
+</div>
+
+<h3>公开仓库文件清单</h3>
+
+<table>
+  <tr><th>类别</th><th>文件</th><th>说明</th></tr>
+  <tr><td>根</td><td>README.md, LICENSE, .gitignore</td><td>文档 + MIT 许可</td></tr>
+  <tr><td>PWA</td><td>pwa/ (58 文件)</td><td>完整单页应用</td></tr>
+  <tr><td>同步</td><td>sync/ (16 文件, 排除 .env / __pycache__ / run_sync.bat)</td><td>Python 同步脚本</td></tr>
+  <tr><td>数据库</td><td>supabase/migrations/ (001 + 002)</td><td>SQL 迁移</td></tr>
+  <tr><td>排除</td><td>debug.html, theme-demo, bug-report, reflection, .claude, .vercel</td><td>保留在私有库</td></tr>
+</table>
+
+<h3>部署信息</h3>
+
+<table>
+  <tr><th>平台</th><th>URL</th></tr>
+  <tr><td>Vercel (生产)</td><td>smartstickynotes.vercel.app</td></tr>
+  <tr><td>GitHub 私有库</td><td>github.com/anzhi221e/smart-sticky-notes-dev</td></tr>
+  <tr><td>GitHub 公开库</td><td>github.com/anzhi221e/smart-sticky-notes</td></tr>
+</table>
+
+<!-- Session End ─────────────────────────────────────────── -->
+
+<!-- Session: 2026-06-08 (续) — 频闪问题专项 ───────────────────────────────── -->
+<h2 class="session-heading">专项分析：频闪问题的完整历史</h2>
+
+<div class="highlight-box red">
+  <p><strong>频闪问题在本项目中已出现 3 次，每次根因不同。</strong>这已不是偶发 bug，而是一类系统性症状——"页面频繁重绘/布局偏移"——需要在开发流程中建立预防机制。</p>
+</div>
+
+<h3>频闪事件时间线</h3>
+
+<div class="timeline-item"><strong>事件 1：编辑保存后的引用块频闪</strong>（本次 session 早期）</div>
+<table>
+  <tr><th>触发条件</th><td>编辑已有笔记 → 添加引用块（> 文字）→ 保存</td></tr>
+  <tr><th>症状</th><td>保存后页面开始持续闪烁</td></tr>
+  <tr><th>根因</th><td><code>saveEditing()</code> 中 <code>_editingBubble.innerHTML = html</code> 用原始 markdown HTML 替换了整个气泡，导致 <code>.note-text</code> 包装 div 丢失。CSS 选择器 <code>.note-text blockquote</code> 不再匹配，引用块回退到浏览器默认样式（大边距、默认缩进），气泡尺寸剧烈变化。</td></tr>
+  <tr><th>修复</th><td>保存后重建完整气泡结构：<code>.note-text</code> 包装 + <code>.note-meta</code> + audio player + 标签点击事件</td></tr>
+  <tr><th>教训</th><td>用 innerHTML 替换 DOM 时，必须重建<strong>完整</strong>的内部结构，不能只替换内容片段</td></tr>
+</table>
+
+<div class="timeline-item"><strong>事件 2：CSS 治标失败</strong>（同 session 中期）</div>
+<table>
+  <tr><th>触发条件</th><td>事件 1 的第一次修复尝试（仅改 CSS）</td></tr>
+  <tr><th>症状</th><td>引用块上下空白和内容间距仍然存在，修复无效</td></tr>
+  <tr><th>根因</th><td><code>white-space: pre-wrap</code> 导致 <code>marked.parse()</code> 输出的 <code>\n</code> 被渲染为可见空白行。CSS margin/padding 对文字内容产生的空间无能为力。</td></tr>
+  <tr><th>修复</th><td>在 <code>renderMarkdown()</code> 中添加 <code>.replace(/>\s+</g, '><').trim()</code></td></tr>
+  <tr><th>教训</th><td>UI 间距问题不应从 CSS 入手——从数据流源头追踪：输入 → 处理 → 输出 → 渲染</td></tr>
+</table>
+
+<div class="timeline-item"><strong>事件 3：自动刷新导致的整页闪烁</strong>（本次）</div>
+<table>
+  <tr><th>触发条件</th><td>用户未进行任何操作，页面在后台打开一段时间后开始频闪</td></tr>
+  <tr><th>症状</th><td>整页内容周期性消失后重现（白屏闪烁）</td></tr>
+  <tr><th>根因</th><td><code>loadNotes()</code> 被 <code>setInterval</code> 每 30 秒调用一次，每次执行 <code>list.innerHTML = ''</code> 瞬间清空所有 DOM 节点，然后异步等待 Supabase 查询完成后再重建。从清空到重建之间有明显的白屏间隙。</td></tr>
+  <tr><th>修复</th><td>改为增量更新：用 <code>Set</code> 追踪已有笔记 ID，只追加新笔记，不清除现有 DOM。切换工作区时显式传 <code>clearFirst=true</code>。</td></tr>
+  <tr><th>教训</th><td>周期性刷新不能用"清空→重建"模式。DOM 应被视为持久化资源，只增不减。</td></tr>
+</table>
+
+<h3>频闪问题系统性分析</h3>
+
+<p>三次频闪的共同模式：</p>
+
+<div class="code-block">
+<pre><code><span class="comment">// 频闪 = 以下条件之一成立：</span>
+<span class="comment">// 1. DOM 被周期性清空并重建</span>
+list.innerHTML = <span class="string">''</span>;  <span class="comment">// ← 事件 3 的根因</span>
+
+<span class="comment">// 2. 关键 DOM 结构（如 CSS 选择器的父元素）被意外移除</span>
+bubble.innerHTML = markdownHtml;  <span class="comment">// ← 事件 1 的根因（丢失 .note-text 包装）</span>
+
+<span class="comment">// 3. 隐藏的文字内容（\n）被 CSS 渲染为可见空白</span>
+<span class="comment">//    white-space: pre-wrap + HTML 标签间换行 = 可见空白行</span>
+<span class="comment">//    ← 事件 2 的根因（事件 1 的 CSS 修补尝试失败原因）</span></code></pre>
+</div>
+
+<h3>频闪预防清单</h3>
+
+<div class="highlight-box green">
+  <p><strong>今后任何涉及 DOM 操作的修改，检查以下三项：</strong></p>
+</div>
+
+<table>
+  <tr><th>检查项</th><th>为什么重要</th><th>涉及的事件</th></tr>
+  <tr><td>是否用 <code>innerHTML = ''</code> 清空列表？</td><td>会导致白屏闪烁，改为增量更新</td><td>事件 3</td></tr>
+  <tr><td>用 <code>innerHTML</code> 替换内容时，是否保留了外层包装元素？</td><td>丢失包装器 = CSS 选择器失效 = 布局崩溃</td><td>事件 1</td></tr>
+  <tr><td>HTML 输出是否包含标签间换行？配合 <code>white-space: pre-wrap</code> 会怎样？</td><td>pre-wrap 会把 HTML 源码中的 \n 变成可见空行</td><td>事件 2</td></tr>
+  <tr><td>周期性刷新是否触发了 DOM 重建？</td><td>任何 >1 次/分钟的 DOM 重建都可能被感知为闪烁</td><td>事件 3</td></tr>
+  <tr><td><code>scrollTop = scrollHeight</code> 是否触发了 scroll 事件监听器？</td><td>可能导致意外回调链（double-send bug 就是这原因）</td><td>历史 bug</td></tr>
+</table>
+
+<h3>本次修复的代码变更</h3>
+
+<div class="file-card">
+  <div class="name">pwa/js/app.js — loadNotes() 增量更新</div>
+  <div class="desc"><code>loadNotes(clearFirst = false)</code>：默认不清理 DOM，用 Set 追踪已有 ID，只追加新笔记。切换工作区/清空搜索时传 true。首次加载才滚动到底部。</div>
+  <span class="tag green">FIXED</span>
+</div>
+
+<div class="file-card">
+  <div class="name">pwa/js/app.js — switchWorkspace() 显式清空</div>
+  <div class="desc">切换工作区前先 <code>list.innerHTML = ''</code>，确保旧工作区笔记不会残留</div>
+  <span class="tag green">FIXED</span>
+</div>
+
+<div class="file-card">
+  <div class="name">pwa/js/app.js — filterNotes() 清空搜索</div>
+  <div class="desc">清空搜索框时调用 <code>loadNotes(true)</code> 强制完整刷新</div>
+  <span class="tag green">FIXED</span>
+</div>
+
+<!-- Session End ─────────────────────────────────────────── -->
+
+<!-- REFLECTION_INSERT_POINT -->
+
 <div class="divider"></div>
 
 <div class="footer">
-  <p>Smart Sticky Notes — Markdown Engine Upgrade Reflection</p>
-  <p>2026-06-05 · 7 commits · D:\My Documents\Claude Code\projects\smart_sticky_notes</p>
-  <p>Designed by Anzhi</p>
+  <p>Smart Sticky Notes — Full Development Reflection</p>
+  <p>2026-06-08 · 5 commits this session · Designed by Anzhi</p>
 </div>
 
 </div>
