@@ -52,7 +52,7 @@ html, body {
     flex: 1; min-width: 0; background: var(--surface);
     border: 1px solid var(--border); border-radius: 20px;
     padding: 8px 12px; color: var(--text); font-size: 14px;
-    outline: none; margin: 0 8px; font-family: var(--font);
+    outline: none; margin: 0 4px; font-family: var(--font);
 }
 @media (max-width: 400px) {
     #search-input { flex: 0 1 auto; width: 80px; padding: 8px 8px; margin: 0 4px; font-size: 13px; }
