@@ -49,6 +49,8 @@ export function renderNoteBubble(note, onDelete, onEdit) {
     const bubble = document.createElement('div');
     bubble.className = 'note-bubble';
     bubble.dataset.noteId = note.id;
+    bubble.dataset.noteText = note.text;
+    bubble.dataset.noteTags = JSON.stringify(note.tags || []);
 
     // Multi-color: apply tag's palette color, always white text for readability
     const isMulti = document.documentElement.dataset.multi === '1';
@@ -158,10 +160,13 @@ function showBubbleMenu(bubble, note, onDelete, onEdit) {
         </div>
     `;
 
-    menu.querySelector('[data-action="edit"]').addEventListener('click', () => { cleanup(); if (onEdit) onEdit(bubble, note.id, note.text, note.tags); });
+    const currentText = bubble.dataset.noteText || note.text;
+    const currentTags = (() => { try { return JSON.parse(bubble.dataset.noteTags || '[]'); } catch { return note.tags || []; } })();
+
+    menu.querySelector('[data-action="edit"]').addEventListener('click', () => { cleanup(); if (onEdit) onEdit(bubble, note.id, currentText, currentTags); });
     menu.querySelector('[data-action="move"]').addEventListener('click', () => { cleanup(); showMoveDialog(note, bubble, onDelete); });
     menu.querySelector('[data-action="delete"]').addEventListener('click', () => { cleanup(); deleteBubble(bubble, note, onDelete); });
-    menu.querySelector('[data-action="copy"]').addEventListener('click', () => { cleanup(); navigator.clipboard.writeText(note.text); showToast('已复制'); });
+    menu.querySelector('[data-action="copy"]').addEventListener('click', () => { cleanup(); navigator.clipboard.writeText(currentText); showToast('已复制'); });
     menu.querySelector('[data-action="cancel"]').addEventListener('click', cleanup);
 
     function cleanup() { menu.remove(); _bubbleMenuOpen = false; }
