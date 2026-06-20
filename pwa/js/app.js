@@ -230,9 +230,15 @@ function setupMainUI() {
     });
     textInput.addEventListener('input', () => {
         toggleSendButton(textInput.value.trim().length > 0);
+        textInput.style.height = 'auto';
+        textInput.style.height = Math.min(textInput.scrollHeight, 200) + 'px';
+        textInput.style.overflowY = textInput.scrollHeight > 200 ? 'auto' : 'hidden';
     });
     textInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); sendTextNote('keydown-Enter'); }
+        if (e.key === 'Enter' && e.shiftKey) {
+            e.preventDefault();
+            if (textInput.value.trim()) sendTextNote('keydown-Shift+Enter');
+        }
     });
 
     document.getElementById('send-btn').addEventListener('click', () => sendTextNote('send-btn-click'));
@@ -600,7 +606,7 @@ async function sendTextNote(caller = 'unknown') {
         if (!isOnline()) {
             await addToQueue({ id: clientId, type: voiceBlob ? 'voice' : 'text', text: text || '', tags, workspace: _currentWorkspace, audio_path: null, audio_duration: null });
             showToast('已保存到本地，联网后自动发送');
-            textInput.value = ''; toggleSendButton(false);
+            textInput.value = ''; textInput.style.height = 'auto'; toggleSendButton(false);
         } else {
             showToast('发送失败: ' + err.message);
         }
@@ -610,6 +616,7 @@ async function sendTextNote(caller = 'unknown') {
     // Phase 2: UI update (from here on, note is in DB — never addToQueue)
     try {
         textInput.value = '';
+        textInput.style.height = 'auto';
         toggleSendButton(false);
 
         const list = document.getElementById('notes-list');
