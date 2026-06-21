@@ -76,7 +76,10 @@ export async function renameWorkspace(oldName, newName) {
         await writeConfig('quick_phrases', JSON.stringify(allQp));
     }
     const current = getCurrentWorkspace();
-    if (current === oldName) setCurrentWorkspace(trimmed);
+    if (current === oldName) {
+        setCurrentWorkspace(trimmed);
+        import('./app.js').then(m => m.updateSidebarWs());
+    }
     return trimmed;
 }
 

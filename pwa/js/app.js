@@ -5,6 +5,7 @@ import { renderNoteBubble, parseTags } from './notes.js';
 import { startRecording, stopRecording, cancelRecording, getIsRecording } from './voice.js';
 import { navigateTo, toggleSidebar, setSyncStatus, setMicEnabled, toggleSendButton, showRecordingOverlay, hideRecordingOverlay, updateRecordingText, showToast, applyTheme } from './ui.js';
 import { isOnline, onNetworkChange, cacheNotes, getCachedNotes, addToQueue, getQueueCount, flushQueue } from './offline.js';
+import { getCurrentWorkspace } from './workspaces.js';
 import { renderCalendarDay, renderCalendarWeek, renderCalendarMonth, renderCalendarYear } from './calendar.js';
 import { initToolbar, showToolbar, hideToolbar, setToolbarTarget, renderTagBar, renderQuickPhraseBar } from './toolbar.js';
 import { startEditing } from './editor.js';
@@ -16,7 +17,6 @@ import { showSettings } from './settings.js';
 console.log('[SSN] v2.4 loaded — ' + new Date().toISOString());
 let _loadingMore = false;
 let _oldestCursor = null;
-let _currentWorkspace = 'Main';
 
 async function refreshTagColorCache() {
     try {
@@ -48,8 +48,7 @@ async function doInit() {
         const { getDefaultWorkspace, getCurrentWorkspace, setCurrentWorkspace } = await import('./workspaces.js');
         const defaultWs = await getDefaultWorkspace();
         const savedWs = getCurrentWorkspace();
-        _currentWorkspace = savedWs !== 'Main' ? savedWs : defaultWs;
-        setCurrentWorkspace(_currentWorkspace);
+        setCurrentWorkspace(savedWs !== 'Main' ? savedWs : defaultWs);
         navigateTo('main');
         await loadNotes();
         setupMainUI();
@@ -433,7 +432,7 @@ function setupMainUI() {
 async function setupWorkspaceToggle() {
     const toggle = document.getElementById('workspace-toggle');
     if (!toggle) return;
-    updateWorkspaceLabel(_currentWorkspace);
+    updateWorkspaceLabel(getCurrentWorkspace());
 
     toggle.addEventListener('click', async (e) => {
         e.stopPropagation();
@@ -441,7 +440,7 @@ async function setupWorkspaceToggle() {
         if (existing) { existing.remove(); return; }
         const { getWorkspaces, renderWorkspaceDropdown, showWorkspaceManager } = await import('./workspaces.js');
         const workspaces = await getWorkspaces();
-        const dropdown = renderWorkspaceDropdown(workspaces, _currentWorkspace, async (name) => {
+        const dropdown = renderWorkspaceDropdown(workspaces, getCurrentWorkspace(), async (name) => {
             dropdown.remove();
             await switchWorkspace(name);
         }, () => {
@@ -462,7 +461,7 @@ async function setupWorkspaceToggle() {
     });
 }
 
-async function updateSidebarWs() {
+export async function updateSidebarWs() {
     const sidebarNav = document.querySelector('.sidebar-nav');
     if (!sidebarNav) return;
     const { updateSidebarWorkspaces } = await import('./workspaces.js');
@@ -479,7 +478,7 @@ async function loadOlderNotes() {
         .lt('created_at', _oldestCursor.created_at)
         .order('created_at', { ascending: false })
         .limit(50);
-    if (_currentWorkspace) query = query.eq('workspace', _currentWorkspace);
+    if (getCurrentWorkspace()) query = query.eq('workspace', getCurrentWorkspace());
     try {
         const { data } = await query;
         if (data && data.length > 0) {
@@ -499,7 +498,7 @@ async function loadOlderNotes() {
 
 async function loadTagBar() {
     try {
-        const tags = await fetchTags(_currentWorkspace);
+        const tags = await fetchTags(getCurrentWorkspace());
         const cfg = await readConfig().catch(() => ({}));
         const pinned = JSON.parse(cfg.pinned_tags || '[]');
         renderTagBar(Object.keys(tags), pinned);
@@ -592,19 +591,19 @@ async function sendTextNote(caller = 'unknown') {
     let note;
     try {
         if (voiceBlob) {
-            note = await insertNote({ id: clientId, type: 'voice', text: text || '', tags, workspace: _currentWorkspace, audio_path: '', audio_duration: voiceDur || 0 });
+            note = await insertNote({ id: clientId, type: 'voice', text: text || '', tags, workspace: getCurrentWorkspace(), audio_path: '', audio_duration: voiceDur || 0 });
             try {
                 const audioPath = await uploadAudio(note.id, voiceBlob);
                 await getSupabase().from('smartstickynotes_items').update({ audio_path: audioPath }).eq('id', note.id);
                 note.audio_path = audioPath;
             } catch (e) { /* audio upload failed, note still saved */ }
         } else {
-            note = await insertNote({ id: clientId, type: 'text', text, tags, workspace: _currentWorkspace, audio_path: null, audio_duration: null });
+            note = await insertNote({ id: clientId, type: 'text', text, tags, workspace: getCurrentWorkspace(), audio_path: null, audio_duration: null });
         }
     } catch (err) {
         _isSending = false; sendBtn.disabled = false;
         if (!isOnline()) {
-            await addToQueue({ id: clientId, type: voiceBlob ? 'voice' : 'text', text: text || '', tags, workspace: _currentWorkspace, audio_path: null, audio_duration: null });
+            await addToQueue({ id: clientId, type: voiceBlob ? 'voice' : 'text', text: text || '', tags, workspace: getCurrentWorkspace(), audio_path: null, audio_duration: null });
             showToast('已保存到本地，联网后自动发送');
             textInput.value = ''; textInput.style.height = 'auto'; toggleSendButton(false);
         } else {
@@ -654,7 +653,7 @@ export async function loadNotes(clearFirst = false) {
         else {
             const sb = getSupabase();
             let query = sb.from('smartstickynotes_items').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(15);
-            if (_currentWorkspace) query = query.eq('workspace', _currentWorkspace);
+            if (getCurrentWorkspace()) query = query.eq('workspace', getCurrentWorkspace());
             const { data } = await query;
             notes = (data || []).reverse();
             await cacheNotes(notes);
@@ -696,7 +695,7 @@ async function filterNotes(query) {
     try {
         const sb = getSupabase();
         let q = sb.from('smartstickynotes_items').select('*').eq('status', 'active').ilike('text', `%${query}%`).order('created_at', { ascending: false }).limit(50);
-        if (_currentWorkspace) q = q.eq('workspace', _currentWorkspace);
+        if (getCurrentWorkspace()) q = q.eq('workspace', getCurrentWorkspace());
         const { data } = await q;
         list.innerHTML = '';
         (data || []).forEach(n => list.appendChild(renderNoteBubble(n)));
@@ -704,7 +703,6 @@ async function filterNotes(query) {
 }
 
 export async function switchWorkspace(name) {
-    _currentWorkspace = name;
     const { setCurrentWorkspace } = await import('./workspaces.js');
     setCurrentWorkspace(name);
     updateWorkspaceLabel(name);
