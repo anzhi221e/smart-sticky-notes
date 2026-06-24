@@ -151,14 +151,14 @@ export async function fetchTags(workspace = null) {
     return tagCounts;
 }
 
-export async function fetchNotesByTag(tag, workspace = null) {
+export async function fetchNotesByTag(tag, workspace = null, ascending = false) {
     const sb = getSupabase();
     let query = sb
         .from('smartstickynotes_items')
         .select('*')
         .eq('status', 'active')
         .contains('tags', [tag])
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending });
     if (workspace) query = query.eq('workspace', workspace);
     const { data, error } = await query;
     if (error) throw error;

@@ -228,13 +228,20 @@ function setupMainUI() {
         toolbarBlurTimeout = setTimeout(() => hideToolbar(), 300);
     });
     textInput.addEventListener('input', () => {
+        // Shift+Enter fallback: if a newline was inserted (keydown preventDefault failed
+        // due to IME, browser quirks, etc.), treat it as a send command
+        if (textInput.value.includes('\n')) {
+            textInput.value = textInput.value.replace(/\n/g, '');
+            if (textInput.value.trim()) sendTextNote('input-newline');
+            return;
+        }
         toggleSendButton(textInput.value.trim().length > 0);
         textInput.style.height = 'auto';
         textInput.style.height = Math.min(textInput.scrollHeight, 200) + 'px';
         textInput.style.overflowY = textInput.scrollHeight > 200 ? 'auto' : 'hidden';
     });
     textInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && e.shiftKey) {
+        if ((e.key === 'Enter' || e.code === 'Enter') && e.shiftKey && !e.isComposing) {
             e.preventDefault();
             if (textInput.value.trim()) sendTextNote('keydown-Shift+Enter');
         }
@@ -735,23 +742,8 @@ function setupPullToRefresh() {
 
 // Tag navigation (called from notes.js tag pill clicks)
 export async function navigateToTags(tag) {
-    navigateTo('tags');
-    const content = document.getElementById('tags-content');
-    const { fetchNotesByTag } = await import('./db.js');
-    const notes = await fetchNotesByTag(tag);
-    content.innerHTML = `
-        <div style="padding:8px 16px;display:flex;align-items:center;gap:8px;">
-            <button id="tag-filter-back" class="icon-btn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <h2>#${tag}</h2>
-        </div>
-    `;
-    const savedMulti = document.documentElement.dataset.multi;
-    document.documentElement.dataset.multi = '0';
-    notes.forEach(n => content.appendChild(renderNoteBubble(n)));
-    document.documentElement.dataset.multi = savedMulti;
-    document.getElementById('tag-filter-back').addEventListener('click', showTagsView);
+    const { showTagNotes } = await import('./tags.js');
+    await showTagNotes(tag);
 }
 
 function setupPeriodicRefresh() {

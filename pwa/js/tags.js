@@ -184,18 +184,31 @@ async function batchDeleteTag(tag) {
     showTagsView();
 }
 
-async function showTagNotes(tag) {
+export async function showTagNotes(tag, ascending = false) {
     navigateTo('tags');
     const content = document.getElementById('tags-content');
-    const notes = await fetchNotesByTag(tag);
+    if (!content) return;
+
+    const notes = await fetchNotesByTag(tag, null, ascending);
+
+    const sortIcon = ascending
+        ? '<polyline points="6 15 12 9 18 15"/>'
+        : '<polyline points="6 9 12 15 18 9"/>';
     content.innerHTML = `
         <div style="padding:8px 16px;display:flex;align-items:center;gap:8px;">
             <button id="tag-notes-back" class="icon-btn">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
-            <h2>#${tag}</h2>
+            <h2 style="flex:1;">#${tag}</h2>
+            <button id="tag-notes-sort" class="sort-btn" title="${ascending ? '切换为最新优先' : '切换为最早优先'}">
+                <span id="sort-label">${ascending ? '显示最早' : '显示最新'}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${sortIcon}</svg>
+            </button>
         </div>
+        <div id="tag-notes-list"></div>
     `;
+
+    const notesContainer = document.getElementById('tag-notes-list');
     // Inside a single tag, use theme accent color, not multi-color
     const savedMulti = document.documentElement.dataset.multi;
     document.documentElement.dataset.multi = '0';
@@ -203,10 +216,13 @@ async function showTagNotes(tag) {
         const empty = document.createElement('p');
         empty.style.cssText = 'padding:24px;color:var(--text-secondary);text-align:center;';
         empty.textContent = '没有该标签的笔记';
-        content.appendChild(empty);
+        notesContainer.appendChild(empty);
     } else {
-        notes.forEach(n => content.appendChild(renderNoteBubble(n)));
+        notes.forEach(n => notesContainer.appendChild(renderNoteBubble(n)));
     }
     document.documentElement.dataset.multi = savedMulti;
     document.getElementById('tag-notes-back').addEventListener('click', showTagsView);
+    document.getElementById('tag-notes-sort').addEventListener('click', () => {
+        showTagNotes(tag, !ascending);
+    });
 }
