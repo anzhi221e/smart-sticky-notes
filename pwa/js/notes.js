@@ -96,34 +96,6 @@ export function renderNoteBubble(note, onDelete, onEdit) {
     });
     bubble.appendChild(meta);
 
-    // Swipe left to delete
-    let startX = 0;
-    bubble.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-    }, { passive: true });
-    bubble.addEventListener('touchend', (e) => {
-        const diff = startX - e.changedTouches[0].clientX;
-        if (diff > 80) {
-            if (_deletingBubble) return;
-            _deletingBubble = true;
-            softDeleteNote(note.id).then(() => {
-                showToast('已移至回收站', {
-                    undoLabel: '撤销',
-                    onUndo: () => {
-                        import('./db.js').then(m => m.restoreNote(note.id)).then(() => {
-                            bubble.remove();
-                            import('./app.js').then(m => m.loadNotes());
-                            _deletingBubble = false;
-                        });
-                    },
-                });
-                bubble.remove();
-                if (onDelete) onDelete(note.id);
-                _deletingBubble = false;
-            });
-        }
-    });
-
     // Long press → edit menu
     let longPressTimer;
     bubble.addEventListener('touchstart', () => {
