@@ -228,10 +228,10 @@ function setupMainUI() {
         toolbarBlurTimeout = setTimeout(() => hideToolbar(), 300);
     });
     textInput.addEventListener('input', () => {
-        // Shift+Enter fallback: if a newline was inserted (keydown preventDefault failed
-        // due to IME, browser quirks, etc.), treat it as a send command
-        if (textInput.value.includes('\n')) {
-            textInput.value = textInput.value.replace(/\n/g, '');
+        // Fallback: if any newline was inserted into the textarea (regardless of
+        // how it got there — keyboard, IME, paste), treat it as a send command
+        if (textInput.value.includes('\n') || textInput.value.includes('\r')) {
+            textInput.value = textInput.value.replace(/[\r\n]/g, '');
             if (textInput.value.trim()) sendTextNote('input-newline');
             return;
         }
@@ -241,7 +241,7 @@ function setupMainUI() {
         textInput.style.overflowY = textInput.scrollHeight > 200 ? 'auto' : 'hidden';
     });
     textInput.addEventListener('keydown', (e) => {
-        if ((e.key === 'Enter' || e.code === 'Enter') && e.shiftKey && !e.isComposing) {
+        if (e.keyCode === 13 && e.shiftKey) {
             e.preventDefault();
             if (textInput.value.trim()) sendTextNote('keydown-Shift+Enter');
         }
