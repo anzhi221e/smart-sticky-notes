@@ -604,6 +604,9 @@ html, body {
     }
     .bottom-bar { padding: 8px 10px 14px; }
     .note-bubble .note-text { font-size: 14px; }
+    .nav-item { font-size: 13px; padding: 10px 12px; }
+    .sidebar-header { padding: 12px; }
+    .sidebar-header h2 { font-size: 15px; }
 }
 @media (max-width: 280px) {
     .icon-btn { width: 28px; height: 28px; }
@@ -615,6 +618,10 @@ html, body {
     #text-input { padding: 10px 14px; font-size: 14px; }
     .notes-list { padding: 10px 6px; }
     .bottom-bar { padding: 6px 6px 10px; }
+    .sidebar { width: 240px; }
+    .nav-item { font-size: 12px; padding: 8px 10px; }
+    .sidebar-header { padding: 10px; }
+    .sidebar-header h2 { font-size: 14px; }
 }
 .sidebar { max-width: 100vw; }
 @media (max-width: 240px) {
