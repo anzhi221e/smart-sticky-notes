@@ -43,8 +43,8 @@ async function doInit() {
     initSupabase(conn.url, conn.anonKey);
     const session = await getSession();
     if (session) {
-        applyTheme(localStorage.getItem('ssn-theme') || 'blue-light');
         const cfg = await readConfig().catch(() => ({}));
+        applyTheme(cfg.theme || localStorage.getItem('ssn-theme') || 'day-multi');
         const { getDefaultWorkspace, getCurrentWorkspace, setCurrentWorkspace } = await import('./workspaces.js');
         const defaultWs = await getDefaultWorkspace();
         const savedWs = getCurrentWorkspace();

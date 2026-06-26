@@ -10,7 +10,7 @@ export async function showSettings() {
 
     let cfg; try { cfg = await readConfig(); } catch { cfg = {}; }
     const themeNames = getThemeNames();
-    const currentTheme = cfg.theme || 'blue-light';
+    const currentTheme = cfg.theme || localStorage.getItem('ssn-theme') || 'day-multi';
     const dayThemes = ['pink-light','green-light','blue-light','day-multi'];
     const nightThemes = ['dark-blue','pure-black','pink-dark','night-multi'];
 
