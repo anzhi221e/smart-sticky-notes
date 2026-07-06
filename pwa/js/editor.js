@@ -23,7 +23,7 @@ export function startEditing(bubble, noteId, text) {
     const viewWidth = bubble.offsetWidth;
     bubble.style.minWidth = viewWidth + 'px';
     bubble.innerHTML = `
-        <textarea class="bubble-editor" id="bubble-editor">${escapeHtml(text)}</textarea>
+        <textarea class="bubble-editor" id="bubble-editor" rows="6">${escapeHtml(text)}</textarea>
         <div class="edit-actions">
             <button class="edit-btn edit-btn--cancel">取消</button>
             <button class="edit-btn edit-btn--save">保存</button>

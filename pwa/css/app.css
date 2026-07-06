@@ -385,7 +385,7 @@ html, body {
 
 /* Bubble editor */
 .bubble-editor {
-    width: 100%; min-height: 60px; background: var(--bg);
+    width: 100%; min-height: calc(6 * 1.6em + 20px); background: var(--bg);
     border: 1px solid var(--border); border-radius: var(--radius-sm);
     color: var(--text); font-family: var(--font); font-size: 14px;
     padding: 10px; resize: vertical; outline: none; line-height: 1.6;
