@@ -17,6 +17,15 @@ def _format_time(iso_str: str) -> str:
         return iso_str or ""
 
 
+def _created_at_sort_key(note: dict):
+    iso_str = note.get("created_at") or ""
+    try:
+        dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+        return (0, dt.timestamp(), note.get("id", ""))
+    except (ValueError, AttributeError, OSError):
+        return (1, iso_str, note.get("id", ""))
+
+
 def _render_note(note: dict) -> str:
     note_id_short = note["id"][:8]
     text = (note.get("text") or "").strip()
@@ -39,6 +48,8 @@ def _render_note(note: dict) -> str:
 
 
 def build_tag_files(notes: list[dict]) -> tuple[dict[str, str], dict[str, str]]:
+    notes = sorted(notes, key=_created_at_sort_key)
+
     all_tags = set()
     for note in notes:
         for tag in note.get("tags", []):
@@ -75,6 +86,9 @@ def build_tag_files(notes: list[dict]) -> tuple[dict[str, str], dict[str, str]]:
 
 
 def write_snapshot(active_notes: list[dict], deleted_notes: list[dict], folder: str) -> dict:
+    active_notes = sorted(active_notes, key=_created_at_sort_key)
+    deleted_notes = sorted(deleted_notes, key=_created_at_sort_key)
+
     timestamp = datetime.now().strftime("%Y-%m-%dT%H%M%S")
     snap_dir = Path(folder) / "snapshots" / timestamp
     snap_dir.mkdir(parents=True, exist_ok=True)
