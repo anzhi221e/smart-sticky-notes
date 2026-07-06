@@ -315,6 +315,19 @@ html, body {
     white-space: nowrap; font-family: var(--font); flex-shrink: 0;
 }
 .quick-phrase-btn:active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+.quick-phrase-group-chip {
+    display: inline-flex; align-items: stretch; flex-shrink: 0;
+    border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--surface);
+}
+.quick-phrase-group-main,
+.quick-phrase-group-arrow {
+    border: none; background: transparent; color: var(--text); font-family: var(--font);
+    font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+.quick-phrase-group-main { padding: 5px 9px 5px 10px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.quick-phrase-group-arrow { padding: 5px 8px; border-left: 1px solid var(--border); color: var(--text-secondary); }
+.quick-phrase-group-main:active,
+.quick-phrase-group-arrow:active { background: var(--accent-dim); color: var(--accent); }
 .quick-phrase-edit-btn {
     background: transparent; border: 1px solid var(--border); color: var(--text-secondary);
     padding: 5px 8px; border-radius: 14px; font-size: 11px; cursor: pointer;
@@ -331,6 +344,7 @@ html, body {
     background: var(--surface); border-radius: 16px; padding: 20px;
     max-width: 400px; width: 90%; max-height: 80vh; display: flex; flex-direction: column;
 }
+.quick-phrase-modal-inner--wide { max-width: 560px; }
 .quick-phrase-modal-title {
     font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text);
 }
@@ -338,9 +352,24 @@ html, body {
     font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;
 }
 .quick-phrase-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; overflow-y: auto; max-height: 40vh; }
+.quick-phrase-list--groups { gap: 12px; max-height: 52vh; scrollbar-width: none; }
+.quick-phrase-list--groups::-webkit-scrollbar { display: none; }
+.quick-phrase-empty { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 18px; }
+.quick-phrase-group-card {
+    display: flex; flex-direction: column; gap: 8px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px;
+}
+.quick-phrase-group-header { display: flex; gap: 8px; align-items: center; }
+.quick-phrase-group-name {
+    flex: 1; min-width: 0; padding: 8px 10px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+    font-size: 13px; font-family: var(--font); outline: none;
+}
+.quick-phrase-group-name:focus { border-color: var(--accent); }
+.quick-phrase-group-phrases { display: flex; flex-direction: column; gap: 6px; }
 .quick-phrase-item {
     display: flex; align-items: center; gap: 8px; padding: 8px 12px;
-    background: var(--bg); border-radius: 8px;
+    background: var(--surface); border-radius: 8px;
 }
 .quick-phrase-item-text {
     flex: 1; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -382,6 +411,30 @@ html, body {
     width: 100%; margin-top: 12px; padding: 10px; background: var(--surface); border: 1px solid var(--border);
     border-radius: 8px; color: var(--text); cursor: pointer; font-size: 14px; font-family: var(--font);
 }
+.quick-phrase-sheet {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 360;
+    display: flex; align-items: flex-end; justify-content: center;
+}
+.quick-phrase-sheet-inner {
+    width: 100%; max-width: 520px; max-height: 70vh; background: var(--surface);
+    border-radius: 16px 16px 0 0; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.quick-phrase-sheet-title { font-size: 14px; font-weight: 600; color: var(--text); text-align: center; }
+.quick-phrase-sheet-list {
+    display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 44vh;
+    scrollbar-width: none;
+}
+.quick-phrase-sheet-list::-webkit-scrollbar { display: none; }
+.quick-phrase-sheet-recent {
+    display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid var(--border);
+}
+.quick-phrase-sheet-item,
+.quick-phrase-sheet-close {
+    width: 100%; padding: 11px 12px; border: none; border-radius: 8px; background: var(--bg);
+    color: var(--text); font-size: 14px; font-family: var(--font); cursor: pointer; text-align: left;
+}
+.quick-phrase-sheet-item--recent { background: var(--accent-dim); color: var(--accent); }
+.quick-phrase-sheet-close { text-align: center; color: var(--text-secondary); background: var(--surface-hover); }
 
 /* Bubble editor */
 .bubble-editor {

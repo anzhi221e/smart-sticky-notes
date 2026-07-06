@@ -98,7 +98,8 @@ export function renderNoteBubble(note, onDelete, onEdit) {
 
     // Long press → edit menu
     let longPressTimer;
-    bubble.addEventListener('touchstart', () => {
+    bubble.addEventListener('touchstart', (e) => {
+        if (isEditingTarget(bubble, e.target)) return;
         longPressTimer = setTimeout(() => {
             showBubbleMenu(bubble, note, onDelete, onEdit);
         }, 500);
@@ -106,11 +107,16 @@ export function renderNoteBubble(note, onDelete, onEdit) {
     bubble.addEventListener('touchend', () => clearTimeout(longPressTimer));
     bubble.addEventListener('touchmove', () => clearTimeout(longPressTimer));
     bubble.addEventListener('contextmenu', (e) => {
+        if (isEditingTarget(bubble, e.target)) return;
         e.preventDefault();
         showBubbleMenu(bubble, note, onDelete, onEdit);
     });
 
     return bubble;
+}
+
+function isEditingTarget(bubble, target) {
+    return bubble.classList.contains('is-editing') || target?.closest?.('.bubble-editor');
 }
 
 let _bubbleMenuOpen = false;

@@ -208,10 +208,13 @@ export async function showSettings() {
     (async () => {
         const ws = getCurrentWorkspace();
         const all = JSON.parse(cfg.quick_phrases || '{}');
-        const phrases = all[ws] || [];
+        const qpData = all[ws] || [];
+        const phraseCount = Array.isArray(qpData)
+            ? qpData.length
+            : ((qpData.groups || []).reduce((sum, group) => sum + (group.phrases || []).length, 0) + (qpData.ungrouped || []).length);
         const info = document.getElementById('qp-settings-info');
         if (info) {
-            info.textContent = `当前工作区：${ws}，已配置 ${phrases.length} 条快捷语（上限 20 条）`;
+            info.textContent = `当前工作区：${ws}，已配置 ${phraseCount} 条快捷语`;
         }
         document.getElementById('qp-settings-edit-btn').addEventListener('click', async () => {
             const { showQuickPhraseEditor } = await import('./toolbar.js');

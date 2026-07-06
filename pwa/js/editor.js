@@ -5,11 +5,14 @@ import { renderMarkdown } from './notes.js';
 let _editingBubble = null;
 let _editingNoteId = null;
 let _originalText = '';
+let _isSaving = false;
 
 export function startEditing(bubble, noteId, text) {
     _editingBubble = bubble;
     _editingNoteId = noteId;
     _originalText = text;
+    _isSaving = false;
+    bubble.classList.add('is-editing');
 
     const originalHTML = bubble.innerHTML;
     bubble._originalHTML = originalHTML;
@@ -55,10 +58,17 @@ function escapeHtml(s) {
 }
 
 async function saveEditing() {
-    const textarea = _editingBubble?.querySelector('#bubble-editor');
+    if (_isSaving) return;
+    const bubble = _editingBubble;
+    const noteId = _editingNoteId;
+    const textarea = bubble?.querySelector('#bubble-editor');
     if (!textarea) return;
     const newText = textarea.value;
     if (newText === _originalText) { cancelEditing(); return; }
+
+    const saveButton = bubble.querySelector('.edit-btn--save');
+    _isSaving = true;
+    saveButton.disabled = true;
 
     try {
         const { getSupabase } = await import('./supabase.js');
@@ -68,16 +78,16 @@ async function saveEditing() {
             text: newText,
             tags: newTags,
             updated_at: new Date().toISOString(),
-        }).eq('id', _editingNoteId);
+        }).eq('id', noteId);
 
-        _editingBubble._originalHTML = null;
+        bubble._originalHTML = null;
         const html = renderMarkdown(newText);
         // Rebuild proper bubble structure with .note-text wrapper
         let newHTML = `<div class="note-text">${html}</div>`;
-        newHTML += _editingBubble._savedAudioHTML || '';
+        newHTML += bubble._savedAudioHTML || '';
 
         // Rebuild meta with updated tags, preserving original timestamp
-        const savedMeta = _editingBubble._savedMetaHTML || '';
+        const savedMeta = bubble._savedMetaHTML || '';
         const timeMatch = savedMeta.match(/<span>([^<]+)<\/span>/);
         const timeStr = timeMatch ? timeMatch[1] : '';
         const tagsHTML = newTags.map(t =>
@@ -85,19 +95,21 @@ async function saveEditing() {
         ).join('');
         newHTML += `<div class="note-meta"><span>${timeStr}</span>${tagsHTML}</div>`;
 
-        _editingBubble.innerHTML = newHTML;
-        _editingBubble._savedInnerHTML = newHTML;
-        _editingBubble.dataset.noteText = newText;
-        _editingBubble.dataset.noteTags = JSON.stringify(newTags);
+        bubble.innerHTML = newHTML;
+        bubble._savedInnerHTML = newHTML;
+        bubble.dataset.noteText = newText;
+        bubble.dataset.noteTags = JSON.stringify(newTags);
 
         // Re-attach tag pill click handlers
-        _editingBubble.querySelectorAll('.note-tag').forEach(tagEl => {
+        bubble.querySelectorAll('.note-tag').forEach(tagEl => {
             tagEl.addEventListener('click', (e) => {
                 e.stopPropagation();
                 import('./app.js').then(m => m.navigateToTags(tagEl.textContent.slice(1)));
             });
         });
     } catch (e) {
+        _isSaving = false;
+        saveButton.disabled = false;
         alert('保存失败: ' + e.message);
         return;
     }
@@ -113,10 +125,14 @@ function cancelEditing() {
 }
 
 function finishEditing() {
-    if (_editingBubble) _editingBubble.style.minWidth = '';
+    if (_editingBubble) {
+        _editingBubble.style.minWidth = '';
+        _editingBubble.classList.remove('is-editing');
+    }
     hideToolbar();
     setToolbarTarget(null);
     _editingBubble = null;
     _editingNoteId = null;
     _originalText = '';
+    _isSaving = false;
 }

@@ -101,7 +101,34 @@ export function renderTagBar(tags, pinnedTags = []) {
     });
 }
 
-// --- Quick phrases (per-workspace) ---
+// --- Quick phrases (per-workspace, grouped) ---
+
+function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function makeQuickPhraseId(prefix = 'qp') {
+    return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function normalizeQuickPhraseData(value) {
+    if (Array.isArray(value)) {
+        return {
+            version: 2,
+            groups: value.length ? [{ id: 'default', name: 'Default', phrases: [...value], recent: [] }] : [],
+            ungrouped: [],
+        };
+    }
+    if (!value || typeof value !== 'object') return { version: 2, groups: [], ungrouped: [] };
+    const groups = Array.isArray(value.groups) ? value.groups.map((group, index) => ({
+        id: group.id || makeQuickPhraseId('group'),
+        name: String(group.name || `Group ${index + 1}`),
+        phrases: Array.isArray(group.phrases) ? group.phrases.filter(Boolean).map(String) : [],
+        recent: Array.isArray(group.recent) ? group.recent.filter(Boolean).map(String).slice(0, 3) : [],
+    })).filter(group => group.phrases.length || group.name.trim()) : [];
+    const ungrouped = Array.isArray(value.ungrouped) ? value.ungrouped.filter(Boolean).map(String) : [];
+    return { version: 2, groups, ungrouped };
+}
 
 async function getQuickPhrases() {
     const { readConfig } = await import('./db.js');
@@ -109,45 +136,120 @@ async function getQuickPhrases() {
     const cfg = await readConfig().catch(() => ({}));
     const all = JSON.parse(cfg.quick_phrases || '{}');
     const ws = getCurrentWorkspace();
-    return { all, ws, phrases: all[ws] || [] };
+    const data = normalizeQuickPhraseData(all[ws]);
+    return { all, ws, data };
 }
 
-async function saveQuickPhrases(phrases) {
+async function saveQuickPhraseData(data) {
     const { writeConfig } = await import('./db.js');
     const { all, ws } = await getQuickPhrases();
-    if (phrases.length === 0) {
-        delete all[ws];
-    } else {
-        all[ws] = phrases;
-    }
+    const cleaned = normalizeQuickPhraseData(data);
+    if (!cleaned.groups.length && !cleaned.ungrouped.length) delete all[ws];
+    else all[ws] = cleaned;
     await writeConfig('quick_phrases', JSON.stringify(all));
+}
+
+function insertPhrase(phrase) {
+    if (!_targetInput || !phrase) return;
+    const el = _targetInput;
+    const pos = el.selectionStart || 0;
+    el.value = el.value.substring(0, pos) + phrase + el.value.substring(pos);
+    el.focus();
+    const newPos = pos + phrase.length;
+    el.setSelectionRange(newPos, newPos);
+    el.dispatchEvent(new Event('input'));
+}
+
+async function rememberPhraseUse(groupId, phrase) {
+    const { data } = await getQuickPhrases();
+    const group = data.groups.find(g => g.id === groupId);
+    if (!group) return;
+    group.recent = [phrase, ...(group.recent || []).filter(p => p !== phrase)].slice(0, 3);
+    await saveQuickPhraseData(data);
+    renderQuickPhraseBar();
+}
+
+function getGroupDefaultPhrase(group) {
+    const recent = (group.recent || []).find(p => group.phrases.includes(p));
+    return recent || group.phrases[group.phrases.length - 1] || group.name;
 }
 
 export async function renderQuickPhraseBar() {
     const bar = document.getElementById('quick-phrase-bar');
     if (!bar) return;
     bar.innerHTML = '';
-    const { phrases } = await getQuickPhrases();
-    phrases.forEach(phrase => {
+    const { data } = await getQuickPhrases();
+
+    data.groups.filter(group => group.phrases.length).forEach(group => {
+        const chip = document.createElement('span');
+        chip.className = 'quick-phrase-group-chip';
+
+        const main = document.createElement('button');
+        main.className = 'quick-phrase-group-main';
+        main.textContent = getGroupDefaultPhrase(group);
+        main.title = `${group.name}: ${group.phrases.join(' / ')}`;
+        main.addEventListener('click', async () => {
+            const phrase = getGroupDefaultPhrase(group);
+            insertPhrase(phrase);
+            await rememberPhraseUse(group.id, phrase);
+        });
+
+        const arrow = document.createElement('button');
+        arrow.className = 'quick-phrase-group-arrow';
+        arrow.textContent = '▾';
+        arrow.setAttribute('aria-label', `${group.name} options`);
+        arrow.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showQuickPhraseGroupSheet(group);
+        });
+
+        chip.append(main, arrow);
+        bar.appendChild(chip);
+    });
+
+    data.ungrouped.forEach(phrase => {
         const btn = document.createElement('button');
         btn.className = 'quick-phrase-btn';
         btn.textContent = phrase;
-        btn.addEventListener('click', () => {
-            if (!_targetInput) return;
-            const el = _targetInput;
-            const pos = el.selectionStart || 0;
-            el.value = el.value.substring(0, pos) + phrase + el.value.substring(pos);
-            el.focus();
-            const newPos = pos + phrase.length;
-            el.setSelectionRange(newPos, newPos);
-        });
+        btn.addEventListener('click', () => insertPhrase(phrase));
         bar.appendChild(btn);
     });
+
     const editBtn = document.createElement('button');
     editBtn.className = 'quick-phrase-edit-btn';
-    editBtn.textContent = phrases.length ? '编辑' : '+ 添加快捷语';
+    editBtn.textContent = data.groups.length || data.ungrouped.length ? '编辑' : '+ 添加快捷语';
     editBtn.addEventListener('click', () => showQuickPhraseEditor());
     bar.appendChild(editBtn);
+}
+
+function showQuickPhraseGroupSheet(group) {
+    document.querySelectorAll('.quick-phrase-sheet').forEach(el => el.remove());
+    const sheet = document.createElement('div');
+    sheet.className = 'quick-phrase-sheet';
+    const recent = (group.recent || []).filter(p => group.phrases.includes(p)).slice(0, 3);
+    sheet.innerHTML = `
+        <div class="quick-phrase-sheet-inner">
+            <div class="quick-phrase-sheet-title">${esc(group.name)}</div>
+            <div class="quick-phrase-sheet-list">
+                ${group.phrases.map(phrase => `<button class="quick-phrase-sheet-item" data-phrase="${esc(phrase)}">${esc(phrase)}</button>`).join('')}
+            </div>
+            ${recent.length ? `<div class="quick-phrase-sheet-recent">
+                ${recent.map(phrase => `<button class="quick-phrase-sheet-item quick-phrase-sheet-item--recent" data-phrase="${esc(phrase)}">${esc(phrase)}</button>`).join('')}
+            </div>` : ''}
+            <button class="quick-phrase-sheet-close" data-action="close">关闭</button>
+        </div>
+    `;
+    sheet.querySelectorAll('[data-phrase]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const phrase = btn.dataset.phrase;
+            insertPhrase(phrase);
+            await rememberPhraseUse(group.id, phrase);
+            sheet.remove();
+        });
+    });
+    sheet.querySelector('[data-action="close"]').addEventListener('click', () => sheet.remove());
+    sheet.addEventListener('click', e => { if (e.target === sheet) sheet.remove(); });
+    document.body.appendChild(sheet);
 }
 
 export function showQuickPhraseEditor() {
@@ -157,15 +259,15 @@ export function showQuickPhraseEditor() {
     const overlay = document.createElement('div');
     overlay.className = 'quick-phrase-modal';
 
-    getQuickPhrases().then(({ phrases, ws }) => {
+    getQuickPhrases().then(({ data, ws }) => {
         overlay.innerHTML = `
-            <div class="quick-phrase-modal-inner">
+            <div class="quick-phrase-modal-inner quick-phrase-modal-inner--wide">
                 <div class="quick-phrase-modal-title">编辑快捷语</div>
-                <div class="quick-phrase-modal-subtitle">工作区：${ws.replace(/</g,'&lt;').replace(/>/g,'&gt;')}（最多 20 条）</div>
-                <div class="quick-phrase-list" id="qp-list"></div>
+                <div class="quick-phrase-modal-subtitle">工作区：${esc(ws)}。长按或右键快捷语可移动到其他分组。</div>
+                <div class="quick-phrase-list quick-phrase-list--groups" id="qp-list"></div>
                 <div class="quick-phrase-add-row">
-                    <input class="quick-phrase-add-input" id="qp-add-input" placeholder="输入新的快捷语..." maxlength="60" autocomplete="off">
-                    <button class="quick-phrase-add-btn" id="qp-add-btn">添加</button>
+                    <input class="quick-phrase-add-input" id="qp-group-input" placeholder="新分组名..." maxlength="40" autocomplete="off">
+                    <button class="quick-phrase-add-btn" id="qp-group-add-btn">添加分组</button>
                 </div>
                 <button class="quick-phrase-modal-close" id="qp-close-btn">完成</button>
             </div>
@@ -174,123 +276,173 @@ export function showQuickPhraseEditor() {
 
         const list = overlay.querySelector('#qp-list');
 
-        function renderList(items) {
+        async function persist(nextData = data) {
+            await saveQuickPhraseData(nextData);
+            renderQuickPhraseBar();
+        }
+
+        function renderList() {
             list.innerHTML = '';
-            if (items.length === 0) {
-                list.innerHTML = '<div style="text-align:center;color:var(--text-secondary);font-size:13px;padding:16px;">还没有快捷语，用下方输入框添加</div>';
+            if (!data.groups.length) {
+                list.innerHTML = '<div class="quick-phrase-empty">还没有分组，先添加一个分组。</div>';
                 return;
             }
-            items.forEach((phrase, i) => {
-                const item = document.createElement('div');
-                item.className = 'quick-phrase-item';
-                item.innerHTML = `
-                    <span class="quick-phrase-item-text">${phrase.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>
-                    <button class="quick-phrase-item-edit" data-index="${i}">编辑</button>
-                    <button class="quick-phrase-item-del" data-index="${i}">删除</button>
+            data.groups.forEach(group => {
+                const card = document.createElement('div');
+                card.className = 'quick-phrase-group-card';
+                card.dataset.groupId = group.id;
+                card.innerHTML = `
+                    <div class="quick-phrase-group-header">
+                        <input class="quick-phrase-group-name" value="${esc(group.name)}" maxlength="40">
+                        <button class="quick-phrase-item-del" data-action="delete-group">删除组</button>
+                    </div>
+                    <div class="quick-phrase-group-phrases"></div>
+                    <div class="quick-phrase-add-row">
+                        <input class="quick-phrase-add-input" data-role="phrase-input" placeholder="添加到 ${esc(group.name)}..." maxlength="80" autocomplete="off">
+                        <button class="quick-phrase-add-btn" data-action="add-phrase">添加</button>
+                    </div>
                 `;
-                item.querySelector('.quick-phrase-item-del').addEventListener('click', async () => {
-                    const { phrases: current } = await getQuickPhrases();
-                    current.splice(i, 1);
-                    await saveQuickPhrases(current);
-                    renderList(current);
-                    renderQuickPhraseBar();
+                const phraseList = card.querySelector('.quick-phrase-group-phrases');
+                group.phrases.forEach((phrase, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'quick-phrase-item';
+                    item.dataset.phrase = phrase;
+                    item.innerHTML = `
+                        <span class="quick-phrase-item-text">${esc(phrase)}</span>
+                        <button class="quick-phrase-item-edit" data-action="edit-phrase">编辑</button>
+                        <button class="quick-phrase-item-del" data-action="delete-phrase">删除</button>
+                    `;
+                    addMoveHandlers(item, group.id, index);
+                    item.querySelector('[data-action="edit-phrase"]').addEventListener('click', () => startInlinePhraseEdit(item, group, index));
+                    item.querySelector('[data-action="delete-phrase"]').addEventListener('click', async () => {
+                        const removed = group.phrases.splice(index, 1)[0];
+                        group.recent = (group.recent || []).filter(p => p !== removed);
+                        await persist();
+                        renderList();
+                    });
+                    phraseList.appendChild(item);
                 });
-                item.querySelector('.quick-phrase-item-edit').addEventListener('click', () => {
-                    startInlineEdit(item, phrase, i);
+
+                card.querySelector('.quick-phrase-group-name').addEventListener('change', async e => {
+                    group.name = e.target.value.trim() || group.name;
+                    await persist();
+                    renderList();
                 });
-                list.appendChild(item);
+                card.querySelector('[data-action="delete-group"]').addEventListener('click', async () => {
+                    data.ungrouped.push(...group.phrases);
+                    data.groups = data.groups.filter(g => g.id !== group.id);
+                    await persist();
+                    renderList();
+                });
+                card.querySelector('[data-action="add-phrase"]').addEventListener('click', async () => {
+                    const input = card.querySelector('[data-role="phrase-input"]');
+                    const val = input.value.trim();
+                    if (!val || group.phrases.includes(val)) return;
+                    group.phrases.push(val);
+                    input.value = '';
+                    await persist();
+                    renderList();
+                });
+                card.querySelector('[data-role="phrase-input"]').addEventListener('keydown', e => {
+                    if (e.key === 'Enter') card.querySelector('[data-action="add-phrase"]').click();
+                });
+                list.appendChild(card);
             });
         }
 
-        function startInlineEdit(item, oldPhrase, index) {
-            const textSpan = item.querySelector('.quick-phrase-item-text');
-            const editBtn = item.querySelector('.quick-phrase-item-edit');
-            const delBtn = item.querySelector('.quick-phrase-item-del');
-
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'quick-phrase-inline-input';
-            input.value = oldPhrase;
-            input.maxLength = 60;
-
-            const saveBtn = document.createElement('button');
-            saveBtn.className = 'quick-phrase-inline-save';
-            saveBtn.textContent = '保存';
-
-            const cancelBtn = document.createElement('button');
-            cancelBtn.className = 'quick-phrase-inline-cancel';
-            cancelBtn.textContent = '取消';
-
-            textSpan.replaceWith(input);
-            editBtn.replaceWith(saveBtn);
-            delBtn.replaceWith(cancelBtn);
+        function startInlinePhraseEdit(item, group, index) {
+            const oldPhrase = group.phrases[index];
+            item.innerHTML = `
+                <input class="quick-phrase-inline-input" value="${esc(oldPhrase)}" maxlength="80">
+                <button class="quick-phrase-inline-save">保存</button>
+                <button class="quick-phrase-inline-cancel">取消</button>
+            `;
+            const input = item.querySelector('input');
             input.focus();
             input.setSelectionRange(input.value.length, input.value.length);
-
-            async function doSave() {
+            item.querySelector('.quick-phrase-inline-save').addEventListener('click', async () => {
                 const val = input.value.trim();
-                if (!val || val === oldPhrase) { doCancel(); return; }
-                const { phrases: current } = await getQuickPhrases();
-                if (current.includes(val) && val !== oldPhrase) {
-                    const { showToast } = await import('./ui.js');
-                    showToast('快捷语已存在');
-                    return;
+                if (val && !group.phrases.includes(val)) {
+                    group.phrases[index] = val;
+                    group.recent = (group.recent || []).map(p => p === oldPhrase ? val : p);
+                    await persist();
                 }
-                current[index] = val;
-                await saveQuickPhrases(current);
-                renderList(current);
-                renderQuickPhraseBar();
-            }
-
-            function doCancel() {
-                renderList(/* will be refetched */ undefined);
-                // Re-render from saved state
-                getQuickPhrases().then(({ phrases: current }) => {
-                    renderList(current);
-                });
-            }
-
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') doSave();
-                else if (e.key === 'Escape') doCancel();
+                renderList();
             });
-            saveBtn.addEventListener('click', doSave);
-            cancelBtn.addEventListener('click', doCancel);
+            item.querySelector('.quick-phrase-inline-cancel').addEventListener('click', renderList);
         }
 
-        renderList(phrases);
+        function addMoveHandlers(item, groupId, phraseIndex) {
+            let timer = null;
+            const open = (e) => {
+                e.preventDefault();
+                showMovePhraseSheet(data, groupId, phraseIndex, async () => {
+                    await persist();
+                    renderList();
+                });
+            };
+            item.addEventListener('touchstart', () => {
+                timer = setTimeout(() => showMovePhraseSheet(data, groupId, phraseIndex, async () => {
+                    await persist();
+                    renderList();
+                }), 500);
+            }, { passive: true });
+            item.addEventListener('touchend', () => clearTimeout(timer));
+            item.addEventListener('touchmove', () => clearTimeout(timer));
+            item.addEventListener('contextmenu', open);
+        }
 
-        overlay.querySelector('#qp-add-btn').addEventListener('click', async () => {
-            const input = overlay.querySelector('#qp-add-input');
-            const val = input.value.trim();
-            if (!val) return;
-            const { phrases: current } = await getQuickPhrases();
-            if (current.length >= 20) {
-                const { showToast } = await import('./ui.js');
-                showToast('最多 20 条快捷语');
-                return;
-            }
-            if (current.includes(val)) {
-                const { showToast } = await import('./ui.js');
-                showToast('快捷语已存在');
-                return;
-            }
-            current.push(val);
-            await saveQuickPhrases(current);
+        overlay.querySelector('#qp-group-add-btn').addEventListener('click', async () => {
+            const input = overlay.querySelector('#qp-group-input');
+            const name = input.value.trim();
+            if (!name) return;
+            data.groups.push({ id: makeQuickPhraseId('group'), name, phrases: [], recent: [] });
             input.value = '';
-            renderList(current);
-            renderQuickPhraseBar();
+            await persist();
+            renderList();
         });
-
-        overlay.querySelector('#qp-add-input').addEventListener('keydown', async (e) => {
-            if (e.key === 'Enter') overlay.querySelector('#qp-add-btn').click();
+        overlay.querySelector('#qp-group-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') overlay.querySelector('#qp-group-add-btn').click();
         });
-
         overlay.querySelector('#qp-close-btn').addEventListener('click', () => overlay.remove());
+        renderList();
     });
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) overlay.remove();
     });
     document.body.appendChild(overlay);
+}
+
+function showMovePhraseSheet(data, fromGroupId, phraseIndex, onMoved) {
+    document.querySelectorAll('.quick-phrase-sheet').forEach(el => el.remove());
+    const fromGroup = data.groups.find(g => g.id === fromGroupId);
+    if (!fromGroup) return;
+    const phrase = fromGroup.phrases[phraseIndex];
+    const sheet = document.createElement('div');
+    sheet.className = 'quick-phrase-sheet';
+    sheet.innerHTML = `
+        <div class="quick-phrase-sheet-inner">
+            <div class="quick-phrase-sheet-title">移动「${esc(phrase)}」到分组</div>
+            <div class="quick-phrase-sheet-list">
+                ${data.groups.filter(g => g.id !== fromGroupId).map(group => `<button class="quick-phrase-sheet-item" data-group-id="${esc(group.id)}">${esc(group.name)}</button>`).join('')}
+            </div>
+            <button class="quick-phrase-sheet-close" data-action="close">取消</button>
+        </div>
+    `;
+    sheet.querySelectorAll('[data-group-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const target = data.groups.find(g => g.id === btn.dataset.groupId);
+            if (target && phrase) {
+                fromGroup.phrases.splice(phraseIndex, 1);
+                fromGroup.recent = (fromGroup.recent || []).filter(p => p !== phrase);
+                if (!target.phrases.includes(phrase)) target.phrases.push(phrase);
+                sheet.remove();
+                await onMoved();
+            }
+        });
+    });
+    sheet.querySelector('[data-action="close"]').addEventListener('click', () => sheet.remove());
+    sheet.addEventListener('click', e => { if (e.target === sheet) sheet.remove(); });
+    document.body.appendChild(sheet);
 }
