@@ -22,8 +22,17 @@ def test_quick_phrase_editor_supports_groups_and_move_menu():
 
     assert "quick-phrase-group-card" in toolbar_js
     assert "quick-phrase-group-name" in toolbar_js
+    assert "quick-phrase-drag-handle" in toolbar_js
     assert "showMovePhraseSheet" in toolbar_js
     assert "touchstart" in toolbar_js
     assert "contextmenu" in toolbar_js
     assert ".quick-phrase-sheet-list" in app_css
-    assert "scrollbar-width: none" in app_css
+    assert ".quick-phrase-list--groups::-webkit-scrollbar-button { display: none; }" in app_css
+    assert "scrollbar-width: thin" in app_css
+
+
+def test_quick_phrase_menus_do_not_close_on_backdrop_click():
+    toolbar_js = (ROOT / "pwa" / "js" / "toolbar.js").read_text(encoding="utf-8")
+
+    assert "if (e.target === overlay) overlay.remove()" not in toolbar_js
+    assert "if (e.target === sheet) sheet.remove()" not in toolbar_js

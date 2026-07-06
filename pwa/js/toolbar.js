@@ -248,7 +248,6 @@ function showQuickPhraseGroupSheet(group) {
         });
     });
     sheet.querySelector('[data-action="close"]').addEventListener('click', () => sheet.remove());
-    sheet.addEventListener('click', e => { if (e.target === sheet) sheet.remove(); });
     document.body.appendChild(sheet);
 }
 
@@ -311,8 +310,15 @@ export function showQuickPhraseEditor() {
                         <span class="quick-phrase-item-text">${esc(phrase)}</span>
                         <button class="quick-phrase-item-edit" data-action="edit-phrase">编辑</button>
                         <button class="quick-phrase-item-del" data-action="delete-phrase">删除</button>
+                        <button class="quick-phrase-drag-handle" data-action="move-phrase" aria-label="移动快捷语">
+                            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                                <line x1="5" y1="7" x2="19" y2="7"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <line x1="5" y1="17" x2="19" y2="17"></line>
+                            </svg>
+                        </button>
                     `;
-                    addMoveHandlers(item, group.id, index);
+                    addMoveHandlers(item.querySelector('[data-action="move-phrase"]'), group.id, index);
                     item.querySelector('[data-action="edit-phrase"]').addEventListener('click', () => startInlinePhraseEdit(item, group, index));
                     item.querySelector('[data-action="delete-phrase"]').addEventListener('click', async () => {
                         const removed = group.phrases.splice(index, 1)[0];
@@ -376,19 +382,35 @@ export function showQuickPhraseEditor() {
             let timer = null;
             const open = (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 showMovePhraseSheet(data, groupId, phraseIndex, async () => {
                     await persist();
                     renderList();
                 });
             };
-            item.addEventListener('touchstart', () => {
+            item.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
                 timer = setTimeout(() => showMovePhraseSheet(data, groupId, phraseIndex, async () => {
                     await persist();
                     renderList();
                 }), 500);
             }, { passive: true });
+            item.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                timer = setTimeout(() => showMovePhraseSheet(data, groupId, phraseIndex, async () => {
+                    await persist();
+                    renderList();
+                }), 500);
+            });
             item.addEventListener('touchend', () => clearTimeout(timer));
             item.addEventListener('touchmove', () => clearTimeout(timer));
+            item.addEventListener('mouseup', () => clearTimeout(timer));
+            item.addEventListener('mouseleave', () => clearTimeout(timer));
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
             item.addEventListener('contextmenu', open);
         }
 
@@ -408,9 +430,6 @@ export function showQuickPhraseEditor() {
         renderList();
     });
 
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) overlay.remove();
-    });
     document.body.appendChild(overlay);
 }
 
@@ -443,6 +462,5 @@ function showMovePhraseSheet(data, fromGroupId, phraseIndex, onMoved) {
         });
     });
     sheet.querySelector('[data-action="close"]').addEventListener('click', () => sheet.remove());
-    sheet.addEventListener('click', e => { if (e.target === sheet) sheet.remove(); });
     document.body.appendChild(sheet);
 }
