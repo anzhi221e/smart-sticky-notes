@@ -20,7 +20,6 @@ export async function showSettings() {
                 <input type="text" id="cfg-folder" value="${cfg.local_folder_path || ''}"><span class="setting-hint" id="cfg-folder-hint"></span></div>
             <div class="setting-row"><label>同步间隔 (分钟)</label>
                 <input type="number" id="cfg-sync-interval" value="${cfg.sync_interval || 30}" min="5" max="1440"></div>
-            <button id="cfg-sync-now" style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:14px;margin-top:8px;">立即同步</button>
             <span class="setting-hint" id="sync-status-hint">上次同步: ${cfg.last_sync_at ? new Date(cfg.last_sync_at).toLocaleString('zh-CN') : '从未'}</span>
         </div>
         <div class="setting-group"><h3>主题</h3>
@@ -116,14 +115,6 @@ export async function showSettings() {
         this.classList.toggle('on', next);
         writeConfig('show_mic_button', next ? 'true' : 'false');
         document.getElementById('mic-btn').style.display = next ? '' : 'none';
-    });
-
-    // Manual sync
-    document.getElementById('cfg-sync-now').addEventListener('click', async () => {
-        const { getSupabase } = await import('./supabase.js');
-        await getSupabase().from('sync_requests').insert({ status: 'pending' });
-        document.getElementById('sync-status-hint').textContent = '已请求同步 · 等待 PC 响应';
-        showToast('已发送同步请求');
     });
 
     // Copy token
