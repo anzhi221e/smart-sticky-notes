@@ -23,12 +23,31 @@ def test_quick_phrase_editor_supports_groups_and_move_menu():
     assert "quick-phrase-group-card" in toolbar_js
     assert "quick-phrase-group-name" in toolbar_js
     assert "quick-phrase-drag-handle" in toolbar_js
-    assert "showMovePhraseSheet" in toolbar_js
-    assert "touchstart" in toolbar_js
-    assert "contextmenu" in toolbar_js
+    assert "startPhraseDrag" in toolbar_js
+    assert "document.elementFromPoint" in toolbar_js
+    assert "showMovePhraseSheet" not in toolbar_js
+    assert "touchstart" not in toolbar_js
+    assert "contextmenu" not in toolbar_js
     assert ".quick-phrase-sheet-list" in app_css
     assert ".quick-phrase-list--groups::-webkit-scrollbar-button { display: none; }" in app_css
     assert "scrollbar-width: thin" in app_css
+    assert "max-height: min(52vh, 470px)" in app_css
+
+
+def test_quick_phrase_editor_uses_compact_collapsible_icon_ui():
+    toolbar_js = (ROOT / "pwa" / "js" / "toolbar.js").read_text(encoding="utf-8")
+    app_css = (ROOT / "pwa" / "css" / "app.css").read_text(encoding="utf-8")
+
+    assert "quick-phrase-group-toggle" in toolbar_js
+    assert "quick-phrase-group-count" in toolbar_js
+    assert "quick-phrase-group-name-edit" in toolbar_js
+    assert "quick-phrase-icon-btn" in toolbar_js
+    assert "quick-phrase-icon-btn--delete" in toolbar_js
+    assert "quickPhraseIcon('edit')" in toolbar_js
+    assert "quickPhraseIcon('trash')" in toolbar_js
+    assert "quickPhraseIcon('drag')" in toolbar_js
+    assert ".quick-phrase-group-card.is-collapsed" in app_css
+    assert ".quick-phrase-icon-btn--delete { color: var(--text-secondary); }" in app_css
 
 
 def test_quick_phrase_menus_do_not_close_on_backdrop_click():
