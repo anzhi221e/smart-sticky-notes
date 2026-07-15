@@ -456,8 +456,10 @@ async function setupWorkspaceToggle() {
         });
         // Position dropdown below the toggle button (left-aligned)
         const rect = toggle.getBoundingClientRect();
+        const workspaceDropdownMaxHeight = Math.max(160, Math.min(360, window.innerHeight - rect.bottom - 12));
         dropdown.style.top = (rect.bottom + 4) + 'px';
         dropdown.style.left = rect.left + 'px';
+        dropdown.style.maxHeight = workspaceDropdownMaxHeight + 'px';
         document.body.appendChild(dropdown);
         setTimeout(() => {
             document.addEventListener('click', function closeDropdown() {
