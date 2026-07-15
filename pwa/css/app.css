@@ -71,6 +71,8 @@ html, body {
     display: flex; flex-direction: column; gap: 8px;
     -webkit-overflow-scrolling: touch;
 }
+.notes-list { scrollbar-width: none; }
+.notes-list::-webkit-scrollbar { display: none; }
 
 /* Chat bubbles */
 .note-bubble {
@@ -630,12 +632,9 @@ html, body {
     box-shadow: 0 8px 24px rgba(0,0,0,0.25);
     max-height: min(360px, calc(100vh - 96px)); overflow-y: auto; overflow-x: hidden;
     overscroll-behavior: contain; animation: dropdownIn 0.15s ease;
-    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
 }
-.workspace-dropdown::-webkit-scrollbar { width: 6px; }
-.workspace-dropdown::-webkit-scrollbar-track { background: transparent; }
-.workspace-dropdown::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
-.workspace-dropdown::-webkit-scrollbar-button { display: none; }
+.workspace-dropdown { scrollbar-width: none; }
+.workspace-dropdown::-webkit-scrollbar { display: none; }
 @keyframes dropdownIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 .workspace-dropdown-item {
     display: flex; align-items: center; justify-content: space-between;
