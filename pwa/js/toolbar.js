@@ -84,7 +84,7 @@ export function renderTagBar(tags, pinnedTags = []) {
     bar.innerHTML = '';
     const validPinned = pinnedTags.filter(t => tags.includes(t));
     const sorted = [...validPinned, ...tags.filter(t => !validPinned.includes(t))];
-    sorted.slice(0, 12).forEach(tag => {
+    sorted.forEach(tag => {
         const pill = document.createElement('button');
         pill.className = 'tag-pill';
         pill.textContent = '#' + tag;
