@@ -294,6 +294,8 @@ html, body {
 .toolbar-row::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .toolbar-row { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 .toolbar-row--format { justify-content: space-between; }
+.toolbar-row--tags { scrollbar-width: none; }
+.toolbar-row--tags::-webkit-scrollbar { display: none; }
 .toolbar-group { display: flex; gap: 3px; flex-shrink: 0; }
 .tb-btn {
     background: var(--surface); border: 1px solid var(--border); color: var(--text);
