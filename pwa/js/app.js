@@ -1,6 +1,6 @@
 import { initSupabase, getSupabase, getConnection, saveConnection } from './supabase.js';
 import { sendOtp, verifyOtp, getSession, signOut, onAuthStateChange } from './auth.js';
-import { fetchNotes, insertNote, uploadAudio, readConfig, fetchTags } from './db.js';
+import { fetchNotes, insertNote, uploadAudio, readConfig, fetchTagSummary } from './db.js';
 import { renderNoteBubble, parseTags } from './notes.js';
 import { startRecording, stopRecording, cancelRecording, getIsRecording } from './voice.js';
 import { navigateTo, toggleSidebar, setSyncStatus, setMicEnabled, toggleSendButton, showRecordingOverlay, hideRecordingOverlay, updateRecordingText, showToast, applyTheme } from './ui.js';
@@ -507,10 +507,10 @@ async function loadOlderNotes() {
 
 async function loadTagBar() {
     try {
-        const tags = await fetchTags(getCurrentWorkspace());
+        const { recentTags } = await fetchTagSummary(getCurrentWorkspace());
         const cfg = await readConfig().catch(() => ({}));
         const pinned = JSON.parse(cfg.pinned_tags || '[]');
-        renderTagBar(Object.keys(tags), pinned);
+        renderTagBar(recentTags, pinned);
     } catch (e) { /* ignore */ }
     renderQuickPhraseBar();
 }
@@ -640,6 +640,7 @@ async function sendTextNote(caller = 'unknown') {
             id: b.dataset.noteId, type: note.type, text: note.text, tags: note.tags, created_at: note.created_at || new Date().toISOString(),
         }));
         await cacheNotes(noteData);
+        void loadTagBar();
         requestPcSync(); // auto-request PC sync after saving a note
     } catch (err) {
         // Note is already saved in DB. UI render/cache failed — just reload.

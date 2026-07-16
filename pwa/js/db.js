@@ -133,21 +133,29 @@ export async function moveNoteToWorkspace(noteId, newWorkspace) {
     if (error) throw error;
 }
 
-export async function fetchTags(workspace = null) {
+export async function fetchTagSummary(workspace = null) {
     const sb = getSupabase();
     let query = sb
         .from('smartstickynotes_items')
-        .select('tags')
-        .eq('status', 'active');
+        .select('tags, updated_at')
+        .eq('status', 'active')
+        .order('updated_at', { ascending: false });
     if (workspace) query = query.eq('workspace', workspace);
     const { data, error } = await query;
     if (error) throw error;
     const tagCounts = {};
+    const recentTags = [];
     data.forEach(row => {
         (row.tags || []).forEach(tag => {
+            if (!Object.prototype.hasOwnProperty.call(tagCounts, tag)) recentTags.push(tag);
             tagCounts[tag] = (tagCounts[tag] || 0) + 1;
         });
     });
+    return { tagCounts, recentTags };
+}
+
+export async function fetchTags(workspace = null) {
+    const { tagCounts } = await fetchTagSummary(workspace);
     return tagCounts;
 }
 

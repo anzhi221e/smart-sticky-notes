@@ -1,6 +1,7 @@
 import { showToolbar, hideToolbar, setToolbarTarget, renderTagBar, renderQuickPhraseBar } from './toolbar.js';
-import { fetchTags, readConfig } from './db.js';
+import { fetchTagSummary, readConfig } from './db.js';
 import { renderMarkdown } from './notes.js';
+import { getCurrentWorkspace } from './workspaces.js';
 
 let _editingBubble = null;
 let _editingNoteId = null;
@@ -40,10 +41,10 @@ export function startEditing(bubble, noteId, text) {
     setToolbarTarget(textarea);
     showToolbar();
 
-    fetchTags().then(tagCounts => {
+    fetchTagSummary(getCurrentWorkspace()).then(({ recentTags }) => {
         readConfig().then(cfg => {
             const pinned = JSON.parse(cfg.pinned_tags || '[]');
-            renderTagBar(Object.keys(tagCounts), pinned);
+            renderTagBar(recentTags, pinned);
         });
     });
     renderQuickPhraseBar();
