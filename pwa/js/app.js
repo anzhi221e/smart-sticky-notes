@@ -274,7 +274,11 @@ function setupMainUI() {
     setupPullToRefresh();
 
     document.getElementById('calendar-back').addEventListener('click', () => navigateTo('main'));
-    document.getElementById('cal-today').addEventListener('click', () => renderCalendarMonth(new Date()));
+    document.getElementById('cal-today').addEventListener('click', () => {
+        const activeView = document.querySelector('.cal-tab.active')?.dataset.view || 'month';
+        const fn = { day: renderCalendarDay, week: renderCalendarWeek, month: renderCalendarMonth, year: renderCalendarYear };
+        (fn[activeView] || renderCalendarMonth)(new Date());
+    });
     document.querySelectorAll('.cal-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.cal-tab').forEach(t => t.classList.remove('active'));

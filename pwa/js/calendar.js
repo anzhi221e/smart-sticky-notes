@@ -1,11 +1,135 @@
-import { fetchNotesByDateRange, fetchNoteDates } from './db.js';
+import { fetchNotesByDateRange } from './db.js';
 import { renderNoteBubble } from './notes.js';
 
 const content = () => document.getElementById('calendar-content');
+const WEEKDAY_NAMES = ['一', '二', '三', '四', '五', '六', '日'];
+let _calendarRenderVersion = 0;
+
+function localDateKey(date) {
+    return [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0'),
+    ].join('-');
+}
+
+function noteDateKey(note) {
+    return localDateKey(new Date(note.created_at));
+}
+
+function groupNotesByDay(notes) {
+    const notesByDay = {};
+    notes.forEach(note => {
+        const key = noteDateKey(note);
+        if (!notesByDay[key]) notesByDay[key] = [];
+        notesByDay[key].push(note);
+    });
+    return notesByDay;
+}
+
+function setActiveCalendarView(view) {
+    document.querySelectorAll('.cal-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.view === view);
+    });
+}
+
+function createPeriodNavigation(label, previousLabel, nextLabel, onPrevious, onNext) {
+    const nav = document.createElement('div');
+    nav.className = 'calendar-period-nav';
+
+    const previous = document.createElement('button');
+    previous.className = 'calendar-period-button';
+    previous.type = 'button';
+    previous.setAttribute('aria-label', previousLabel);
+    previous.textContent = '‹';
+    previous.addEventListener('click', onPrevious);
+
+    const title = document.createElement('h3');
+    title.className = 'calendar-period-title';
+    title.textContent = label;
+
+    const next = document.createElement('button');
+    next.className = 'calendar-period-button';
+    next.type = 'button';
+    next.setAttribute('aria-label', nextLabel);
+    next.textContent = '›';
+    next.addEventListener('click', onNext);
+
+    nav.append(previous, title, next);
+    return nav;
+}
+
+function appendNoteCount(cell, count) {
+    if (!count) return;
+    cell.classList.add('has-notes');
+    const badge = document.createElement('span');
+    badge.className = 'calendar-note-count';
+    badge.textContent = count;
+    badge.setAttribute('aria-label', `${count} 条笔记`);
+    cell.appendChild(badge);
+}
+
+function appendDayNotes(container, date, notes, showEmpty = true) {
+    const section = document.createElement('section');
+    section.className = 'calendar-day-detail';
+
+    const header = document.createElement('h3');
+    header.className = 'calendar-day-title';
+    header.textContent = date.toLocaleDateString('zh-CN', {
+        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
+    });
+    section.appendChild(header);
+
+    if (notes.length) {
+        notes.forEach(note => section.appendChild(renderNoteBubble(note)));
+    } else if (showEmpty) {
+        const empty = document.createElement('p');
+        empty.className = 'calendar-day-empty';
+        empty.textContent = '当天没有笔记';
+        section.appendChild(empty);
+    }
+
+    container.appendChild(section);
+}
+
+function createDayCell(className, date, selectedKey, notes, onClick, weekday = null) {
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = className;
+    const key = localDateKey(date);
+    if (key === selectedKey) cell.classList.add('selected');
+
+    if (weekday !== null) {
+        const weekdayLabel = document.createElement('span');
+        weekdayLabel.className = 'week-day-label';
+        weekdayLabel.textContent = weekday;
+        cell.appendChild(weekdayLabel);
+    }
+
+    const dayNumber = document.createElement('span');
+    dayNumber.className = 'calendar-day-number';
+    dayNumber.textContent = date.getDate();
+    cell.appendChild(dayNumber);
+    appendNoteCount(cell, notes.length);
+    cell.addEventListener('click', onClick);
+    return cell;
+}
+
+function shiftMonthClamped(date, offset) {
+    const year = date.getFullYear();
+    const month = date.getMonth() + offset;
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    return new Date(year, month, Math.min(date.getDate(), lastDay));
+}
+
+function replaceCalendarContent(container, newContent) {
+    container.replaceChildren(newContent);
+    container.scrollTop = 0;
+}
 
 export async function renderCalendarDay(date) {
-    const c = content();
-    c.innerHTML = '';
+    setActiveCalendarView('day');
+    const renderVersion = ++_calendarRenderVersion;
     const from = new Date(date); from.setHours(0, 0, 0, 0);
     const to = new Date(date); to.setHours(23, 59, 59, 999);
 
@@ -13,27 +137,17 @@ export async function renderCalendarDay(date) {
     try {
         notes = await fetchNotesByDateRange(from.toISOString(), to.toISOString());
     } catch { notes = []; }
+    if (renderVersion !== _calendarRenderVersion) return;
 
-    const header = document.createElement('h3');
-    header.style.cssText = 'font-size:16px;margin-bottom:12px;';
-    header.textContent = date.toLocaleDateString('zh-CN', {
-        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
-    });
-    c.appendChild(header);
-
-    if (notes.length === 0) {
-        const empty = document.createElement('p');
-        empty.style.color = 'var(--text-secondary)';
-        empty.textContent = '当天没有笔记';
-        c.appendChild(empty);
-    } else {
-        notes.forEach(n => c.appendChild(renderNoteBubble(n)));
-    }
+    const c = content();
+    const fragment = document.createDocumentFragment();
+    appendDayNotes(fragment, date, notes);
+    replaceCalendarContent(c, fragment);
 }
 
 export async function renderCalendarWeek(date) {
-    const c = content();
-    c.innerHTML = '';
+    setActiveCalendarView('week');
+    const renderVersion = ++_calendarRenderVersion;
     const day = date.getDay();
     const mondayOffset = day === 0 ? -6 : 1 - day;
     const startOfWeek = new Date(date);
@@ -47,124 +161,153 @@ export async function renderCalendarWeek(date) {
     try {
         notes = await fetchNotesByDateRange(startOfWeek.toISOString(), endOfWeek.toISOString());
     } catch { notes = []; }
+    if (renderVersion !== _calendarRenderVersion) return;
 
-    const notesByDay = {};
-    notes.forEach(n => {
-        const d = n.created_at.split('T')[0];
-        if (!notesByDay[d]) notesByDay[d] = [];
-        notesByDay[d].push(n);
-    });
+    const selectedKey = localDateKey(date);
+    const notesByDay = groupNotesByDay(notes);
+    const c = content();
+    const fragment = document.createDocumentFragment();
+
+    const weekLabel = startOfWeek.getMonth() === endOfWeek.getMonth()
+        ? `${startOfWeek.getFullYear()}年${startOfWeek.getMonth() + 1}月${startOfWeek.getDate()}日–${endOfWeek.getDate()}日`
+        : `${startOfWeek.getMonth() + 1}月${startOfWeek.getDate()}日–${endOfWeek.getMonth() + 1}月${endOfWeek.getDate()}日`;
+    fragment.appendChild(createPeriodNavigation(
+        weekLabel,
+        '上一周',
+        '下一周',
+        () => {
+            const previousWeek = new Date(date);
+            previousWeek.setDate(previousWeek.getDate() - 7);
+            renderCalendarWeek(previousWeek);
+        },
+        () => {
+            const nextWeek = new Date(date);
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            renderCalendarWeek(nextWeek);
+        },
+    ));
 
     const grid = document.createElement('div');
     grid.className = 'week-grid';
     for (let i = 0; i < 7; i++) {
-        const d = new Date(startOfWeek);
-        d.setDate(startOfWeek.getDate() + i);
-        const ds = d.toISOString().split('T')[0];
-        const cell = document.createElement('div');
-        cell.className = 'week-day';
-        cell.textContent = d.getDate();
-        if (ds === date.toISOString().split('T')[0]) cell.classList.add('selected');
-        if (notesByDay[ds]) cell.classList.add('has-notes');
-        cell.addEventListener('click', () => renderCalendarDay(d));
-        grid.appendChild(cell);
+        const current = new Date(startOfWeek);
+        current.setDate(startOfWeek.getDate() + i);
+        const currentKey = localDateKey(current);
+        const currentNotes = notesByDay[currentKey] || [];
+        grid.appendChild(createDayCell(
+            'week-day',
+            current,
+            selectedKey,
+            currentNotes,
+            () => renderCalendarWeek(current),
+            WEEKDAY_NAMES[i],
+        ));
     }
-    c.appendChild(grid);
-
-    const selectedDay = date.toISOString().split('T')[0];
-    const dayNotes = notesByDay[selectedDay] || [];
-    const list = document.createElement('div');
-    list.style.cssText = 'margin-top:16px;';
-    if (dayNotes.length > 0) {
-        dayNotes.forEach(n => list.appendChild(renderNoteBubble(n)));
-    }
-    c.appendChild(list);
+    fragment.appendChild(grid);
+    appendDayNotes(fragment, date, notesByDay[selectedKey] || []);
+    replaceCalendarContent(c, fragment);
 }
 
 export async function renderCalendarMonth(date) {
-    const c = content();
-    c.innerHTML = '';
+    setActiveCalendarView('month');
+    const renderVersion = ++_calendarRenderVersion;
     const year = date.getFullYear();
     const month = date.getMonth();
+    const from = new Date(year, month, 1);
+    const to = new Date(year, month + 1, 0, 23, 59, 59, 999);
 
-    let dates;
-    try { dates = await fetchNoteDates(); } catch { dates = []; }
-    const dateSet = new Set(dates.map(d => d.split('T')[0]));
+    let notes;
+    try {
+        notes = await fetchNotesByDateRange(from.toISOString(), to.toISOString());
+    } catch { notes = []; }
+    if (renderVersion !== _calendarRenderVersion) return;
 
-    const header = document.createElement('h3');
-    header.style.cssText = 'text-align:center;margin-bottom:12px;font-size:16px;';
-    header.textContent = `${year} 年 ${month + 1} 月`;
-    c.appendChild(header);
+    const notesByDay = groupNotesByDay(notes);
+    const selectedKey = localDateKey(date);
+    const todayKey = localDateKey(new Date());
+    const c = content();
+    const fragment = document.createDocumentFragment();
+
+    fragment.appendChild(createPeriodNavigation(
+        `${year}年${month + 1}月`,
+        '上一个月',
+        '下一个月',
+        () => renderCalendarMonth(shiftMonthClamped(date, -1)),
+        () => renderCalendarMonth(shiftMonthClamped(date, 1)),
+    ));
 
     const grid = document.createElement('div');
     grid.className = 'month-grid';
-    ['一', '二', '三', '四', '五', '六', '日'].forEach(d => {
-        const dh = document.createElement('div');
-        dh.className = 'day-header';
-        dh.textContent = d;
-        grid.appendChild(dh);
+    WEEKDAY_NAMES.forEach(dayName => {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'day-header';
+        dayHeader.textContent = dayName;
+        grid.appendChild(dayHeader);
     });
 
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const startOffset = firstDay === 0 ? 6 : firstDay - 1;
-
     for (let i = 0; i < startOffset; i++) {
-        grid.appendChild(document.createElement('div'));
+        const spacer = document.createElement('div');
+        spacer.className = 'month-grid-spacer';
+        grid.appendChild(spacer);
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    for (let d = 1; d <= daysInMonth; d++) {
-        const ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const cell = document.createElement('div');
-        cell.className = 'day-cell';
-        cell.textContent = d;
-        if (ds === today) cell.classList.add('today');
-        if (dateSet.has(ds)) cell.classList.add('has-notes');
-        cell.addEventListener('click', () => renderCalendarDay(new Date(year, month, d)));
+    for (let dayNumber = 1; dayNumber <= daysInMonth; dayNumber++) {
+        const current = new Date(year, month, dayNumber);
+        const currentKey = localDateKey(current);
+        const currentNotes = notesByDay[currentKey] || [];
+        const cell = createDayCell(
+            'day-cell',
+            current,
+            selectedKey,
+            currentNotes,
+            () => renderCalendarMonth(current),
+        );
+        if (currentKey === todayKey) cell.classList.add('today');
         grid.appendChild(cell);
     }
-    c.appendChild(grid);
+    fragment.appendChild(grid);
+    appendDayNotes(fragment, date, notesByDay[selectedKey] || []);
+    replaceCalendarContent(c, fragment);
 }
 
 export async function renderCalendarYear(date) {
-    const c = content();
-    c.innerHTML = '';
+    setActiveCalendarView('year');
+    const renderVersion = ++_calendarRenderVersion;
     const year = date.getFullYear();
     const from = new Date(year, 0, 1).toISOString();
     const to = new Date(year, 11, 31, 23, 59, 59, 999).toISOString();
 
     let notes;
     try { notes = await fetchNotesByDateRange(from, to); } catch { notes = []; }
+    if (renderVersion !== _calendarRenderVersion) return;
 
     const countByMonth = new Array(12).fill(0);
-    const summaryByMonth = new Array(12).fill(null).map(() => []);
-    notes.forEach(n => {
-        const m = new Date(n.created_at).getMonth();
-        countByMonth[m]++;
-        if (summaryByMonth[m].length < 2) {
-            summaryByMonth[m].push((n.text || '').substring(0, 30));
-        }
+    notes.forEach(note => {
+        countByMonth[new Date(note.created_at).getMonth()]++;
     });
 
+    const c = content();
+    const fragment = document.createDocumentFragment();
     const header = document.createElement('h3');
     header.style.cssText = 'text-align:center;margin-bottom:12px;font-size:16px;';
     header.textContent = `${year} 年`;
-    c.appendChild(header);
+    fragment.appendChild(header);
 
     const grid = document.createElement('div');
     grid.className = 'year-grid';
-    const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月',
-        '7月', '8月', '9月', '10月', '11月', '12月'];
-    for (let m = 0; m < 12; m++) {
+    for (let month = 0; month < 12; month++) {
         const card = document.createElement('div');
         card.className = 'year-card';
         card.innerHTML = `
-            <div class="month-name">${monthNames[m]}</div>
-            <div class="note-count">${countByMonth[m]}</div>
+            <div class="month-name">${month + 1}月</div>
+            <div class="note-count">${countByMonth[month]}</div>
         `;
-        card.addEventListener('click', () => renderCalendarMonth(new Date(year, m, 1)));
+        card.addEventListener('click', () => renderCalendarMonth(new Date(year, month, 1)));
         grid.appendChild(card);
     }
-    c.appendChild(grid);
+    fragment.appendChild(grid);
+    replaceCalendarContent(c, fragment);
 }
