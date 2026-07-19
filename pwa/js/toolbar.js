@@ -174,11 +174,16 @@ function getGroupDefaultPhrase(group) {
     return recent || group.phrases[group.phrases.length - 1] || group.name;
 }
 
+let _quickPhraseRenderVersion = 0;
+
 export async function renderQuickPhraseBar() {
     const bar = document.getElementById('quick-phrase-bar');
     if (!bar) return;
-    bar.innerHTML = '';
+    const renderVersion = ++_quickPhraseRenderVersion;
+    const previousScrollLeft = bar.scrollLeft;
     const { data } = await getQuickPhrases();
+    if (renderVersion !== _quickPhraseRenderVersion) return;
+    const content = document.createDocumentFragment();
 
     data.groups.filter(group => group.phrases.length).forEach(group => {
         const chip = document.createElement('span');
@@ -204,7 +209,7 @@ export async function renderQuickPhraseBar() {
         });
 
         chip.append(main, arrow);
-        bar.appendChild(chip);
+        content.appendChild(chip);
     });
 
     data.ungrouped.forEach(phrase => {
@@ -212,14 +217,17 @@ export async function renderQuickPhraseBar() {
         btn.className = 'quick-phrase-btn';
         btn.textContent = phrase;
         btn.addEventListener('click', () => insertPhrase(phrase));
-        bar.appendChild(btn);
+        content.appendChild(btn);
     });
 
     const editBtn = document.createElement('button');
     editBtn.className = 'quick-phrase-edit-btn';
     editBtn.textContent = data.groups.length || data.ungrouped.length ? '编辑' : '+ 添加快捷语';
     editBtn.addEventListener('click', () => showQuickPhraseEditor());
-    bar.appendChild(editBtn);
+    content.appendChild(editBtn);
+
+    bar.replaceChildren(content);
+    bar.scrollLeft = previousScrollLeft;
 }
 
 function showQuickPhraseGroupSheet(group) {

@@ -16,6 +16,19 @@ def test_quick_phrase_groups_have_migration_and_group_toolbar():
     assert "rememberPhraseUse" in toolbar_js
 
 
+def test_quick_phrase_toolbar_refreshes_atomically_after_async_load():
+    toolbar_js = (ROOT / "pwa" / "js" / "toolbar.js").read_text(encoding="utf-8")
+    render_start = toolbar_js.index("export async function renderQuickPhraseBar()")
+    render_end = toolbar_js.index("function showQuickPhraseGroupSheet", render_start)
+    render_body = toolbar_js[render_start:render_end]
+
+    assert "bar.innerHTML = ''" not in render_body
+    assert "const { data } = await getQuickPhrases();" in render_body
+    assert "document.createDocumentFragment()" in render_body
+    assert "bar.replaceChildren(content);" in render_body
+    assert "renderVersion !== _quickPhraseRenderVersion" in render_body
+
+
 def test_quick_phrase_editor_supports_groups_and_move_menu():
     toolbar_js = (ROOT / "pwa" / "js" / "toolbar.js").read_text(encoding="utf-8")
     app_css = (ROOT / "pwa" / "css" / "app.css").read_text(encoding="utf-8")
