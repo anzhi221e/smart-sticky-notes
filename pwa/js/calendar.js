@@ -69,6 +69,23 @@ function appendNoteCount(cell, count) {
     cell.appendChild(badge);
 }
 
+function getDayTags(notes) {
+    const tags = [];
+    notes.forEach(note => {
+        (note.tags || []).forEach(tag => {
+            if (!tags.includes(tag)) tags.push(tag);
+        });
+    });
+    return tags;
+}
+
+function filterNotesBySelectedTags(notes, selectedTags, allTagCount) {
+    if (selectedTags.size === allTagCount) return notes;
+    return notes.filter(note => {
+        return (note.tags || []).some(tag => selectedTags.has(tag));
+    });
+}
+
 function appendDayNotes(container, date, notes, showEmpty = true) {
     const section = document.createElement('section');
     section.className = 'calendar-day-detail';
@@ -80,15 +97,51 @@ function appendDayNotes(container, date, notes, showEmpty = true) {
     });
     section.appendChild(header);
 
-    if (notes.length) {
-        notes.forEach(note => section.appendChild(renderNoteBubble(note)));
-    } else if (showEmpty) {
+    const dayTags = getDayTags(notes);
+    const selectedTags = new Set(dayTags);
+    const noteList = document.createElement('div');
+    noteList.className = 'calendar-day-notes';
+
+    const renderFilteredNotes = () => {
+        const visibleNotes = filterNotesBySelectedTags(notes, selectedTags, dayTags.length);
+        noteList.replaceChildren();
+        if (visibleNotes.length) {
+            visibleNotes.forEach(note => noteList.appendChild(renderNoteBubble(note)));
+            return;
+        }
+        if (!showEmpty) return;
         const empty = document.createElement('p');
         empty.className = 'calendar-day-empty';
-        empty.textContent = '当天没有笔记';
-        section.appendChild(empty);
+        empty.textContent = notes.length ? '没有符合当前标签筛选的笔记' : '当天没有笔记';
+        noteList.appendChild(empty);
+    };
+
+    if (dayTags.length) {
+        const filters = document.createElement('div');
+        filters.className = 'calendar-tag-filters';
+        filters.setAttribute('aria-label', '按标签筛选当天笔记');
+
+        dayTags.forEach(tag => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'calendar-tag-filter is-selected';
+            button.textContent = `#${tag}`;
+            button.setAttribute('aria-pressed', 'true');
+            button.addEventListener('click', () => {
+                if (selectedTags.has(tag)) selectedTags.delete(tag);
+                else selectedTags.add(tag);
+                const isSelected = selectedTags.has(tag);
+                button.classList.toggle('is-selected', isSelected);
+                button.setAttribute('aria-pressed', String(isSelected));
+                renderFilteredNotes();
+            });
+            filters.appendChild(button);
+        });
+        section.appendChild(filters);
     }
 
+    renderFilteredNotes();
+    section.appendChild(noteList);
     container.appendChild(section);
 }
 
