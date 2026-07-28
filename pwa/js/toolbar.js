@@ -19,7 +19,29 @@ export function setToolbarTarget(inputEl) {
     _targetInput = inputEl;
 }
 
+function enableQuickPhraseWheelScroll() {
+    const bar = document.getElementById('quick-phrase-bar');
+    if (!bar || bar.dataset.wheelScrollEnabled === 'true') return;
+    bar.dataset.wheelScrollEnabled = 'true';
+    bar.addEventListener('wheel', e => {
+        if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+        const maxScrollLeft = Math.max(0, bar.scrollWidth - bar.clientWidth);
+        if (maxScrollLeft === 0) return;
+
+        const multiplier = e.deltaMode === 1 ? 24 : e.deltaMode === 2 ? bar.clientWidth : 1;
+        const nextScrollLeft = Math.max(
+            0,
+            Math.min(maxScrollLeft, bar.scrollLeft + e.deltaY * multiplier),
+        );
+        if (Math.abs(nextScrollLeft - bar.scrollLeft) < 0.5) return;
+
+        bar.scrollLeft = nextScrollLeft;
+        e.preventDefault();
+    }, { passive: false });
+}
+
 export function initToolbar() {
+    enableQuickPhraseWheelScroll();
     // Rich text buttons (fixed)
     document.querySelectorAll('.tb-btn[data-action]').forEach(btn => {
         btn.addEventListener('click', () => {
