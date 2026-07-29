@@ -179,6 +179,19 @@ function setupAuthUI() {
     });
 }
 
+function isTextInputMultiline(textInput) {
+    if (/[\r\n]/.test(textInput.value)) return true;
+
+    const style = getComputedStyle(textInput);
+    const lineHeight = Number.parseFloat(style.lineHeight);
+    const paddingTop = Number.parseFloat(style.paddingTop) || 0;
+    const paddingBottom = Number.parseFloat(style.paddingBottom) || 0;
+    if (!Number.isFinite(lineHeight)) return false;
+
+    const singleLineScrollHeight = lineHeight + paddingTop + paddingBottom;
+    return textInput.scrollHeight > Math.ceil(singleLineScrollHeight) + 1;
+}
+
 // --- Main UI ---
 let _mainUISetup = false;
 function setupMainUI() {
@@ -228,22 +241,27 @@ function setupMainUI() {
         toolbarBlurTimeout = setTimeout(() => hideToolbar(), 300);
     });
     textInput.addEventListener('input', () => {
-        // Fallback: if any newline was inserted into the textarea (regardless of
-        // how it got there — keyboard, IME, paste), treat it as a send command
-        if (textInput.value.includes('\n') || textInput.value.includes('\r')) {
-            textInput.value = textInput.value.replace(/[\r\n]/g, '');
-            if (textInput.value.trim()) sendTextNote('input-newline');
-            return;
-        }
         toggleSendButton(textInput.value.trim().length > 0);
         textInput.style.height = 'auto';
         textInput.style.height = Math.min(textInput.scrollHeight, 200) + 'px';
         textInput.style.overflowY = textInput.scrollHeight > 200 ? 'auto' : 'hidden';
     });
     textInput.addEventListener('keydown', (e) => {
-        if (e.keyCode === 13 && e.shiftKey) {
+        if (e.key !== 'Enter' || e.isComposing) return;
+
+        // Ctrl+Enter always sends. Once the text visually occupies more than
+        // one line, plain Enter edits the note by inserting a newline.
+        // Shift+Enter also remains available for starting a second line early.
+        if (e.ctrlKey) {
             e.preventDefault();
-            if (textInput.value.trim()) sendTextNote('keydown-Shift+Enter');
+            if (textInput.value.trim()) sendTextNote('keydown-Ctrl+Enter');
+            return;
+        }
+        if (e.shiftKey || isTextInputMultiline(textInput)) return;
+
+        e.preventDefault();
+        if (textInput.value.trim()) {
+            sendTextNote('keydown-Enter-single-line');
         }
     });
 
