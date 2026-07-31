@@ -1,4 +1,5 @@
 import { showToolbar, hideToolbar, setToolbarTarget, renderTagBar, renderQuickPhraseBar } from './toolbar.js';
+import { showToast } from './ui.js';
 import { fetchTagSummary, readConfig } from './db.js';
 import { renderMarkdown } from './notes.js';
 import { getCurrentWorkspace } from './workspaces.js';
@@ -70,6 +71,10 @@ async function saveEditing() {
     const saveButton = bubble.querySelector('.edit-btn--save');
     _isSaving = true;
     saveButton.disabled = true;
+    const saveStatus = showToast('正在保存笔记修改…', { status: 'loading', duration: 0 });
+    const slowConnectionTimer = setTimeout(() => {
+        saveStatus.update('连接较慢，仍在保存修改…', { status: 'warning', duration: 0 });
+    }, 4000);
 
     try {
         const { getSupabase } = await import('./supabase.js');
@@ -108,10 +113,13 @@ async function saveEditing() {
                 import('./app.js').then(m => m.navigateToTags(tagEl.textContent.slice(1)));
             });
         });
+        clearTimeout(slowConnectionTimer);
+        saveStatus.update('笔记修改已保存', { status: 'success', duration: 2000 });
     } catch (e) {
+        clearTimeout(slowConnectionTimer);
         _isSaving = false;
         saveButton.disabled = false;
-        alert('保存失败: ' + e.message);
+        saveStatus.update('保存失败：' + e.message, { status: 'error', duration: 5000 });
         return;
     }
 

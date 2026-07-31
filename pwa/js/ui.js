@@ -1,10 +1,46 @@
 // Toast, screen navigation, and DOM helpers
 
-export function showToast(message, { undoLabel, onUndo, duration = 3000 } = {}) {
+const MANAGED_SCREENS = new Set([
+    'main',
+    'calendar',
+    'recycle-bin',
+    'tags',
+    'settings',
+    'workspace-manager',
+]);
+
+export function showToast(message, {
+    undoLabel,
+    onUndo,
+    duration = 3000,
+    status = 'info',
+} = {}) {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = message;
+    toast.className = `toast toast--${status}`;
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+
+    const messageEl = document.createElement('span');
+    messageEl.className = 'toast-message';
+    messageEl.textContent = message;
+    toast.appendChild(messageEl);
+
+    let dismissTimer = null;
+    let removeTimer = null;
+
+    const dismiss = () => {
+        clearTimeout(dismissTimer);
+        clearTimeout(removeTimer);
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        removeTimer = setTimeout(() => toast.remove(), 300);
+    };
+
+    const scheduleDismiss = (nextDuration) => {
+        clearTimeout(dismissTimer);
+        if (nextDuration > 0) dismissTimer = setTimeout(dismiss, nextDuration);
+    };
 
     if (undoLabel && onUndo) {
         const btn = document.createElement('button');
@@ -12,20 +48,31 @@ export function showToast(message, { undoLabel, onUndo, duration = 3000 } = {}) 
         btn.textContent = undoLabel;
         btn.addEventListener('click', () => {
             onUndo();
-            toast.remove();
+            dismiss();
         });
         toast.appendChild(btn);
     }
 
     container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.3s';
-        setTimeout(() => toast.remove(), 300);
-    }, duration);
+    scheduleDismiss(duration);
+
+    return {
+        element: toast,
+        dismiss,
+        update(nextMessage, {
+            status: nextStatus = status,
+            duration: nextDuration = 3000,
+        } = {}) {
+            messageEl.textContent = nextMessage;
+            toast.className = `toast toast--${nextStatus}`;
+            toast.style.opacity = '1';
+            toast.style.transition = '';
+            scheduleDismiss(nextDuration);
+        },
+    };
 }
 
-export function navigateTo(screenId) {
+function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => {
         s.classList.remove('active');
         s.classList.add('hidden');
@@ -38,6 +85,110 @@ export function navigateTo(screenId) {
     const sidebar = document.getElementById('sidebar');
     if (sidebar) { sidebar.classList.remove('open'); sidebar.classList.add('hidden'); }
 }
+
+function getActiveScreenId() {
+    const active = document.querySelector('.screen.active');
+    return active?.id?.replace(/^screen-/, '') || null;
+}
+
+function navigationState(screen) {
+    return { ssnNavigation: true, screen };
+}
+
+export function navigateTo(screenId, { replace = false } = {}) {
+    const previousScreen = getActiveScreenId();
+    showScreen(screenId);
+
+    if (!MANAGED_SCREENS.has(screenId)) {
+        history.replaceState({ ssnNavigation: false, screen: screenId }, '');
+        return;
+    }
+
+    if (!MANAGED_SCREENS.has(previousScreen)) {
+        history.replaceState(navigationState('main'), '');
+        if (screenId === 'main') {
+            history.pushState(navigationState('main'), '');
+        } else {
+            history.pushState(navigationState(screenId), '');
+        }
+        return;
+    }
+
+    if (previousScreen === screenId && history.state?.ssnNavigation) return;
+    if (replace) history.replaceState(navigationState(screenId), '');
+    else history.pushState(navigationState(screenId), '');
+}
+
+export function closeTransientUi() {
+    const menu = document.querySelector(
+        '.bubble-menu, .quick-phrase-modal, .quick-phrase-sheet, .tag-color-overlay, .context-menu',
+    );
+    if (menu) { menu.remove(); return true; }
+
+    const dropdown = document.querySelector('.workspace-dropdown');
+    if (dropdown) { dropdown.remove(); return true; }
+
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar?.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        sidebar.classList.add('hidden');
+        return true;
+    }
+
+    const editorCancel = document.querySelector('.is-editing .edit-btn--cancel');
+    if (editorCancel) {
+        editorCancel.click();
+        return true;
+    }
+
+    const selectCancel = document.getElementById('select-cancel-btn');
+    if (selectCancel) {
+        selectCancel.click();
+        return true;
+    }
+
+    const textInput = document.getElementById('text-input');
+    const toolbar = document.getElementById('toolbar');
+    if (document.activeElement === textInput || (toolbar && !toolbar.classList.contains('hidden'))) {
+        textInput?.blur();
+        toolbar?.classList.add('hidden');
+        return true;
+    }
+
+    return false;
+}
+
+export function navigateBack(fallback = 'main') {
+    if (closeTransientUi()) return;
+    const current = getActiveScreenId();
+    if (current !== fallback && history.state?.ssnNavigation) {
+        history.back();
+        return;
+    }
+    navigateTo(fallback, { replace: true });
+}
+
+window.addEventListener('popstate', (event) => {
+    const current = getActiveScreenId() || 'main';
+    if (closeTransientUi()) {
+        history.pushState(navigationState(current), '');
+        return;
+    }
+    if (!MANAGED_SCREENS.has(current)) {
+        history.pushState({ ssnNavigation: false, screen: current }, '');
+        return;
+    }
+
+    const target = event.state?.ssnNavigation ? event.state.screen : null;
+    if (target && MANAGED_SCREENS.has(target)) {
+        showScreen(target);
+        return;
+    }
+
+    // Keep the installed PWA inside its main screen instead of exiting.
+    showScreen('main');
+    history.pushState(navigationState('main'), '');
+});
 
 export function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');

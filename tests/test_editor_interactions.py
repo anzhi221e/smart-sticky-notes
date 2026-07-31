@@ -11,6 +11,8 @@ def test_editor_save_is_guarded_against_double_submit():
     assert "if (_isSaving) return;" in editor_js
     assert "saveButton.disabled = true;" in editor_js
     assert "const bubble = _editingBubble;" in editor_js
+    assert "saveStatus.update('保存失败：" in editor_js
+    assert "alert('保存失败:" not in editor_js
 
 
 def test_note_menu_ignores_active_editor_interactions():

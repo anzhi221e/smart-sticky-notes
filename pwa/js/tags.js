@@ -149,6 +149,7 @@ async function showColorPicker(tag) {
     const tagColors = JSON.parse(cfg.tag_colors || '{}');
 
     const overlay = document.createElement('div');
+    overlay.className = 'tag-color-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;align-items:center;justify-content:center;';
     overlay.innerHTML = `
         <div style="background:var(--surface);border-radius:16px;padding:20px;max-width:360px;width:90%;">

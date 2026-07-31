@@ -3,7 +3,7 @@ import { sendOtp, verifyOtp, getSession, signOut, onAuthStateChange } from './au
 import { fetchNotes, insertNote, uploadAudio, readConfig, fetchTagSummary } from './db.js';
 import { renderNoteBubble, parseTags } from './notes.js';
 import { startRecording, stopRecording, cancelRecording, getIsRecording } from './voice.js';
-import { navigateTo, toggleSidebar, setSyncStatus, setMicEnabled, toggleSendButton, showRecordingOverlay, hideRecordingOverlay, updateRecordingText, showToast, applyTheme } from './ui.js';
+import { navigateTo, navigateBack, toggleSidebar, setSyncStatus, setMicEnabled, toggleSendButton, showRecordingOverlay, hideRecordingOverlay, updateRecordingText, showToast, applyTheme } from './ui.js';
 import { isOnline, onNetworkChange, cacheNotes, getCachedNotes, addToQueue, getQueueCount, flushQueue } from './offline.js';
 import { getCurrentWorkspace } from './workspaces.js';
 import { renderCalendarDay, renderCalendarWeek, renderCalendarMonth, renderCalendarYear } from './calendar.js';
@@ -291,7 +291,7 @@ function setupMainUI() {
 
     setupPullToRefresh();
 
-    document.getElementById('calendar-back').addEventListener('click', () => navigateTo('main'));
+    document.getElementById('calendar-back').addEventListener('click', () => navigateBack());
     document.getElementById('cal-today').addEventListener('click', () => {
         const activeView = document.querySelector('.cal-tab.active')?.dataset.view || 'month';
         const fn = { day: renderCalendarDay, week: renderCalendarWeek, month: renderCalendarMonth, year: renderCalendarYear };
@@ -306,9 +306,9 @@ function setupMainUI() {
         });
     });
 
-    document.getElementById('trash-back')?.addEventListener('click', () => { navigateTo('main'); loadNotes(); });
-    document.getElementById('tags-back')?.addEventListener('click', () => navigateTo('main'));
-    document.getElementById('settings-back')?.addEventListener('click', () => navigateTo('main'));
+    document.getElementById('trash-back')?.addEventListener('click', () => { navigateBack(); loadNotes(); });
+    document.getElementById('tags-back')?.addEventListener('click', () => navigateBack());
+    document.getElementById('settings-back')?.addEventListener('click', () => navigateBack());
 
     // Search
     let searchTimeout;
@@ -450,7 +450,7 @@ function setupMainUI() {
     // Workspace toggle
     setupWorkspaceToggle();
     // Workspace manager back button
-    document.getElementById('workspace-manager-back')?.addEventListener('click', () => navigateTo('main'));
+    document.getElementById('workspace-manager-back')?.addEventListener('click', () => navigateBack());
 
     // Render sidebar workspaces
     updateSidebarWs();
@@ -617,6 +617,14 @@ async function sendTextNote(caller = 'unknown') {
     const voiceDur = window._pendingVoiceDuration;
     window._pendingVoiceBlob = null;
     window._pendingVoiceDuration = null;
+    const sendStatus = showToast(
+        isOnline() ? '正在发送笔记…' : '当前离线，正在保存到本地…',
+        { status: 'loading', duration: 0 },
+    );
+    const slowConnectionTimer = isOnline() ? setTimeout(() => {
+        sendStatus.update('连接较慢，仍在发送笔记…', { status: 'warning', duration: 0 });
+    }, 4000) : null;
+    let voiceUploadFailed = false;
 
     // Phase 1: Database insert (only this can trigger offline queue)
     let note;
@@ -624,24 +632,34 @@ async function sendTextNote(caller = 'unknown') {
         if (voiceBlob) {
             note = await insertNote({ id: clientId, type: 'voice', text: text || '', tags, workspace: getCurrentWorkspace(), audio_path: '', audio_duration: voiceDur || 0 });
             try {
+                clearTimeout(slowConnectionTimer);
+                sendStatus.update('笔记已保存，正在上传语音…', { status: 'loading', duration: 0 });
                 const audioPath = await uploadAudio(note.id, voiceBlob);
                 await getSupabase().from('smartstickynotes_items').update({ audio_path: audioPath }).eq('id', note.id);
                 note.audio_path = audioPath;
-            } catch (e) { /* audio upload failed, note still saved */ }
+            } catch (e) {
+                voiceUploadFailed = true;
+            }
         } else {
             note = await insertNote({ id: clientId, type: 'text', text, tags, workspace: getCurrentWorkspace(), audio_path: null, audio_duration: null });
         }
     } catch (err) {
+        clearTimeout(slowConnectionTimer);
         _isSending = false; sendBtn.disabled = false;
         if (!isOnline()) {
-            await addToQueue({ id: clientId, type: voiceBlob ? 'voice' : 'text', text: text || '', tags, workspace: getCurrentWorkspace(), audio_path: null, audio_duration: null });
-            showToast('已保存到本地，联网后自动发送');
-            textInput.value = ''; textInput.style.height = 'auto'; toggleSendButton(false);
+            try {
+                await addToQueue({ id: clientId, type: voiceBlob ? 'voice' : 'text', text: text || '', tags, workspace: getCurrentWorkspace(), audio_path: null, audio_duration: null });
+                sendStatus.update('连接已断开，笔记已保存到本地，联网后自动发送', { status: 'warning', duration: 4000 });
+                textInput.value = ''; textInput.style.height = 'auto'; toggleSendButton(false);
+            } catch (queueError) {
+                sendStatus.update('本地保存失败：' + queueError.message, { status: 'error', duration: 5000 });
+            }
         } else {
-            showToast('发送失败: ' + err.message);
+            sendStatus.update('发送失败：' + err.message, { status: 'error', duration: 5000 });
         }
         return;
     }
+    clearTimeout(slowConnectionTimer);
 
     // Phase 2: UI update (from here on, note is in DB — never addToQueue)
     try {
@@ -670,6 +688,11 @@ async function sendTextNote(caller = 'unknown') {
         await loadNotes();
     } finally {
         _isSending = false; sendBtn.disabled = false;
+        if (voiceUploadFailed) {
+            sendStatus.update('笔记已保存，但语音上传失败', { status: 'warning', duration: 5000 });
+        } else {
+            sendStatus.update('笔记已发送', { status: 'success', duration: 2000 });
+        }
     }
 }
 
@@ -716,8 +739,22 @@ export async function loadNotes(clearFirst = false) {
 }
 
 async function flushAndReload() {
+    const pendingBefore = await getQueueCount();
+    if (pendingBefore === 0) return;
+    const retryStatus = showToast(
+        `网络已恢复，正在重试发送 ${pendingBefore} 条笔记…`,
+        { status: 'loading', duration: 0 },
+    );
     const sent = await flushQueue(async (item) => { await insertNote(item); });
-    if (sent > 0) { setSyncStatus('已同步'); await loadNotes(); }
+    const remaining = await getQueueCount();
+    if (remaining === 0) {
+        setSyncStatus('已同步');
+        retryStatus.update(`已重新发送 ${sent} 条笔记`, { status: 'success', duration: 2500 });
+        await loadNotes();
+    } else {
+        setSyncStatus(`${remaining} 条待发送`);
+        retryStatus.update(`连接仍不稳定，${remaining} 条笔记等待下次重试`, { status: 'warning', duration: 5000 });
+    }
 }
 
 async function filterNotes(query) {

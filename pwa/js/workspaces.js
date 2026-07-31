@@ -229,12 +229,26 @@ async function renderWorkspaceList(container, workspaces, defaultWs, current) {
             const oldName = btn.dataset.workspace;
             const newName = prompt('输入新名称:', oldName);
             if (newName && newName.trim() && newName.trim() !== oldName) {
+                const trimmedName = newName.trim();
+                btn.disabled = true;
+                const renameStatus = showToast(
+                    `正在修改分区文件名「${oldName}」→「${trimmedName}」…`,
+                    { status: 'loading', duration: 0 },
+                );
+                const slowConnectionTimer = setTimeout(() => {
+                    renameStatus.update('连接较慢，仍在修改分区文件名…', { status: 'warning', duration: 0 });
+                }, 4000);
                 try {
-                    await renameWorkspace(oldName, newName.trim());
+                    await renameWorkspace(oldName, trimmedName);
                     const parent = container.closest('.settings-content');
                     if (parent) await renderWorkspaceManager(parent);
-                    showToast('已重命名');
-                } catch (e) { showToast(e.message); }
+                    clearTimeout(slowConnectionTimer);
+                    renameStatus.update(`分区文件名已修改为「${trimmedName}」`, { status: 'success', duration: 2500 });
+                } catch (e) {
+                    clearTimeout(slowConnectionTimer);
+                    btn.disabled = false;
+                    renameStatus.update('分区文件名修改失败：' + e.message, { status: 'error', duration: 5000 });
+                }
             }
         });
     });
