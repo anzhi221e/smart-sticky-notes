@@ -2,8 +2,31 @@ import { fetchTags, fetchNotesByTag, softDeleteNote, readConfig, writeConfig } f
 import { renderNoteBubble } from './notes.js';
 import { showToast, navigateTo, getTagColor, getPalette } from './ui.js';
 
-export async function showTagsView() {
-    navigateTo('tags');
+function replaceTagHistoryState(tagsView, extra = {}) {
+    history.replaceState({
+        ...history.state,
+        ssnNavigation: true,
+        screen: 'tags',
+        tagsView,
+        ...extra,
+    }, '');
+}
+
+function pushTagHistoryState(tagsView, extra = {}) {
+    history.pushState({
+        ...history.state,
+        ssnNavigation: true,
+        screen: 'tags',
+        tagsView,
+        ...extra,
+    }, '');
+}
+
+export async function showTagsView({ historyMode = 'auto' } = {}) {
+    if (historyMode !== 'none') {
+        navigateTo('tags');
+        replaceTagHistoryState('list', { tag: null, ascending: false });
+    }
     const content = document.getElementById('tags-content');
     if (!content) return;
 
@@ -185,8 +208,23 @@ async function batchDeleteTag(tag) {
     showTagsView();
 }
 
-export async function showTagNotes(tag, ascending = false) {
-    navigateTo('tags');
+export async function showTagNotes(tag, ascending = false, { historyMode = 'auto' } = {}) {
+    if (historyMode !== 'none') {
+        const currentState = history.state;
+        const isTagsState = currentState?.ssnNavigation && currentState.screen === 'tags';
+        if (!isTagsState) {
+            navigateTo('tags');
+            replaceTagHistoryState('list', { tag: null, ascending: false });
+            pushTagHistoryState('detail', { tag, ascending });
+        } else if (currentState.tagsView === 'detail') {
+            replaceTagHistoryState('detail', { tag, ascending });
+        } else {
+            if (currentState.tagsView !== 'list') {
+                replaceTagHistoryState('list', { tag: null, ascending: false });
+            }
+            pushTagHistoryState('detail', { tag, ascending });
+        }
+    }
     const content = document.getElementById('tags-content');
     if (!content) return;
 
@@ -222,8 +260,21 @@ export async function showTagNotes(tag, ascending = false) {
         notes.forEach(n => notesContainer.appendChild(renderNoteBubble(n)));
     }
     document.documentElement.dataset.multi = savedMulti;
-    document.getElementById('tag-notes-back').addEventListener('click', showTagsView);
+    document.getElementById('tag-notes-back').addEventListener('click', () => {
+        if (history.state?.tagsView === 'detail') history.back();
+        else showTagsView();
+    });
     document.getElementById('tag-notes-sort').addEventListener('click', () => {
         showTagNotes(tag, !ascending);
     });
 }
+
+window.addEventListener('ssn:navigation-applied', (event) => {
+    const state = event.detail;
+    if (state?.screen !== 'tags') return;
+    if (state.tagsView === 'detail' && state.tag) {
+        void showTagNotes(state.tag, !!state.ascending, { historyMode: 'none' });
+    } else {
+        void showTagsView({ historyMode: 'none' });
+    }
+});

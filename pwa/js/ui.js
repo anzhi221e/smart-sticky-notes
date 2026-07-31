@@ -182,6 +182,9 @@ window.addEventListener('popstate', (event) => {
     const target = event.state?.ssnNavigation ? event.state.screen : null;
     if (target && MANAGED_SCREENS.has(target)) {
         showScreen(target);
+        window.dispatchEvent(new CustomEvent('ssn:navigation-applied', {
+            detail: event.state,
+        }));
         return;
     }
 
