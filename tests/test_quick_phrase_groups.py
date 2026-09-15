@@ -42,8 +42,8 @@ def test_quick_phrase_editor_supports_groups_and_move_menu():
     assert "touchstart" not in toolbar_js
     assert "contextmenu" not in toolbar_js
     assert ".quick-phrase-sheet-list" in app_css
-    assert ".quick-phrase-list--groups::-webkit-scrollbar-button { display: none; }" in app_css
-    assert "scrollbar-width: thin" in app_css
+    assert ".quick-phrase-list--groups::-webkit-scrollbar { display: none; }" in app_css
+    assert "scrollbar-width: thin" not in app_css
     assert "max-height: min(52vh, 470px)" in app_css
 
 

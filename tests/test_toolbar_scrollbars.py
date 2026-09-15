@@ -8,6 +8,8 @@ def test_tag_toolbar_keeps_horizontal_scroll_but_hides_scrollbar():
     app_css = (ROOT / "pwa" / "css" / "app.css").read_text(encoding="utf-8")
 
     assert ".toolbar-row { display: flex; gap: 4px; overflow-x: auto;" in app_css
+    assert ".toolbar-row { scrollbar-width: none; }" in app_css
+    assert ".toolbar-row::-webkit-scrollbar { display: none; }" in app_css
     assert ".toolbar-row--tags { scrollbar-width: none; }" in app_css
     assert ".toolbar-row--tags::-webkit-scrollbar { display: none; }" in app_css
 
@@ -16,6 +18,8 @@ def test_quick_phrase_toolbar_keeps_horizontal_scroll_but_hides_scrollbar():
     app_css = (ROOT / "pwa" / "css" / "app.css").read_text(encoding="utf-8")
 
     assert ".toolbar-row { display: flex; gap: 4px; overflow-x: auto;" in app_css
+    assert ".toolbar-row { scrollbar-width: none; }" in app_css
+    assert ".toolbar-row::-webkit-scrollbar { display: none; }" in app_css
     assert ".toolbar-row--quick-phrases { scrollbar-width: none; }" in app_css
     assert ".toolbar-row--quick-phrases::-webkit-scrollbar { display: none; }" in app_css
 
@@ -45,3 +49,20 @@ def test_mobile_touch_and_trackpad_horizontal_gestures_remain_native():
     assert "if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;" in toolbar_js
     assert "touchstart" not in toolbar_js
     assert "touchmove" not in toolbar_js
+
+
+def test_all_scrollbars_are_hidden_without_disabling_overflow():
+    app_css = (ROOT / "pwa" / "css" / "app.css").read_text(encoding="utf-8")
+
+    assert "* {\n    scrollbar-width: none;\n    -ms-overflow-style: none;\n}" in app_css
+    assert "*::-webkit-scrollbar {\n    display: none;\n    width: 0;\n    height: 0;\n}" in app_css
+    assert "scrollbar-width: thin" not in app_css
+    assert "overflow-y: auto" in app_css
+    assert "overflow-x: auto" in app_css
+
+
+def test_workspace_filter_keeps_scrolling_with_hidden_scrollbar():
+    app_css = (ROOT / "pwa" / "css" / "app.css").read_text(encoding="utf-8")
+
+    assert ".workspace-filter-scroll { scrollbar-width: none; }" in app_css
+    assert ".workspace-filter-scroll::-webkit-scrollbar { display: none; }" in app_css

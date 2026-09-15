@@ -346,9 +346,8 @@ html, body {
 /* Toolbar */
 .toolbar { border-top: 1px solid var(--border); background: var(--bg); padding: 8px 12px 4px; }
 .toolbar-row { display: flex; gap: 4px; overflow-x: auto; padding: 4px 0; -webkit-overflow-scrolling: touch; }
-.toolbar-row::-webkit-scrollbar { height: 4px; }
-.toolbar-row::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-.toolbar-row { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.toolbar-row { scrollbar-width: none; }
+.toolbar-row::-webkit-scrollbar { display: none; }
 .toolbar-row--format { justify-content: space-between; }
 .toolbar-row--quick-phrases { scrollbar-width: none; }
 .toolbar-row--quick-phrases::-webkit-scrollbar { display: none; }
@@ -417,12 +416,9 @@ html, body {
 .quick-phrase-list--groups {
     gap: 0; flex: 0 1 auto; min-height: 0; max-height: min(52vh, 470px); overflow-y: auto;
     padding-right: 4px; margin-bottom: 12px;
-    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    scrollbar-width: none;
 }
-.quick-phrase-list--groups::-webkit-scrollbar { width: 6px; }
-.quick-phrase-list--groups::-webkit-scrollbar-track { background: transparent; }
-.quick-phrase-list--groups::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
-.quick-phrase-list--groups::-webkit-scrollbar-button { display: none; }
+.quick-phrase-list--groups::-webkit-scrollbar { display: none; }
 .quick-phrase-empty { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 18px; }
 .quick-phrase-group-card {
     display: flex; flex-direction: column; gap: 4px; background: transparent;
@@ -735,9 +731,8 @@ html, body {
     display: flex; gap: 6px; padding: 8px 16px;
     overflow-x: auto; -webkit-overflow-scrolling: touch;
 }
-.workspace-filter-scroll::-webkit-scrollbar { height: 4px; }
-.workspace-filter-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-.workspace-filter-scroll { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.workspace-filter-scroll { scrollbar-width: none; }
+.workspace-filter-scroll::-webkit-scrollbar { display: none; }
 .workspace-filter-btn {
     padding: 5px 14px; border-radius: 16px; border: 1px solid var(--border);
     background: var(--surface); color: var(--text-secondary);
@@ -774,10 +769,16 @@ html, body {
     background: var(--accent-dim); color: var(--accent); font-weight: 600;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+/* Hide every scrollbar without changing any scroll container or interaction. */
+* {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
 
 /* ===== Narrow / split-screen PWA: compact but keep all controls =====
    MUST be at end of file so they override base rules in the cascade.
